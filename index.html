@@ -69,7 +69,8 @@
   .preview { background:#fff; border:1px solid var(--line); border-radius:8px; overflow:hidden; display:flex; flex-direction:column; min-height:70vh; position:sticky; top:16px; height: calc(100vh - 32px); }
   .previewbar { background:var(--navy); color:#fff; padding:10px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center; }
   .previewbar span { color:var(--cyan); }
-  iframe { border:0; width:100%; flex:1; background:#e9edf5; }
+  #preview { flex:1; overflow:auto; padding:18px; background:#e9edf5; }
+  #preview .empty { font-family:'Segoe UI', Arial, sans-serif; color:#4a5878; padding:40px; text-align:center; }
   .foot { text-align:center; font-size:12px; color:var(--mute); padding:14px; }
   details summary { cursor:pointer; color:var(--navy); font-size:14px; margin-top:8px; }
 </style>
@@ -151,7 +152,7 @@
 
   <section class="preview">
     <div class="previewbar"><div>Home page preview</div><span id="preview-note">Links work after import, not here.</span></div>
-    <iframe id="preview" title="Home page preview" sandbox="allow-same-origin"></iframe>
+    <div id="preview" aria-label="Home page preview"></div>
   </section>
 </main>
 <div class="foot">Optima Course Kit prototype &middot; kits are built from live Optima courses &middot; this page never writes to Canvas</div>
@@ -440,9 +441,11 @@
   function currentHtml() { return (course && kit) ? buildHome(course, kit, home) : ''; }
   function renderPreview() {
     var html = currentHtml();
-    var shown = html.replace(/\$CANVAS_(?:OBJECT|COURSE)_REFERENCE\$[^"]*/g, '#');
-    $('preview').srcdoc = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0; background:#e9edf5; padding:18px;">' +
-      (html ? shown : '<div style="font-family: Segoe UI, Arial, sans-serif; color:#4a5878; padding:40px; text-align:center;">Find a course and choose a kit to preview its home page.</div>') + '</body></html>';
+    // Rendered inline (the emitted page is fully inline-styled, like Canvas shows it);
+    // Canvas tokens become dead links here because they only resolve on import.
+    $('preview').innerHTML = html
+      ? html.replace(/\$CANVAS_(?:OBJECT|COURSE)_REFERENCE\$[^"]*/g, '#')
+      : '<div class="empty">Find a course and choose a kit to preview its home page.</div>';
   }
   function lock(n, on) { $('step' + n).classList.toggle('locked', on); }
   function escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -500,12 +503,12 @@
 
   // ------------------------------------------------------------ wiring
   function wire() {
-    var dl = document.createElement('option');
     catalog.courses.forEach(function (c) {
       var o = document.createElement('option'); o.value = c.code; o.label = c.title + ' (grade ' + c.grade + ')'; o.textContent = c.title;
       $('codes').appendChild(o);
     });
     $('code').addEventListener('input', function () { course = findCourse(this.value); kit = null; renderCourse(); renderPreview(); });
+    $('preview').addEventListener('click', function (e) { if (e.target.closest('a')) e.preventDefault(); });
     FIELDS.forEach(function (f) { $('f-' + f).addEventListener('input', function () { readForm(); save(); renderPreview(); }); });
     $('dl').addEventListener('click', function () {
       status('Building your kit…');
