@@ -1,0 +1,7 @@
+# downloaded course files used only while building (they ship inside the cartridge)
+specs/files/
+specs/*.log
+# test artefacts
+cartridges/_selftest.imscc
+cartridges/_widget_patched.imscc
+__pycache__/

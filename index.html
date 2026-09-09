@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Optima Course Kit</title>
+<!--
+  Optima Course Kit - PROTOTYPE
+  A teacher types a CPALMS course code, picks the kit for their section, fills in
+  a short home-page form, and downloads one Canvas cartridge (.imscc) with the
+  whole sequenced course inside and their home page already set as the front page.
+
+  The cartridges are built by _build/ in this repo from live Optima courses.
+  This page never calls Canvas. It fetches a cartridge, rewrites one file inside
+  it (the front page) in the browser, and hands the zip back. Nothing is uploaded.
+
+  The home-page emitter below is adapted from the live Course Home Page Builder
+  (optimaondemand/teacher-homepages). That builder is untouched; this file is
+  its own thing so the two can change independently.
+-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root { --navy:#0E1C42; --cyan:#55C8E8; --gold:#E0A82E; --ink:#0e1c42; --mute:#4a5878; --line:#D0D9E8; --bg:#F4F6FB; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:'Segoe UI', Arial, sans-serif; color:var(--ink); background:var(--bg); font-size:16px; line-height:1.45; }
+  .top { background:var(--navy); border-bottom:5px solid var(--cyan); padding:18px 28px; display:flex; align-items:center; gap:16px; color:#fff; }
+  .top .owl { width:52px; height:52px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .top .owl img { width:50px; height:40px; object-fit:contain; }
+  .top .brand { font-size:22px; line-height:1.15; }
+  .top .brand small { display:block; font-size:12px; color:var(--cyan); }
+  .top .tool { margin-left:auto; text-align:right; }
+  .top .tool .name { font-size:24px; }
+  .top .tool .tag { font-size:12px; color:var(--gold); letter-spacing:1px; }
+  .wrap { display:grid; grid-template-columns: minmax(340px, 520px) 1fr; gap:22px; padding:22px 28px; max-width:1500px; margin:0 auto; }
+  @media (max-width: 1000px) { .wrap { grid-template-columns: 1fr; } .preview { order: 2; } }
+  .step { background:#fff; border:1px solid var(--line); border-top:4px solid var(--cyan); border-radius:8px; padding:18px 20px; margin-bottom:16px; }
+  .step h2 { margin:0 0 10px; font-size:19px; font-weight:600; display:flex; align-items:center; gap:10px; }
+  .step h2 .n { width:28px; height:28px; border-radius:50%; background:var(--navy); color:#fff; font-size:14px; display:inline-flex; align-items:center; justify-content:center; }
+  .step.locked { opacity:.55; }
+  label { display:block; font-size:13px; color:var(--mute); margin:10px 0 4px; }
+  input[type=text], input[type=email], input[type=url], select, textarea { width:100%; font:inherit; font-size:15px; padding:9px 11px; border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--ink); }
+  textarea { min-height:70px; resize:vertical; }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .hint { font-size:13px; color:var(--mute); margin-top:6px; }
+  .card { border:1px solid var(--line); border-left:5px solid var(--navy); border-radius:8px; padding:12px 14px; margin-top:10px; background:#F9FAFD; }
+  .card .t { font-size:18px; }
+  .card .m { font-size:13px; color:var(--mute); }
+  .kit { display:flex; align-items:flex-start; gap:10px; border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-top:8px; cursor:pointer; background:#fff; }
+  .kit.sel { border-color:var(--navy); box-shadow: inset 4px 0 0 var(--navy); }
+  .kit.pending { color:var(--mute); cursor:not-allowed; background:#F4F6FB; }
+  .kit input { margin-top:5px; }
+  .kit .l { font-size:16px; }
+  .kit .s { font-size:13px; color:var(--mute); }
+  .pill { display:inline-block; font-size:11px; letter-spacing:.5px; padding:2px 8px; border-radius:10px; background:var(--gold); color:var(--navy); margin-left:6px; vertical-align:middle; }
+  .pill.grey { background:#D0D9E8; }
+  .mods { margin-top:8px; }
+  .mod { display:grid; grid-template-columns:24px 1fr; gap:8px; align-items:center; margin:6px 0; }
+  .mod input[type=text] { padding:6px 9px; font-size:14px; }
+  button { font:inherit; font-size:15px; border-radius:24px; padding:11px 22px; cursor:pointer; border:2px solid var(--navy); background:var(--navy); color:#fff; }
+  button.alt { background:#fff; color:var(--navy); }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
+  .status { margin-top:10px; font-size:14px; min-height:20px; }
+  .status.err { color:#8C1A0E; }
+  .status.ok { color:#1E4620; }
+  .check { margin:10px 0 0; padding-left:0; list-style:none; counter-reset: c; }
+  .check li { counter-increment:c; position:relative; padding:6px 0 6px 34px; border-top:1px solid var(--line); font-size:14px; }
+  .check li:before { content:counter(c); position:absolute; left:0; top:6px; width:24px; height:24px; border-radius:50%; background:var(--gold); color:var(--navy); font-size:12px; display:flex; align-items:center; justify-content:center; }
+  .preview { background:#fff; border:1px solid var(--line); border-radius:8px; overflow:hidden; display:flex; flex-direction:column; min-height:70vh; position:sticky; top:16px; height: calc(100vh - 32px); }
+  .previewbar { background:var(--navy); color:#fff; padding:10px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center; }
+  .previewbar span { color:var(--cyan); }
+  iframe { border:0; width:100%; flex:1; background:#e9edf5; }
+  .foot { text-align:center; font-size:12px; color:var(--mute); padding:14px; }
+  details summary { cursor:pointer; color:var(--navy); font-size:14px; margin-top:8px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="owl"><img src="https://raw.githubusercontent.com/optimaondemand/optima-assets/eeb0b335630058906d52f478028361d352253a93/images/Optima%20Final%20Circle%20-%20Owl%20Only.png" alt="Optima Academy"></div>
+  <div class="brand">Optima Academy Online<small>An Education Experience Company</small></div>
+  <div class="tool"><div class="name">Course Kit</div><div class="tag">PROTOTYPE</div></div>
+</header>
+
+<main class="wrap">
+  <section class="col">
+    <div class="step" id="step1">
+      <h2><span class="n">1</span> Find your course</h2>
+      <label for="code">CPALMS course code</label>
+      <input type="text" id="code" list="codes" placeholder="e.g. 1001310" autocomplete="off" inputmode="numeric">
+      <datalist id="codes"></datalist>
+      <div class="hint">Type the seven-digit code from your course assignment, or start typing a course name.</div>
+      <div id="course-card"></div>
+    </div>
+
+    <div class="step locked" id="step2">
+      <h2><span class="n">2</span> Choose your kit</h2>
+      <div id="kits"><div class="hint">Find a course first.</div></div>
+    </div>
+
+    <div class="step locked" id="step3">
+      <h2><span class="n">3</span> Customize your home page</h2>
+      <div class="row">
+        <div><label for="f-teacherName">Your name, as students see it</label><input type="text" id="f-teacherName" placeholder="Ms. Rivera"></div>
+        <div><label for="f-teacherTitle">Title</label><input type="text" id="f-teacherTitle" placeholder="Course Instructor"></div>
+      </div>
+      <label for="f-teacherEmail">Email</label><input type="email" id="f-teacherEmail" placeholder="you@optimaed.com">
+      <div class="row">
+        <div><label for="f-mode">Course mode</label><select id="f-mode"><option value="On-Demand">On-Demand</option><option value="Live">Live</option></select></div>
+        <div><label for="f-term">Term</label><input type="text" id="f-term" placeholder="Fall 2026"></div>
+      </div>
+      <div class="row">
+        <div><label for="f-section">Section</label><input type="text" id="f-section" placeholder="Section 2"></div>
+        <div><label for="f-meeting">Study Hall or class meeting</label><input type="text" id="f-meeting" placeholder="Study Hall: Thursdays, 1:00 PM ET"></div>
+      </div>
+      <label for="f-studyHall">Study Hall link (Teams), optional</label><input type="url" id="f-studyHall" placeholder="https://teams.microsoft.com/...">
+      <label for="f-blurb">A few lines about you, optional</label><textarea id="f-blurb" placeholder="What you teach, what you love about it, one thing students should ask you about."></textarea>
+      <div class="row">
+        <div><label for="f-house">Your house, optional</label>
+          <select id="f-house"><option value="">None</option><option value="galahad">Galahad (Perseverance)</option><option value="cincinnatus">Cincinnatus (Courage)</option><option value="nightingale">Nightingale (Service)</option><option value="odysseus">Odysseus (Self-Governance)</option></select></div>
+        <div><label for="f-tagline">Tagline under the course name</label><input type="text" id="f-tagline" placeholder="Course Home · Start here every week."></div>
+      </div>
+      <label for="f-annWhen">First announcement (date line)</label><input type="text" id="f-annWhen" placeholder="Week 1">
+      <label for="f-annText">First announcement (text)</label><textarea id="f-annText" placeholder="Welcome. Read the Module 1 map before opening Lesson 1.01."></textarea>
+      <details><summary>Module cards (edit titles, untick to hide)</summary><div class="mods" id="mods"></div></details>
+      <details><summary>Commonplace Corner, optional</summary>
+        <label for="f-quote">Quote</label><input type="text" id="f-quote">
+        <label for="f-author">Author</label><input type="text" id="f-author">
+        <label for="f-prompt">Prompt</label><textarea id="f-prompt"></textarea>
+      </details>
+    </div>
+
+    <div class="step locked" id="step4">
+      <h2><span class="n">4</span> Download and import</h2>
+      <div class="hint">One file. Your home page is already inside it, set as the course front page, with the module cards linked to the real modules.</div>
+      <div class="actions">
+        <button id="dl" disabled>Download my course kit (.imscc)</button>
+        <button id="copy" class="alt" disabled>Copy home page HTML only</button>
+        <button id="dl-plain" class="alt" disabled>Original kit, no customization</button>
+      </div>
+      <div class="status" id="status"></div>
+      <ol class="check">
+        <li>In your Canvas course: <b>Settings</b> &rarr; <b>Import Course Content</b>.</li>
+        <li>Content Type: <b>Common Cartridge 1.x Package</b>. Choose the file you just downloaded.</li>
+        <li>Content: <b>All content</b>. Leave dates unadjusted. Click <b>Import</b> and wait for the green check.</li>
+        <li>Open <b>Home</b>. Your page should be there with your name on it. If not: Pages &rarr; set it as Front Page &rarr; Home &rarr; Choose Home Page &rarr; Pages Front Page.</li>
+        <li>Check <b>Modules</b> (count matches the kit) and <b>Assignments</b> (group weights present), then <b>Publish</b> the course.</li>
+      </ol>
+      <div class="hint">Importing the same kit again later updates the course in place instead of duplicating it.</div>
+    </div>
+  </section>
+
+  <section class="preview">
+    <div class="previewbar"><div>Home page preview</div><span id="preview-note">Links work after import, not here.</span></div>
+    <iframe id="preview" title="Home page preview" sandbox="allow-same-origin"></iframe>
+  </section>
+</main>
+<div class="foot">Optima Course Kit prototype &middot; kits are built from live Optima courses &middot; this page never writes to Canvas</div>
+<pre id="selftest-out" hidden></pre>
+<pre id="selftest-b64" hidden></pre>
+
+<script>
+(function () {
+  'use strict';
+
+  var TEAMS_TECH_HELP = 'https://teams.microsoft.com/l/meetup-join/19%3ameeting_YWVmZjZjZDEtNjIxZS00ZDcyLWJmYjktZTc2MmYzNDU1ZThh%40thread.v2/0?context=%7b%22Tid%22%3a%22c7b2fe95-5305-4143-a425-262bd0ed6d5e%22%2c%22Oid%22%3a%22213a79fc-fe79-4a88-908c-fe6868f93e92%22%7d';
+  var OWL = 'https://raw.githubusercontent.com/optimaondemand/optima-assets/eeb0b335630058906d52f478028361d352253a93/images/Optima%20Final%20Circle%20-%20Owl%20Only.png';
+  var CREST_BASE = 'https://optimaondemand.github.io/teacher-homepages/houses/';
+  var HOUSES = {
+    galahad:     { label: 'Galahad',     virtue: 'Perseverance',    color: '#1E4620', img: 'galahad.png' },
+    cincinnatus: { label: 'Cincinnatus', virtue: 'Courage',         color: '#8C1A0E', img: 'cincinnatus.png' },
+    nightingale: { label: 'Nightingale', virtue: 'Service',         color: '#10467F', img: 'nightingale.png' },
+    odysseus:    { label: 'Odysseus',    virtue: 'Self-Governance', color: '#4A2472', img: 'odysseus.png' }
+  };
+  var STORE = 'optima-course-kit-v1';
+
+  var catalog = null, course = null, kit = null;
+  var home = blankHome();
+  var $ = function (id) { return document.getElementById(id); };
+
+  function blankHome() {
+    return { teacherName: '', teacherTitle: '', teacherEmail: '', mode: 'On-Demand', term: '', section: '', meeting: '',
+             studyHall: '', blurb: '', house: '', tagline: '', annWhen: '', annText: '', quote: '', author: '', prompt: '',
+             modules: [] };
+  }
+  function exampleHome() {
+    var h = blankHome();
+    h.teacherName = 'Ms. Rivera'; h.teacherTitle = 'Course Instructor'; h.teacherEmail = 'arivera@optimaed.com';
+    h.term = 'Fall 2026'; h.section = 'Section 2'; h.meeting = 'Study Hall: Thursdays, 1:00 PM ET';
+    h.blurb = 'I have taught literature for eleven years and I still read the Odyssey every summer. Ask me about the best opening line you have ever read.';
+    h.house = 'odysseus'; h.annWhen = 'Week 1'; h.annText = 'Welcome. Read the Module 1 map before opening Lesson 1.01, then work down the list in order.';
+    h.quote = 'Justice is giving what is owed.'; h.author = 'a working definition, Lesson 1.02';
+    h.prompt = 'Copy this line into your commonplace book. Bring one moment from this week’s reading where someone gave, or refused, what was owed.';
+    return h;
+  }
+
+  // ------------------------------------------------------------ escaping
+  // Output is pure ASCII (numeric character references) and every style is
+  // inline, because Canvas keeps markup but not stylesheets or scripts.
+  function esc(str) {
+    str = String(str == null ? '' : str);
+    var out = '';
+    for (var i = 0; i < str.length; i++) {
+      var cp = str.codePointAt(i);
+      var ch = String.fromCodePoint(cp);
+      if (cp > 0xFFFF) i++;
+      if (ch === '&') out += '&amp;';
+      else if (ch === '<') out += '&lt;';
+      else if (ch === '>') out += '&gt;';
+      else if (ch === '"') out += '&quot;';
+      else if (cp > 126 || (cp < 32 && ch !== '\n')) out += '&#' + cp + ';';
+      else out += ch;
+    }
+    return out;
+  }
+  function escML(str) {
+    return esc(str).split('\n').map(function (l) { return l.trim(); })
+      .filter(function (l, i, a) { return l !== '' || (i > 0 && i < a.length - 1); }).join('<br />');
+  }
+  function href(url) { url = String(url || '').trim(); return url ? esc(url) : '#'; }
+  function slug(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+  function initialsFor(who) {
+    var parts = String(who || '').replace(/^(mr|mrs|ms|miss|dr|prof)\.?\s+/i, '').split(/\s+/).filter(Boolean);
+    return (parts.length ? parts.map(function (p) { return p[0]; }).join('').slice(0, 2) : 'T').toUpperCase();
+  }
+
+  // -------------------------------------------------- home page emitter
+  // Canvas tokens: the importer rewrites these to the new course's real URLs,
+  // which is how a home page can point at modules that do not exist yet.
+  var T = {
+    modules: '$CANVAS_COURSE_REFERENCE$/modules',
+    syllabus: '$CANVAS_COURSE_REFERENCE$/assignments/syllabus',
+    module: function (gid) { return '$CANVAS_OBJECT_REFERENCE$/modules/' + gid; }
+  };
+  var S = {
+    wrap:    "max-width: 960px; margin: 0 auto; font-family: 'Segoe UI', Arial, sans-serif; color: #0e1c42; font-size: 17px; line-height: 1.5;",
+    header:  'background: #0E1C42; border-bottom: 5px solid #55C8E8; padding: 24px 34px; border-radius: 10px 10px 0 0;',
+    body:    'background: #F4F6FB; padding: 24px; border-radius: 0 0 10px 10px;',
+    tile:    'box-sizing: border-box; flex: 1; min-width: 190px; text-decoration: none; background: #FFFFFF; border: 1px solid #D0D9E8; border-top: 4px solid #55C8E8; border-radius: 8px; padding: 22px 16px; text-align: center; display: block;',
+    modCard: 'flex: 1 1 280px; text-decoration: none; background: #FFFFFF; border: 1px solid #D0D9E8; border-left: 5px solid #0E1C42; border-radius: 8px; padding: 16px 18px; display: flex; align-items: center; gap: 14px;',
+    modNum:  'display: flex; width: 34px; height: 34px; border-radius: 50%; background: #0E1C42; color: #fff; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;',
+    eyebrow: 'display: block; font-size: 12px; letter-spacing: 1px; color: #6b7a99;',
+    footer:  'background: #0E1C42; border-top: 3px solid #55C8E8; padding: 18px 34px; text-align: center; border-radius: 0 0 10px 10px; margin-top: 4px;'
+  };
+  var CHIP = 'background: rgba(255,255,255,0.10); border: 1px solid rgba(85,200,232,0.45); border-radius: 20px; padding: 6px 15px; font-size: 15px; color: #ffffff;';
+  var CHIP_LABEL = 'color: #55c8e8; letter-spacing: 0.5px; font-size: 12px; margin-right: 7px;';
+  // Everything inside a link is a <span>: Canvas's editor unwraps an <a> that
+  // contains a <div>, and the whole card's styling goes with it.
+  var BLOCK = 'display: block; ';
+
+  function buildHome(c, k, h) {
+    var title = (c.title || 'Course').toUpperCase();
+    var out = [];
+    out.push('<!-- ' + esc(title) + ' - COURSE HOME PAGE (Optima Academy Online). Built by Course Kit for ' + esc(k.label) + ', kit version ' + esc(k.version || '') + '. All styling inline: Canvas strips <style> and <script>. -->');
+    out.push('<div style="' + S.wrap + '">');
+    out.push('  <div style="' + S.header + '">');
+    out.push('    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 12px;">');
+    out.push('      <div style="width: 52px; height: 52px; border-radius: 50%; background: #FFFFFF; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><img src="' + OWL + '" alt="Optima Academy" style="width: 50px; height: 40px; object-fit: contain;" /></div>');
+    out.push('      <div><div style="font-size: 24px; color: #ffffff; line-height: 1.2;">Optima Academy Online</div><div style="font-size: 12px; color: #55c8e8;">An Education Experience Company</div></div>');
+    out.push('    </div>');
+    out.push('    <div style="font-size: 40px; color: #ffffff; margin-bottom: 4px; letter-spacing: 0.5px;">' + esc(title) + '</div>');
+    var tagline = String(h.tagline || '').trim() || 'Course Home · Start here every week.';
+    out.push('    <div style="font-size: 16px; color: rgba(255,255,255,0.75);">' + esc(tagline) + '</div>');
+    var chips = [];
+    function chip(label, value, inner) {
+      if (!String(value || '').trim()) return;
+      chips.push('      <div style="' + CHIP + '"><span style="' + CHIP_LABEL + '">' + esc(String(label).toUpperCase()) + '</span>' + (inner || esc(value)) + '</div>');
+    }
+    chip('Term', h.term);
+    chip('Section', [h.section, h.mode].filter(function (v) { return String(v || '').trim(); }).join(' · '));
+    chip('Meets', h.meeting);
+    var teacher = String(h.teacherName || '').trim();
+    if (teacher) {
+      var email = String(h.teacherEmail || '').trim();
+      var name = email ? '<a href="mailto:' + esc(email) + '" style="color: #ffffff; text-decoration: underline;">' + esc(teacher) + '</a>' : esc(teacher);
+      chip(String(h.teacherTitle || '').trim() || 'Your teacher', teacher, name);
+    }
+    if (chips.length) out.push('    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px;">\n' + chips.join('\n') + '\n    </div>');
+    out.push('  </div>');
+    out.push('  <div style="' + S.body + '">');
+
+    if (String(h.annText || '').trim()) {
+      out.push('    <!-- ANNOUNCEMENTS: update each week -->');
+      out.push('    <div style="background: #FFFFFF; border: 1px solid #D0D9E8; border-top: 4px solid #E0A82E; border-radius: 8px; padding: 20px 24px; margin-bottom: 22px;">');
+      out.push('      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;"><span style="font-size: 20px;">&#128226;</span><div><div style="font-size: 12px; letter-spacing: 1px; color: #E0A82E; font-weight: 600;">ANNOUNCEMENTS</div><div style="font-size: 21px; color: #0e1c42;">Latest Updates</div></div></div>');
+      out.push('      <div style="background: #FDF6E7; border-left: 4px solid #E0A82E; border-radius: 4px; padding: 12px 16px;">');
+      if (String(h.annWhen || '').trim()) out.push('        <div style="font-size: 13.5px; color: #b07d1a; margin-bottom: 5px;">' + esc(h.annWhen) + '</div>');
+      out.push('        <div style="font-size: 17px; color: #333; line-height: 1.5;">' + escML(h.annText) + '</div>');
+      out.push('      </div>');
+      out.push('    </div>');
+    }
+
+    var tiles = [
+      { icon: '📜', label: 'Syllabus', desc: 'Grading, pacing & policies', url: T.syllabus },
+      { icon: '📚', label: 'Modules', desc: 'Every week, in order', url: T.modules },
+      { icon: '🔧', label: 'Tech Help', desc: 'Live support with the tech team', url: TEAMS_TECH_HELP, blank: true }
+    ];
+    if (String(h.studyHall || '').trim()) tiles.push({ icon: '🎓', label: 'Study Hall', desc: h.meeting || 'Office hours & support', url: h.studyHall, blank: true });
+    out.push('    <!-- QUICK-ACCESS TILES -->');
+    out.push('    <div style="display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 26px;">');
+    tiles.forEach(function (t) {
+      out.push('      <a href="' + href(t.url) + '"' + (t.blank ? ' target="_blank" rel="noopener"' : '') + ' style="' + S.tile + '">');
+      out.push('        <span style="' + BLOCK + 'font-size: 30px; margin-bottom: 8px;">' + esc(t.icon) + '</span>');
+      out.push('        <span style="' + BLOCK + 'font-size: 19px; color: #0e1c42;">' + esc(t.label) + '</span>');
+      out.push('        <span style="' + BLOCK + 'font-size: 14px; color: #6b7a99; margin-top: 5px;">' + esc(t.desc) + '</span>');
+      out.push('      </a>');
+    });
+    out.push('    </div>');
+
+    var hasTeacherBits = teacher || String(h.blurb || '').trim() || h.house;
+    if (hasTeacherBits) {
+      var who = teacher || 'Your teacher';
+      out.push('    <!-- MEET THE TEACHER -->');
+      out.push('    <div style="background: #FFFFFF; border: 1px solid #D0D9E8; border-top: 4px solid #55C8E8; border-radius: 8px; padding: 24px 26px; margin-bottom: 22px; display: flex; flex-wrap: wrap; gap: 26px; align-items: flex-start;">');
+      out.push('      <div style="flex: 0 0 auto;"><div style="width: 150px; height: 150px; border-radius: 50%; border: 4px solid #55C8E8; background: #EDF1F9; color: #0e1c42; font-size: 46px; text-align: center; line-height: 142px; letter-spacing: 1px;">' + esc(initialsFor(who)) + '</div></div>');
+      out.push('      <div style="flex: 1 1 300px; min-width: 0;">');
+      out.push('        <div style="font-size: 12px; letter-spacing: 1px; color: #6b7a99;">YOUR TEACHER</div>');
+      out.push('        <div style="font-size: 25px; color: #0e1c42; margin-top: 3px;">' + esc(who) + '</div>');
+      if (String(h.teacherTitle || '').trim()) out.push('        <div style="font-size: 15px; color: #6b7a99;">' + esc(h.teacherTitle) + '</div>');
+      if (String(h.blurb || '').trim()) out.push('        <div style="font-size: 17px; color: #333; margin-top: 13px; line-height: 1.5;">' + escML(h.blurb) + '</div>');
+      if (String(h.teacherEmail || '').trim()) out.push('        <div style="margin-top: 14px;"><a href="mailto:' + esc(h.teacherEmail) + '" style="display: inline-block; text-decoration: none; font-size: 16px; color: #0e1c42; border: 1px solid #D0D9E8; border-radius: 24px; padding: 10px 20px;">Email me</a></div>');
+      if (h.house && HOUSES[h.house]) {
+        var H = HOUSES[h.house];
+        out.push('        <div style="display: flex; align-items: center; gap: 13px; margin-top: 16px; border-top: 1px solid #D0D9E8; padding-top: 14px;">');
+        out.push('          <div style="background: #0E1C42; border-radius: 8px; padding: 4px; border-left: 3px solid ' + H.color + '; flex-shrink: 0; line-height: 0;"><img src="' + CREST_BASE + H.img + '" alt="' + esc(H.label) + ' house crest" style="width: 46px; height: 46px; object-fit: contain; display: block;" /></div>');
+        out.push('          <div><div style="font-size: 11px; letter-spacing: 1px; color: #6b7a99;">' + esc((teacher ? who + ' is in' : 'Your teacher is in').toUpperCase()) + '</div><div style="font-size: 18px; color: #0e1c42;">House ' + esc(H.label) + '</div><div style="font-size: 14px; color: #6b7a99;">' + esc(H.virtue) + '</div></div>');
+        out.push('        </div>');
+      }
+      out.push('      </div>');
+      out.push('    </div>');
+    }
+
+    var mods = (h.modules || []).filter(function (m) { return m.show && String(m.title || '').trim(); });
+    out.push('    <!-- COURSE MODULES: each card links to the real module after import -->');
+    out.push('    <div style="display: flex; align-items: baseline; justify-content: space-between; border-bottom: 2px solid #D0D9E8; padding-bottom: 8px; margin-bottom: 16px;">');
+    out.push('      <div style="font-size: 24px; color: #0e1c42;">Course Modules</div>');
+    out.push('      <div style="font-size: 15px; color: #6b7a99;">' + esc(k.label) + ' &middot; select a module to begin</div>');
+    out.push('    </div>');
+    if (mods.length) {
+      out.push('    <div style="display: flex; flex-wrap: wrap; gap: 14px;">');
+      mods.forEach(function (m, i) {
+        out.push('      <a href="' + href(T.module(m.gid)) + '" style="' + S.modCard + '">');
+        out.push('        <span style="' + S.modNum + '">' + (i + 1) + '</span>');
+        out.push('        <span style="' + BLOCK + 'min-width: 0;"><span style="' + S.eyebrow + '">MODULE ' + (i + 1) + '</span><span style="' + BLOCK + 'font-size: 18px; color: #0e1c42;">' + esc(m.title) + '</span></span>');
+        out.push('      </a>');
+      });
+      out.push('    </div>');
+    }
+    out.push('    <div style="margin-top: 20px;"><a href="' + href(T.modules) + '" style="display: inline-block; text-decoration: none; background: #0E1C42; color: #ffffff; border: 2px solid #55C8E8; border-radius: 28px; padding: 14px 30px; font-size: 17px;">See all modules &rarr;</a></div>');
+
+    if (String(h.quote || '').trim() || String(h.prompt || '').trim()) {
+      out.push('    <!-- COMMONPLACE CORNER -->');
+      out.push('    <div style="background: #0E1C42; border-radius: 10px; padding: 24px 28px; margin-top: 26px;">');
+      out.push('      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;"><span style="font-size: 20px;">&#10024;</span><div><div style="font-size: 11px; letter-spacing: 1px; color: #55c8e8; font-weight: 600;">COMMONPLACE CORNER</div><div style="font-size: 21px; color: #ffffff;">This Week\'s Idea Worth Keeping</div></div></div>');
+      if (String(h.quote || '').trim()) {
+        out.push('      <div style="border-left: 4px solid #55c8e8; padding: 4px 18px; margin-bottom: 14px;"><div style="font-size: 20px; color: #ffffff; font-style: italic; line-height: 1.4;">&#8220;' + esc(h.quote) + '&#8221;</div>' +
+                 (String(h.author || '').trim() ? '<div style="font-size: 15px; color: rgba(255,255,255,0.6); margin-top: 8px;">&mdash; ' + esc(h.author) + '</div>' : '') + '</div>');
+      }
+      if (String(h.prompt || '').trim()) out.push('      <div style="font-size: 16px; color: rgba(255,255,255,0.85); line-height: 1.55;">' + escML(h.prompt) + '</div>');
+      out.push('    </div>');
+    }
+    out.push('  </div>');
+    var foot = '<span style="color: #55c8e8;">Optima Academy Online</span> &middot; ' + esc(title);
+    if (String(h.section || '').trim()) foot += ' &middot; ' + esc(h.section);
+    if (teacher) foot += ' &middot; ' + esc(teacher);
+    out.push('  <div style="' + S.footer + '"><div style="font-size: 18px; color: #ffffff; margin-bottom: 7px;">' + foot + '</div><div style="font-size: 13px; color: rgba(255,255,255,0.4);">&copy; Optima Academy Online &middot; An Education Experience Company &middot; kit ' + esc(k.version || '') + '</div></div>');
+    out.push('</div>');
+    return out.join('\n');
+  }
+
+  // ------------------------------------------------------------ catalog
+  function loadCatalog() {
+    return fetch('catalog.json', { cache: 'no-store' }).then(function (r) {
+      if (!r.ok) throw new Error('catalog.json ' + r.status);
+      return r.json();
+    });
+  }
+  function findCourse(q) {
+    q = String(q || '').trim().toLowerCase();
+    if (!q) return null;
+    var exact = catalog.courses.filter(function (c) { return c.code.toLowerCase() === q; });
+    if (exact.length) return exact[0];
+    var byTitle = catalog.courses.filter(function (c) { return c.title.toLowerCase() === q; });
+    return byTitle.length ? byTitle[0] : null;
+  }
+
+  // ------------------------------------------------------------ rendering
+  function renderCourse() {
+    var el = $('course-card');
+    if (!course) {
+      var q = $('code').value.trim();
+      el.innerHTML = q ? '<div class="card"><div class="t">No kit for &ldquo;' + escHtml(q) + '&rdquo; yet</div><div class="m">Check the code, or pick a course from the list. Kits are added as courses are built.</div></div>' : '';
+      lock(2, true); lock(3, true); lock(4, true); kit = null; renderKits(); renderPreview(); return;
+    }
+    var ready = course.kits.filter(function (k) { return k.status === 'ready'; }).length;
+    el.innerHTML = '<div class="card"><div class="t">' + escHtml(course.title) + ' <span class="pill grey">' + escHtml(course.code) + '</span></div>' +
+      '<div class="m">Grade ' + escHtml(course.grade) + ' &middot; ' + escHtml(course.subject) + ' &middot; ' + ready + ' of ' + course.kits.length + ' kit' + (course.kits.length === 1 ? '' : 's') + ' ready</div></div>';
+    lock(2, false);
+    renderKits();
+  }
+  function renderKits() {
+    var el = $('kits');
+    if (!course) { el.innerHTML = '<div class="hint">Find a course first.</div>'; return; }
+    el.innerHTML = '';
+    course.kits.forEach(function (k) {
+      var d = document.createElement('label');
+      d.className = 'kit' + (k.status === 'ready' ? '' : ' pending') + (kit && kit.id === k.id ? ' sel' : '');
+      var s = k.status === 'ready'
+        ? k.items + ' items &middot; ' + k.modules.filter(function (m) { return m.published; }).length + ' student modules &middot; ' + (k.bytes / 1048576).toFixed(1) + ' MB &middot; v' + escHtml(k.version) + '<br>' + escHtml(k.source || '')
+        : 'Not built yet';
+      d.innerHTML = '<input type="radio" name="kit" value="' + escHtml(k.id) + '"' + (k.status !== 'ready' ? ' disabled' : '') + (kit && kit.id === k.id ? ' checked' : '') + '>' +
+        '<div><div class="l">' + escHtml(k.label) + (k.status === 'ready' ? '<span class="pill">READY</span>' : '<span class="pill grey">PENDING</span>') + '</div><div class="s">' + s + '</div></div>';
+      if (k.status === 'ready') d.querySelector('input').addEventListener('change', function () { selectKit(k); });
+      el.appendChild(d);
+    });
+  }
+  function selectKit(k) {
+    kit = k;
+    var saved = loadSaved(k.id);
+    home = saved || blankHome();
+    if (!home.modules || !home.modules.length || home.modules.length !== k.modules.filter(function (m) { return m.published; }).length) {
+      home.modules = k.modules.filter(function (m) { return m.published; }).map(function (m) { return { gid: m.gid, title: m.title, show: true }; });
+    }
+    lock(3, false); lock(4, false);
+    ['dl', 'copy', 'dl-plain'].forEach(function (id) { $(id).disabled = false; });
+    renderKits(); fillForm(); renderMods(); renderPreview();
+  }
+  function renderMods() {
+    var el = $('mods'); el.innerHTML = '';
+    (home.modules || []).forEach(function (m, i) {
+      var row = document.createElement('div'); row.className = 'mod';
+      row.innerHTML = '<input type="checkbox"' + (m.show ? ' checked' : '') + ' aria-label="show module"><input type="text" value="' + escHtml(m.title) + '">';
+      row.children[0].addEventListener('change', function (e) { m.show = e.target.checked; save(); renderPreview(); });
+      row.children[1].addEventListener('input', function (e) { m.title = e.target.value; save(); renderPreview(); });
+      el.appendChild(row);
+    });
+  }
+  var FIELDS = ['teacherName', 'teacherTitle', 'teacherEmail', 'mode', 'term', 'section', 'meeting', 'studyHall', 'blurb', 'house', 'tagline', 'annWhen', 'annText', 'quote', 'author', 'prompt'];
+  function fillForm() { FIELDS.forEach(function (f) { $('f-' + f).value = home[f] || ($('f-' + f).tagName === 'SELECT' ? $('f-' + f).options[0].value : ''); }); }
+  function readForm() { FIELDS.forEach(function (f) { home[f] = $('f-' + f).value; }); }
+  function currentHtml() { return (course && kit) ? buildHome(course, kit, home) : ''; }
+  function renderPreview() {
+    var html = currentHtml();
+    var shown = html.replace(/\$CANVAS_(?:OBJECT|COURSE)_REFERENCE\$[^"]*/g, '#');
+    $('preview').srcdoc = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0; background:#e9edf5; padding:18px;">' +
+      (html ? shown : '<div style="font-family: Segoe UI, Arial, sans-serif; color:#4a5878; padding:40px; text-align:center;">Find a course and choose a kit to preview its home page.</div>') + '</body></html>';
+  }
+  function lock(n, on) { $('step' + n).classList.toggle('locked', on); }
+  function escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function status(msg, cls) { var el = $('status'); el.textContent = msg; el.className = 'status ' + (cls || ''); }
+
+  // ------------------------------------------------------------ storage
+  function save() {
+    if (!kit) return;
+    try {
+      var all = JSON.parse(localStorage.getItem(STORE) || '{}');
+      all[kit.id] = home; all.__lastCode = course.code;
+      localStorage.setItem(STORE, JSON.stringify(all));
+    } catch (e) { /* storage may be unavailable */ }
+  }
+  function loadSaved(kitId) {
+    try { return JSON.parse(localStorage.getItem(STORE) || '{}')[kitId] || null; } catch (e) { return null; }
+  }
+
+  // ------------------------------------------------------------ the patch
+  // Fetch the built cartridge, swap the body of its front page for the page the
+  // teacher just built, stamp the export note, hand the zip back.
+  function patchedKit(type) {
+    if (!kit || !course) return Promise.reject(new Error('choose a kit first'));
+    var html = currentHtml();
+    return fetch(kit.file, { cache: 'no-store' }).then(function (r) {
+      if (!r.ok) throw new Error('could not fetch ' + kit.file + ' (' + r.status + ')');
+      return r.arrayBuffer();
+    }).then(function (buf) { return JSZip.loadAsync(buf); }).then(function (zip) {
+      var fp = zip.file(kit.front_page);
+      if (!fp) throw new Error('front page ' + kit.front_page + ' is not in the kit');
+      return fp.async('string').then(function (doc) {
+        var i = doc.indexOf('<body>'), j = doc.lastIndexOf('</body>');
+        if (i < 0 || j < 0) throw new Error('front page has no <body>');
+        zip.file(kit.front_page, doc.slice(0, i + 6) + '\n' + html + '\n' + doc.slice(j));
+        var note = zip.file('course_settings/canvas_export.txt');
+        var stamp = 'Home page customized in Course Kit for ' + (home.teacherName || 'a teacher') + ' on ' + new Date().toISOString().slice(0, 10) + '.\n';
+        return (note ? note.async('string') : Promise.resolve('')).then(function (t) {
+          zip.file('course_settings/canvas_export.txt', t + stamp);
+          return zip.generateAsync({ type: type || 'blob', compression: 'DEFLATE' }).then(function (out) {
+            return { data: out, entries: Object.keys(zip.files).filter(function (n) { return !zip.files[n].dir; }).length, html: html };
+          });
+        });
+      });
+    });
+  }
+  function kitFilename() {
+    return [slug(course.title), slug(kit.label), slug(home.teacherName) || 'teacher'].filter(Boolean).join('-') + '.imscc';
+  }
+  function saveBlob(blob, name) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  }
+
+  // ------------------------------------------------------------ wiring
+  function wire() {
+    var dl = document.createElement('option');
+    catalog.courses.forEach(function (c) {
+      var o = document.createElement('option'); o.value = c.code; o.label = c.title + ' (grade ' + c.grade + ')'; o.textContent = c.title;
+      $('codes').appendChild(o);
+    });
+    $('code').addEventListener('input', function () { course = findCourse(this.value); kit = null; renderCourse(); renderPreview(); });
+    FIELDS.forEach(function (f) { $('f-' + f).addEventListener('input', function () { readForm(); save(); renderPreview(); }); });
+    $('dl').addEventListener('click', function () {
+      status('Building your kit…');
+      patchedKit('blob').then(function (r) {
+        saveBlob(r.data, kitFilename());
+        status('Downloaded ' + kitFilename() + ' (' + r.entries + ' files inside). Now import it into your Canvas course.', 'ok');
+      }).catch(function (e) { status('Could not build the kit: ' + e.message, 'err'); });
+    });
+    $('dl-plain').addEventListener('click', function () {
+      status('Fetching the original kit…');
+      fetch(kit.file, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.blob(); })
+        .then(function (b) { saveBlob(b, kit.file.split('/').pop()); status('Downloaded the original kit. Its home page is the generic one.', 'ok'); })
+        .catch(function (e) { status('Could not fetch the kit: ' + e.message, 'err'); });
+    });
+    $('copy').addEventListener('click', function () {
+      var html = currentHtml();
+      var done = function () { status('Home page HTML copied. Paste it into a Canvas page in HTML view. Module links only work inside an import; in a pasted page, edit them to your Modules URLs.', 'ok'); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(html).then(done, function () { fallbackCopy(html); done(); });
+      else { fallbackCopy(html); done(); }
+    });
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem(STORE) || '{}').__lastCode; } catch (e) { /* ignore */ }
+    if (saved) { $('code').value = saved; course = findCourse(saved); renderCourse(); }
+    renderPreview();
+  }
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) { /* ignore */ }
+    ta.remove();
+  }
+
+  // ------------------------------------------------------------ self-test
+  // #selftest or #selftest=CODE: pick the first ready kit, fill the example,
+  // build the patched zip, and write the result into the DOM so a headless
+  // browser can read it back and verify the cartridge for real.
+  function selftest(code) {
+    var c = code ? findCourse(code) : null;
+    if (!c) c = catalog.courses.filter(function (x) { return x.kits.some(function (k) { return k.status === 'ready'; }); })[0];
+    if (!c) { $('selftest-out').textContent = JSON.stringify({ ok: false, error: 'no ready kits' }); return; }
+    $('code').value = c.code; course = c; renderCourse();
+    var k = c.kits.filter(function (x) { return x.status === 'ready'; })[0];
+    selectKit(k);
+    home = exampleHome(); home.modules = k.modules.filter(function (m) { return m.published; }).map(function (m) { return { gid: m.gid, title: m.title, show: true }; });
+    fillForm(); renderMods(); renderPreview();
+    patchedKit('base64').then(function (r) {
+      $('selftest-b64').textContent = r.data;
+      $('selftest-out').textContent = JSON.stringify({ ok: true, code: c.code, kit: k.id, frontPage: k.front_page, entries: r.entries,
+        homeBytes: r.html.length, teacher: home.teacherName, moduleLinks: (r.html.match(/\$CANVAS_OBJECT_REFERENCE\$\/modules\//g) || []).length,
+        nonAscii: /[^\x00-\x7f]/.test(r.html), filename: kitFilename() });
+      document.title = 'Optima Course Kit [selftest done]';
+    }).catch(function (e) {
+      $('selftest-out').textContent = JSON.stringify({ ok: false, error: String(e && e.message || e) });
+      document.title = 'Optima Course Kit [selftest failed]';
+    });
+  }
+
+  loadCatalog().then(function (c) {
+    catalog = c; wire();
+    var m = /^#selftest(?:=(.+))?$/.exec(location.hash || '');
+    if (m) selftest(m[1] ? decodeURIComponent(m[1]) : null);
+  }).catch(function (e) {
+    $('course-card').innerHTML = '<div class="card"><div class="t">Could not load the kit catalog</div><div class="m">' + escHtml(e.message) + '. Open this page over http (GitHub Pages or a local server), not as a file.</div></div>';
+  });
+})();
+</script>
+</body>
+</html>
