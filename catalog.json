@@ -112,15 +112,147 @@
      "id": "1001040-s1",
      "label": "Semester 1",
      "canvas_course_id": 2,
-     "status": "pending"
+     "file": "cartridges/1001040-s1.imscc",
+     "bytes": 1149854,
+     "version": "2026.09.10",
+     "built": "2026-09-10T14:00:39",
+     "front_page": "wiki_content/course-home.html",
+     "items": 213,
+     "modules": [
+      {
+       "id": "m1512",
+       "title": "Module 0 — Start Here",
+       "gid": "g45f1c603868513e1039cae762071adc3",
+       "published": true,
+       "items": 5
+      },
+      {
+       "id": "m1513",
+       "title": "Module 1 — Gulliver's Travels",
+       "gid": "g74dcbec9283426b637a6a625f4c47984",
+       "published": true,
+       "items": 96
+      },
+      {
+       "id": "m1518",
+       "title": "Module 2 — The Call of the Wild",
+       "gid": "g4a30b8082f9d3448904b199fae5864d9",
+       "published": true,
+       "items": 78
+      },
+      {
+       "id": "m1520",
+       "title": "Module 3 — A Christmas Carol",
+       "gid": "g49d3c2ad37abb5cef9eafa1125013257",
+       "published": true,
+       "items": 32
+      },
+      {
+       "id": "m1521",
+       "title": "Teacher Resources",
+       "gid": "g10459b49abe61d6fd6f0aa32db0c8b2e",
+       "published": false,
+       "items": 2
+      }
+     ],
+     "counts": {
+      "pages": 97,
+      "assignments": 72,
+      "quizzes": 34,
+      "discussions": 9,
+      "files": 2,
+      "modules": 5,
+      "items": 213
+     },
+     "weights": [
+      {
+       "title": "Assignments",
+       "weight": 0
+      }
+     ],
+     "weighted": false,
+     "source": "Canvas course 2 on optimaoaoteam.instructure.com, pulled 2026-09-10",
+     "status": "ready",
+     "warnings": [
+      "\"facilitator\" appears 28 time(s) in student-facing text"
+     ]
     },
     {
      "id": "1001040-s2",
      "label": "Semester 2",
      "canvas_course_id": 236,
-     "status": "pending"
+     "file": "cartridges/1001040-s2.imscc",
+     "bytes": 12245758,
+     "version": "2026.09.10",
+     "built": "2026-09-10T14:00:40",
+     "front_page": null,
+     "items": 294,
+     "modules": [
+      {
+       "id": "m2196",
+       "title": "Module 0 — Start Here",
+       "gid": "g9e012d24ade992a6ab74e227468bfafa",
+       "published": true,
+       "items": 5
+      },
+      {
+       "id": "m2197",
+       "title": "Module 4 — The Outsiders",
+       "gid": "g805d7994bf80b4bc7beb1a4f56c76829",
+       "published": true,
+       "items": 83
+      },
+      {
+       "id": "m2198",
+       "title": "Module 4B — A Midsummer Night's Dream (Alternate to Module 4)",
+       "gid": "gb401e9008568a8484119dd058335bcb9",
+       "published": false,
+       "items": 83
+      },
+      {
+       "id": "m2199",
+       "title": "Module 5 — Short Story Unit",
+       "gid": "g6145efd4357cc240e846e399d2799f7f",
+       "published": true,
+       "items": 18
+      },
+      {
+       "id": "m2200",
+       "title": "Module 6 — The Scarlet Pimpernel",
+       "gid": "gfe059062f10ceb4b0430f5e8236daf29",
+       "published": true,
+       "items": 102
+      },
+      {
+       "id": "m2201",
+       "title": "Teacher Resources",
+       "gid": "g73f0be50a362f258cafb7728fccb01dd",
+       "published": false,
+       "items": 3
+      }
+     ],
+     "counts": {
+      "pages": 143,
+      "assignments": 95,
+      "quizzes": 49,
+      "discussions": 4,
+      "files": 3,
+      "modules": 6,
+      "items": 294
+     },
+     "weights": [
+      {
+       "title": "Assignments",
+       "weight": 0
+      }
+     ],
+     "weighted": false,
+     "source": "Canvas course 236 on optimaoaoteam.instructure.com, pulled 2026-09-10",
+     "status": "ready",
+     "warnings": []
     }
-   ]
+   ],
+   "canvas_title": "M/J Language Arts 2 (7th Grade)"
   },
   {
    "code": "1001070",
@@ -528,5 +660,5 @@
    ]
   }
  ],
- "generated": "2026-09-08T20:51:14"
+ "generated": "2026-09-10T14:01:02"
 }

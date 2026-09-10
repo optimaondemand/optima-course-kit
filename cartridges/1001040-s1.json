@@ -1,0 +1,102 @@
+{
+ "id": "1001040-s1",
+ "label": "Semester 1",
+ "code": "1001040",
+ "title": "M/J Language Arts 2 (7th Grade)",
+ "file": "cartridges/1001040-s1.imscc",
+ "bytes": 1149854,
+ "version": "2026.09.10",
+ "built": "2026-09-10T14:00:39",
+ "front_page": "wiki_content/course-home.html",
+ "items": 213,
+ "modules": [
+  {
+   "id": "m1512",
+   "title": "Module 0 — Start Here",
+   "gid": "g45f1c603868513e1039cae762071adc3",
+   "published": true,
+   "items": 5
+  },
+  {
+   "id": "m1513",
+   "title": "Module 1 — Gulliver's Travels",
+   "gid": "g74dcbec9283426b637a6a625f4c47984",
+   "published": true,
+   "items": 96
+  },
+  {
+   "id": "m1518",
+   "title": "Module 2 — The Call of the Wild",
+   "gid": "g4a30b8082f9d3448904b199fae5864d9",
+   "published": true,
+   "items": 78
+  },
+  {
+   "id": "m1520",
+   "title": "Module 3 — A Christmas Carol",
+   "gid": "g49d3c2ad37abb5cef9eafa1125013257",
+   "published": true,
+   "items": 32
+  },
+  {
+   "id": "m1521",
+   "title": "Teacher Resources",
+   "gid": "g10459b49abe61d6fd6f0aa32db0c8b2e",
+   "published": false,
+   "items": 2
+  }
+ ],
+ "counts": {
+  "pages": 97,
+  "assignments": 72,
+  "quizzes": 34,
+  "discussions": 9,
+  "files": 2,
+  "modules": 5,
+  "items": 213
+ },
+ "weights": [
+  {
+   "title": "Assignments",
+   "weight": 0
+  }
+ ],
+ "weighted": false,
+ "source": "Canvas course 2 on optimaoaoteam.instructure.com, pulled 2026-09-10",
+ "verify": {
+  "ok": true,
+  "warnings": [
+   "\"facilitator\" appears 28 time(s) in student-facing text"
+  ],
+  "stats": {
+   "resources": 258,
+   "resource_types": {
+    "associatedcontent/imscc_xmlv1p1/learning-application-resource": 116,
+    "webcontent": 99,
+    "imsqti_xmlv1p2/imscc_xmlv1p1/assessment": 34,
+    "imsdt_xmlv1p1": 9
+   },
+   "organization_items": 213,
+   "modules": 5,
+   "module_items": 213,
+   "module_item_types": {
+    "WikiPage": 96,
+    "Quizzes::Quiz": 34,
+    "Assignment": 72,
+    "DiscussionTopic": 9,
+    "Attachment": 2
+   },
+   "default_view": "wiki",
+   "pages": 97,
+   "front_page": "wiki_content/course-home.html",
+   "assignment_groups": 1,
+   "group_refs": 137,
+   "quizzes": 34,
+   "assignments": 72,
+   "discussions": 9,
+   "files": 2,
+   "points_listed": 1567.0
+  }
+ },
+ "status": "ready"
+}
