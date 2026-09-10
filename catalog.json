@@ -182,10 +182,10 @@
      "label": "Semester 2",
      "canvas_course_id": 236,
      "file": "cartridges/1001040-s2.imscc",
-     "bytes": 12245758,
+     "bytes": 12246239,
      "version": "2026.09.10",
-     "built": "2026-09-10T14:00:40",
-     "front_page": null,
+     "built": "2026-09-10T14:10:17",
+     "front_page": "wiki_content/course-home.html",
      "items": 294,
      "modules": [
       {
@@ -232,7 +232,7 @@
       }
      ],
      "counts": {
-      "pages": 143,
+      "pages": 144,
       "assignments": 95,
       "quizzes": 49,
       "discussions": 4,
@@ -660,5 +660,5 @@
    ]
   }
  ],
- "generated": "2026-09-10T14:01:02"
+ "generated": "2026-09-10T14:10:17"
 }

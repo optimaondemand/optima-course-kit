@@ -4,10 +4,10 @@
  "code": "1001040",
  "title": "M/J Language Arts 2 Sem 2",
  "file": "cartridges/1001040-s2.imscc",
- "bytes": 12245758,
+ "bytes": 12246239,
  "version": "2026.09.10",
- "built": "2026-09-10T14:00:40",
- "front_page": null,
+ "built": "2026-09-10T14:10:17",
+ "front_page": "wiki_content/course-home.html",
  "items": 294,
  "modules": [
   {
@@ -54,7 +54,7 @@
   }
  ],
  "counts": {
-  "pages": 143,
+  "pages": 144,
   "assignments": 95,
   "quizzes": 49,
   "discussions": 4,
@@ -74,10 +74,10 @@
   "ok": true,
   "warnings": [],
   "stats": {
-   "resources": 348,
+   "resources": 349,
    "resource_types": {
     "associatedcontent/imscc_xmlv1p1/learning-application-resource": 149,
-    "webcontent": 146,
+    "webcontent": 147,
     "imsqti_xmlv1p2/imscc_xmlv1p1/assessment": 49,
     "imsdt_xmlv1p1": 4
    },
@@ -91,9 +91,9 @@
     "DiscussionTopic": 4,
     "Attachment": 3
    },
-   "default_view": "modules",
-   "pages": 143,
-   "front_page": null,
+   "default_view": "wiki",
+   "pages": 144,
+   "front_page": "wiki_content/course-home.html",
    "assignment_groups": 1,
    "group_refs": 181,
    "quizzes": 49,

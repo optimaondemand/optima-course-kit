@@ -19,6 +19,33 @@ sys.path.insert(0, HERE)
 import cc  # noqa: E402
 
 
+FRONT_PAGE_PLACEHOLDER = (
+    '<h2>Course Home</h2>'
+    '<p>Your teacher will customize this page. Until then, start with '
+    '<a href="{{modules}}">the module list</a>.</p>'
+)
+
+
+def ensure_front_page(spec):
+    """Every kit needs exactly one front page: it is what the Course Kit widget
+    swaps the teacher's home page into. A source course whose home view is
+    Modules (or that never marked a page front_page) gets a placeholder page,
+    and the course is told to open on it."""
+    pages = spec.setdefault('pages', [])
+    fronts = [p for p in pages if p.get('front_page')]
+    if not fronts:
+        ids = {p['id'] for p in pages}
+        pid, n = 'p_course-home', 2
+        while pid in ids:
+            pid = 'p_course-home-%d' % n; n += 1
+        pages.insert(0, {'id': pid, 'title': 'Course Home', 'html': FRONT_PAGE_PLACEHOLDER,
+                         'front_page': True, 'published': True})
+        print('NOTE source course had no front page; added a placeholder Course Home page')
+    if spec['course'].get('default_view') != 'wiki':
+        print('NOTE default_view was %r; set to wiki so the course opens on the home page' % spec['course'].get('default_view'))
+        spec['course']['default_view'] = 'wiki'
+
+
 def main():
     argv = sys.argv[1:]
     label, version = 'Semester 1', datetime.date.today().strftime('%Y.%m.%d')
@@ -33,8 +60,12 @@ def main():
         spec = json.load(fh)
     spec['course']['version'] = version
     spec['course']['date'] = datetime.date.today().isoformat()
+    ensure_front_page(spec)
     out = os.path.join(ROOT, 'cartridges', kit + '.imscc')
     rep = cc.build(spec, out)
+    if not rep.get('front_page'):
+        os.remove(out)
+        sys.exit('kit has no front page after build; cartridge removed')
 
     v = subprocess.run([sys.executable, os.path.join(HERE, 'verify_cartridge.py'), out, '--json',
                         '--expect-items', str(rep['items'])], capture_output=True, text=True, encoding='utf-8')

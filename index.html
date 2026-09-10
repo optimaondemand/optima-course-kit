@@ -474,8 +474,9 @@
       if (!r.ok) throw new Error('could not fetch ' + kit.file + ' (' + r.status + ')');
       return r.arrayBuffer();
     }).then(function (buf) { return JSZip.loadAsync(buf); }).then(function (zip) {
+      if (!kit.front_page) throw new Error('This kit has no home page to customize. It needs to be rebuilt; tell the curriculum team which course and semester.');
       var fp = zip.file(kit.front_page);
-      if (!fp) throw new Error('front page ' + kit.front_page + ' is not in the kit');
+      if (!fp) throw new Error('The home page listed for this kit (' + kit.front_page + ') is missing from the cartridge. It needs to be rebuilt.');
       return fp.async('string').then(function (doc) {
         var i = doc.indexOf('<body>'), j = doc.lastIndexOf('</body>');
         if (i < 0 || j < 0) throw new Error('front page has no <body>');
@@ -541,15 +542,19 @@
   }
 
   // ------------------------------------------------------------ self-test
-  // #selftest or #selftest=CODE: pick the first ready kit, fill the example,
+  // #selftest, #selftest=CODE or #selftest=CODE:KIT-ID: pick that kit (or the
+  // first ready one), fill the example,
   // build the patched zip, and write the result into the DOM so a headless
   // browser can read it back and verify the cartridge for real.
   function selftest(code) {
+    var kitId = null;
+    if (code && code.indexOf(':') > 0) { kitId = code.slice(code.indexOf(':') + 1); code = code.slice(0, code.indexOf(':')); }
     var c = code ? findCourse(code) : null;
     if (!c) c = catalog.courses.filter(function (x) { return x.kits.some(function (k) { return k.status === 'ready'; }); })[0];
     if (!c) { $('selftest-out').textContent = JSON.stringify({ ok: false, error: 'no ready kits' }); return; }
     $('code').value = c.code; course = c; renderCourse();
-    var k = c.kits.filter(function (x) { return x.status === 'ready'; })[0];
+    var k = c.kits.filter(function (x) { return x.status === 'ready' && (!kitId || x.id === kitId); })[0];
+    if (!k) { $('selftest-out').textContent = JSON.stringify({ ok: false, error: 'no ready kit ' + (kitId || '') }); return; }
     selectKit(k);
     home = exampleHome(); home.modules = k.modules.filter(function (m) { return m.published; }).map(function (m) { return { gid: m.gid, title: m.title, show: true }; });
     fillForm(); renderMods(); renderPreview();
