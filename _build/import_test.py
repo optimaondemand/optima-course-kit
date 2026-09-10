@@ -46,4 +46,16 @@ if isinstance(qs,list):
     print('graded empty:',[(q['title'][:28]) for q in qs if q['quiz_type']=='assignment' and not q['question_count']])
     print('total questions',sum(q['question_count'] or 0 for q in qs))
 asg=call(f'courses/{cid}/assignments',per_page=100)
-if isinstance(asg,list): print('assignments',len(asg),'| external-tool (New Quizzes):',sum(1 for a in asg if 'external_tool' in (a.get('submission_types') or [])))
+if isinstance(asg,list):
+    print('assignments',len(asg),'| external-tool (New Quizzes):',sum(1 for a in asg if 'external_tool' in (a.get('submission_types') or [])))
+    dated=[a for a in asg if a.get('due_at') or a.get('unlock_at') or a.get('lock_at')]
+    print('assignments with dates:',len(dated))
+    for a in dated[:6]: print('   %-44s due=%s unlock=%s lock=%s pts=%s pub=%s'%(a['name'][:44],a.get('due_at'),a.get('unlock_at'),a.get('lock_at'),a.get('points_possible'),a.get('published')))
+    unpub=[a['name'][:40] for a in asg if not a.get('published')]
+    print('unpublished assignments:',len(unpub),unpub[:4])
+course=call(f'courses/{cid}')
+groups=call(f'courses/{cid}/assignment_groups',per_page=50)
+if isinstance(groups,list):
+    print('weighted:',course.get('apply_assignment_group_weights'),'| groups:',[(g['name'],g.get('group_weight')) for g in groups])
+mods=call(f'courses/{cid}/modules',per_page=50)
+if isinstance(mods,list): print('modules:',[(m['name'][:30],m.get('published'),m.get('unlock_at')) for m in mods])

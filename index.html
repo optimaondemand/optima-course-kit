@@ -31,14 +31,14 @@
   .top .tool { margin-left:auto; text-align:right; }
   .top .tool .name { font-size:24px; }
   .top .tool .tag { font-size:12px; color:var(--gold); letter-spacing:1px; }
-  .wrap { display:grid; grid-template-columns: minmax(340px, 520px) 1fr; gap:22px; padding:22px 28px; max-width:1500px; margin:0 auto; }
+  .wrap { display:grid; grid-template-columns: minmax(340px, 600px) 1fr; gap:22px; padding:22px 28px; max-width:1500px; margin:0 auto; }
   @media (max-width: 1000px) { .wrap { grid-template-columns: 1fr; } .preview { order: 2; } }
   .step { background:#fff; border:1px solid var(--line); border-top:4px solid var(--cyan); border-radius:8px; padding:18px 20px; margin-bottom:16px; }
   .step h2 { margin:0 0 10px; font-size:19px; font-weight:600; display:flex; align-items:center; gap:10px; }
   .step h2 .n { width:28px; height:28px; border-radius:50%; background:var(--navy); color:#fff; font-size:14px; display:inline-flex; align-items:center; justify-content:center; }
   .step.locked { opacity:.55; }
   label { display:block; font-size:13px; color:var(--mute); margin:10px 0 4px; }
-  input[type=text], input[type=email], input[type=url], select, textarea { width:100%; font:inherit; font-size:15px; padding:9px 11px; border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--ink); }
+  input[type=text], input[type=email], input[type=url], input[type=date], input[type=datetime-local], input[type=number], select, textarea { width:100%; font:inherit; font-size:15px; padding:9px 11px; border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--ink); }
   textarea { min-height:70px; resize:vertical; }
   .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   .hint { font-size:13px; color:var(--mute); margin-top:6px; }
@@ -73,6 +73,17 @@
   #preview .empty { font-family:'Segoe UI', Arial, sans-serif; color:#4a5878; padding:40px; text-align:center; }
   .foot { text-align:center; font-size:12px; color:var(--mute); padding:14px; }
   details summary { cursor:pointer; color:var(--navy); font-size:14px; margin-top:8px; }
+  .dtable { overflow-x:auto; margin-top:8px; border:1px solid var(--line); border-radius:8px; }
+  table.sched { width:100%; border-collapse:collapse; font-size:13.5px; min-width:640px; }
+  table.sched th { text-align:left; background:var(--bg); color:var(--mute); font-weight:600; padding:8px 10px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  table.sched td { padding:6px 10px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  table.sched tr.modrow td, table.sched tr.wkrow td { background:#F9FAFD; color:var(--navy); font-size:13px; font-weight:600; padding:7px 10px; }
+  table.sched tr.wkrow td { color:var(--mute); font-weight:400; background:#fff; }
+  table.sched input[type=datetime-local], table.sched input[type=number], table.sched input[type=text] { font-size:13px; padding:5px 7px; min-width:150px; }
+  table.sched select { font-size:13px; padding:5px 7px; }
+  table.sched tbody tr:not(.modrow):not(.wkrow) td:first-child { min-width:200px; max-width:260px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  details.modblock { border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-top:10px; }
+  details.modblock summary { margin-top:0; color:var(--navy); font-size:15px; }
 </style>
 </head>
 <body>
@@ -131,7 +142,17 @@
     </div>
 
     <div class="step locked" id="step4">
-      <h2><span class="n">4</span> Download and import</h2>
+      <h2><span class="n">4</span> Set your dates</h2>
+      <div id="dates-panel"><div class="hint">Choose a kit first.</div></div>
+    </div>
+
+    <div class="step locked" id="step5">
+      <h2><span class="n">5</span> Set up your gradebook</h2>
+      <div id="gradebook-panel"><div class="hint">Choose a kit first.</div></div>
+    </div>
+
+    <div class="step locked" id="step6">
+      <h2><span class="n">6</span> Download and import</h2>
       <div class="hint">One file. Your home page is already inside it, set as the course front page, with the module cards linked to the real modules.</div>
       <div class="actions">
         <button id="dl" disabled>Download my course kit (.imscc)</button>
@@ -156,7 +177,7 @@
     <div id="preview" aria-label="Home page preview"></div>
   </section>
 </main>
-<div class="foot">Optima Course Kit prototype &middot; kits are built from live Optima courses &middot; this page never writes to Canvas</div>
+<div class="foot">Optima Course Kit &middot; kits are built from Optima course files &middot; this page never writes to Canvas</div>
 <pre id="selftest-out" hidden></pre>
 <pre id="selftest-b64" hidden></pre>
 
@@ -174,6 +195,13 @@
     odysseus:    { label: 'Odysseus',    virtue: 'Self-Governance', color: '#4A2472', img: 'odysseus.png' }
   };
   var STORE = 'optima-course-kit-v1';
+  var DEFAULT_BASE = 'https://optimaondemand.github.io/optima-course-cartridges/';
+  var BASE = (function () {
+    var m = /[?&]base=([^&#]+)/.exec(location.search);
+    var b = m ? decodeURIComponent(m[1]) : DEFAULT_BASE;
+    if (b && b.charAt(b.length - 1) !== '/') b += '/';
+    return b;
+  })();
 
   var catalog = null, course = null, kit = null;
   var home = blankHome();
@@ -182,7 +210,7 @@
   function blankHome() {
     return { teacherName: '', teacherTitle: '', teacherEmail: '', mode: 'On-Demand', term: '', section: '', meeting: '',
              studyHall: '', blurb: '', house: '', tagline: '', annWhen: '', annText: '', quote: '', author: '', prompt: '',
-             modules: [] };
+             modules: [], courseStart: '', dates: {}, itemOverrides: {}, moduleOverrides: {}, groups: null, weighted: null };
   }
   function exampleHome() {
     var h = blankHome();
@@ -371,7 +399,7 @@
 
   // ------------------------------------------------------------ catalog
   function loadCatalog() {
-    return fetch('catalog.json', { cache: 'no-store' }).then(function (r) {
+    return fetch(BASE + 'catalog.json', { cache: 'no-store' }).then(function (r) {
       if (!r.ok) throw new Error('catalog.json ' + r.status);
       return r.json();
     });
@@ -391,7 +419,7 @@
     if (!course) {
       var q = $('code').value.trim();
       el.innerHTML = q ? '<div class="card"><div class="t">No kit for &ldquo;' + escHtml(q) + '&rdquo; yet</div><div class="m">Check the code, or pick a course from the list. Kits are added as courses are built.</div></div>' : '';
-      lock(2, true); lock(3, true); lock(4, true); kit = null; renderKits(); renderPreview(); return;
+      lock(2, true); lock(3, true); lock(4, true); lock(5, true); lock(6, true); kit = null; renderKits(); renderPreview(); return;
     }
     var ready = course.kits.filter(function (k) { return k.status === 'ready'; }).length;
     el.innerHTML = '<div class="card"><div class="t">' + escHtml(course.title) + ' <span class="pill grey">' + escHtml(course.code) + '</span></div>' +
@@ -422,9 +450,247 @@
     if (!home.modules || !home.modules.length || home.modules.length !== k.modules.filter(function (m) { return m.published; }).length) {
       home.modules = k.modules.filter(function (m) { return m.published; }).map(function (m) { return { gid: m.gid, title: m.title, show: true }; });
     }
-    lock(3, false); lock(4, false);
+    ensureKitDefaults();
+    lock(3, false); lock(4, false); lock(5, false); lock(6, false);
     ['dl', 'copy', 'dl-plain'].forEach(function (id) { $(id).disabled = false; });
-    renderKits(); fillForm(); renderMods(); renderPreview();
+    renderKits(); fillForm(); renderMods(); renderDates(); renderGradebook(); renderPreview();
+  }
+
+  // ------------------------------------------------------------ dates + gradebook state helpers
+  function ensureHomeShape() {
+    if (!home.dates) home.dates = {};
+    if (!home.itemOverrides) home.itemOverrides = {};
+    if (!home.moduleOverrides) home.moduleOverrides = {};
+    if (!home.courseStart) home.courseStart = '';
+  }
+  function ensureKitDefaults() {
+    ensureHomeShape();
+    if (!kit) return;
+    if (!home.groups) {
+      home.groups = (kit.groups || []).map(function (g) { return { id: g.id, title: g.title, weight: g.weight, position: g.position }; });
+    }
+    if (home.weighted == null) home.weighted = !!kit.weighted;
+  }
+  function randHex(n) {
+    var s = '';
+    for (var i = 0; i < n; i++) s += Math.floor(Math.random() * 16).toString(16);
+    return s;
+  }
+  function itemById(id) { return (kit.graded_items || []).filter(function (it) { return it.id === id; })[0]; }
+  function moduleById(id) { return (kit.modules || []).filter(function (m) { return m.id === id; })[0]; }
+  function ensureOverride(item) {
+    return home.itemOverrides[item.id] || (home.itemOverrides[item.id] = { group: item.group, points: item.points, published: item.published });
+  }
+  function modulePublished(m) {
+    var o = home.moduleOverrides[m.id];
+    return o ? o.published : m.published;
+  }
+  function setModulePublished(m, val) {
+    home.moduleOverrides[m.id] = { published: val };
+    if (!val) {
+      (kit.graded_items || []).filter(function (it) { return it.module === m.id && it.graded; }).forEach(function (it) {
+        ensureOverride(it).published = false;
+      });
+    }
+    save(); renderGradebook();
+  }
+  function effItem(item) {
+    var o = home.itemOverrides[item.id];
+    var d = home.dates[item.id];
+    return {
+      due_at: d && 'due_at' in d ? desiredUtc(d.due_at) : (item.due_at || null),
+      unlock_at: d && 'unlock_at' in d ? desiredUtc(d.unlock_at) : (item.unlock_at || null),
+      lock_at: d && 'lock_at' in d ? desiredUtc(d.lock_at) : (item.lock_at || null),
+      published: o && 'published' in o ? o.published : item.published,
+      points: o && 'points' in o ? o.points : item.points,
+      group: o && 'group' in o ? o.group : (item.group || null)
+    };
+  }
+  function fmtPoints(n) {
+    if (n == null) return '0.0';
+    n = Number(n);
+    return Number.isInteger(n) ? n.toFixed(1) : String(n);
+  }
+  function allDayDate(utcDue) { return utcDue ? utcDue.slice(0, 10) : null; }
+  function desiredUtc(localVal) {
+    if (!localVal) return null;
+    var d = new Date(localVal);
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString().slice(0, 19);
+  }
+  function utcToLocalInput(utcVal) {
+    if (!utcVal) return '';
+    var d = new Date(utcVal + 'Z');
+    if (isNaN(d.getTime())) return '';
+    var p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function effLocal(item, field) {
+    var d = home.dates[item.id];
+    if (d && field in d) return d[field];
+    return utcToLocalInput(item[field]);
+  }
+  function addDaysUTC(dateStr, days) {
+    var p = dateStr.split('-').map(Number);
+    var d = new Date(Date.UTC(p[0], p[1] - 1, p[2]));
+    d.setUTCDate(d.getUTCDate() + days);
+    var q = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d.getUTCFullYear() + '-' + q(d.getUTCMonth() + 1) + '-' + q(d.getUTCDate());
+  }
+  function proposeDates() {
+    if (!kit || !kit.graded_items || !home.courseStart) return;
+    kit.graded_items.forEach(function (it) {
+      if (it.week == null) return;
+      var rec = home.dates[it.id] || (home.dates[it.id] = {});
+      if (!rec.due_at) rec.due_at = addDaysUTC(home.courseStart, 7 * it.week - 1) + 'T23:59';
+    });
+  }
+
+  // ------------------------------------------------------------ dates panel
+  function renderDates() {
+    var el = $('dates-panel'); if (!el) return;
+    if (!kit) { el.innerHTML = '<div class="hint">Choose a kit first.</div>'; return; }
+    if (!kit.graded_items || !kit.graded_items.length) {
+      el.innerHTML = '<div class="hint">This kit has no schedule data yet.</div>'; return;
+    }
+    var out = [];
+    out.push('<label for="course-start">Course start date</label>');
+    out.push('<input type="date" id="course-start" value="' + escHtml(home.courseStart || '') + '">');
+    out.push('<div class="hint">Proposed: 11:59 PM on the last day of each item’s week. Edit any date, or leave a row blank.</div>');
+    out.push('<div class="actions"><button type="button" class="alt" id="dates-clear">Clear all dates</button></div>');
+    (kit.modules || []).forEach(function (m) {
+      var items = kit.graded_items.filter(function (it) { return it.module === m.id; });
+      if (!items.length) return;
+      out.push('<details class="modblock"' + (m.published ? ' open' : '') + '>');
+      out.push('<summary>' + escHtml(m.title) + (m.published ? '' : ' <span class="pill grey">UNPUBLISHED</span>') + '</summary>');
+      if (!m.published) out.push('<div class="hint">This module is not published yet. Its dates still apply once you publish it.</div>');
+      out.push('<div class="dtable"><table class="sched"><thead><tr><th>Item</th><th>Type</th><th>Points</th><th>Opens</th><th>Due</th><th>Closes</th></tr></thead><tbody>');
+      var byWeek = {}, weeks = [];
+      items.forEach(function (it) {
+        var wk = it.week == null ? 'none' : it.week;
+        if (!byWeek[wk]) { byWeek[wk] = []; weeks.push(wk); }
+        byWeek[wk].push(it);
+      });
+      weeks.sort(function (a, b) { if (a === 'none') return 1; if (b === 'none') return -1; return a - b; });
+      weeks.forEach(function (wk) {
+        out.push('<tr class="wkrow"><td colspan="6">' + (wk === 'none' ? 'No fixed week' : 'Week ' + wk) + '</td></tr>');
+        byWeek[wk].forEach(function (it) { out.push(dateRow(it)); });
+      });
+      out.push('</tbody></table></div></details>');
+    });
+    el.innerHTML = out.join('');
+    $('course-start').addEventListener('change', function () { home.courseStart = this.value; proposeDates(); save(); renderDates(); });
+    $('dates-clear').addEventListener('click', function () { home.dates = {}; save(); renderDates(); });
+    kit.graded_items.forEach(function (it) {
+      ['unlock_at', 'due_at', 'lock_at'].forEach(function (f) {
+        var input = document.getElementById('dt-' + f + '-' + it.id);
+        if (!input) return;
+        input.addEventListener('change', function () {
+          var rec = home.dates[it.id] || (home.dates[it.id] = {});
+          rec[f] = this.value;
+          save();
+        });
+      });
+    });
+  }
+  function dateRow(it) {
+    var typeLabel = it.type === 'assignment' ? 'Assignment' : it.type === 'quiz' ? 'Quiz' : 'Discussion';
+    var pts = (it.type === 'quiz' && it.quiz_type === 'survey') ? 'ungraded' : fmtPoints(it.points);
+    return '<tr>' +
+      '<td>' + escHtml(it.title) + '</td>' +
+      '<td><span class="pill grey">' + typeLabel + '</span></td>' +
+      '<td>' + pts + '</td>' +
+      '<td><input type="datetime-local" id="dt-unlock_at-' + it.id + '" value="' + escHtml(effLocal(it, 'unlock_at')) + '"></td>' +
+      '<td><input type="datetime-local" id="dt-due_at-' + it.id + '" value="' + escHtml(effLocal(it, 'due_at')) + '"></td>' +
+      '<td><input type="datetime-local" id="dt-lock_at-' + it.id + '" value="' + escHtml(effLocal(it, 'lock_at')) + '"></td>' +
+      '</tr>';
+  }
+
+  // ------------------------------------------------------------ gradebook panel
+  function renderGradebook() {
+    var el = $('gradebook-panel'); if (!el) return;
+    if (!kit) { el.innerHTML = '<div class="hint">Choose a kit first.</div>'; return; }
+    if (!kit.graded_items || !kit.graded_items.length || !home.groups) {
+      el.innerHTML = '<div class="hint">This kit has no schedule data yet.</div>'; return;
+    }
+    var out = [];
+    out.push('<div class="hint">Set how much each part of the grade counts. If you rename or add groups, a brand-new Canvas course also keeps its own empty Assignments group at 0%; delete that one in Canvas after import.</div>');
+    out.push('<label style="display:flex;align-items:center;gap:8px;margin-top:10px;"><input type="checkbox" id="gb-weighted"' + (home.weighted ? ' checked' : '') + '> Weight by group</label>');
+    out.push('<div class="dtable"><table class="sched"><thead><tr><th>Group</th><th>Weight %</th></tr></thead><tbody>');
+    home.groups.forEach(function (g, i) {
+      out.push('<tr><td><input type="text" data-gi="' + i + '" class="gb-gtitle" value="' + escHtml(g.title) + '"></td>' +
+        '<td><input type="number" min="0" max="100" step="1" data-gi="' + i + '" class="gb-gweight" value="' + escHtml(g.weight) + '"></td></tr>');
+    });
+    out.push('</tbody></table></div>');
+    out.push('<div class="actions"><button type="button" class="alt" id="gb-addgroup">Add group</button></div>');
+    out.push('<div class="status" id="gb-summary"></div>');
+    (kit.modules || []).forEach(function (m) {
+      var items = kit.graded_items.filter(function (it) { return it.module === m.id && !(it.type === 'quiz' && it.quiz_type === 'survey'); });
+      if (!items.length) return;
+      out.push('<details class="modblock" open>');
+      out.push('<summary><label style="display:inline-flex;align-items:center;gap:8px;"><input type="checkbox" class="gb-modpub" data-m="' + m.id + '"' + (modulePublished(m) ? ' checked' : '') + '> ' + escHtml(m.title) + '</label></summary>');
+      out.push('<div class="dtable"><table class="sched"><thead><tr><th>Item</th><th>Group</th><th>Points</th><th>Published</th></tr></thead><tbody>');
+      items.forEach(function (it) {
+        var eff = effItem(it);
+        out.push('<tr><td>' + escHtml(it.title) + '</td>');
+        out.push('<td><select data-id="' + escHtml(it.id) + '" class="gb-group">' + home.groups.map(function (g) {
+          return '<option value="' + escHtml(g.id) + '"' + (g.id === eff.group ? ' selected' : '') + '>' + escHtml(g.title) + '</option>';
+        }).join('') + '</select></td>');
+        out.push('<td><input type="number" step="0.5" min="0" class="gb-points" data-id="' + escHtml(it.id) + '" value="' + escHtml(fmtPoints(eff.points)) + '"' + (it.points_editable ? '' : ' disabled title="Set by its questions"') + '></td>');
+        out.push('<td><input type="checkbox" class="gb-pub" data-id="' + escHtml(it.id) + '"' + (eff.published ? ' checked' : '') + '></td>');
+        out.push('</tr>');
+      });
+      out.push('</tbody></table></div></details>');
+    });
+    el.innerHTML = out.join('');
+    wireGradebook();
+    renderGbSummary();
+  }
+  function wireGradebook() {
+    $('gb-weighted').addEventListener('change', function () { home.weighted = this.checked; save(); renderGbSummary(); });
+    document.querySelectorAll('.gb-gtitle').forEach(function (inp) {
+      inp.addEventListener('change', function () { home.groups[+this.dataset.gi].title = this.value; save(); renderGradebook(); });
+    });
+    document.querySelectorAll('.gb-gweight').forEach(function (inp) {
+      inp.addEventListener('change', function () { home.groups[+this.dataset.gi].weight = parseFloat(this.value) || 0; save(); renderGradebook(); });
+    });
+    $('gb-addgroup').addEventListener('click', function () {
+      home.groups.push({ id: 'g' + randHex(32), title: 'New group', weight: 0, position: home.groups.length + 1 });
+      save(); renderGradebook();
+    });
+    document.querySelectorAll('.gb-group').forEach(function (sel) {
+      sel.addEventListener('change', function () { ensureOverride(itemById(this.dataset.id)).group = this.value; save(); });
+    });
+    document.querySelectorAll('.gb-points').forEach(function (inp) {
+      inp.addEventListener('input', function () { ensureOverride(itemById(this.dataset.id)).points = parseFloat(this.value) || 0; save(); renderGbSummary(); });
+    });
+    document.querySelectorAll('.gb-pub').forEach(function (cb) {
+      cb.addEventListener('change', function () { ensureOverride(itemById(this.dataset.id)).published = this.checked; save(); renderGbSummary(); });
+    });
+    document.querySelectorAll('.gb-modpub').forEach(function (cb) {
+      cb.addEventListener('change', function () { setModulePublished(moduleById(this.dataset.m), this.checked); });
+    });
+  }
+  function renderGbSummary() {
+    var el = $('gb-summary'); if (!el) return;
+    var totals = {};
+    home.groups.forEach(function (g) { totals[g.id] = 0; });
+    kit.graded_items.forEach(function (it) {
+      if (it.type === 'quiz' && it.quiz_type === 'survey') return;
+      var eff = effItem(it);
+      if (!eff.published) return;
+      if (totals[eff.group] == null) totals[eff.group] = 0;
+      totals[eff.group] += Number(eff.points) || 0;
+    });
+    var msg = home.groups.map(function (g) { return escHtml(g.title) + ': ' + totals[g.id] + ' pts'; }).join(' · ');
+    if (home.weighted) {
+      var sum = home.groups.reduce(function (s, g) { return s + (Number(g.weight) || 0); }, 0);
+      msg += ' · weights total ' + sum + '%' + (sum === 100 ? '' : ' (should be 100%)');
+      el.className = 'status ' + (sum === 100 ? 'ok' : 'err');
+    } else {
+      el.className = 'status';
+    }
+    el.textContent = msg;
   }
   function renderMods() {
     var el = $('mods'); el.innerHTML = '';
@@ -471,7 +737,7 @@
   function patchedKit(type) {
     if (!kit || !course) return Promise.reject(new Error('choose a kit first'));
     var html = currentHtml();
-    return fetch(kit.file, { cache: 'no-store' }).then(function (r) {
+    return fetch(BASE + kit.file, { cache: 'no-store' }).then(function (r) {
       if (!r.ok) throw new Error('could not fetch ' + kit.file + ' (' + r.status + ')');
       return r.arrayBuffer();
     }).then(function (buf) { return JSZip.loadAsync(buf); }).then(function (zip) {
@@ -482,16 +748,215 @@
         var i = doc.indexOf('<body>'), j = doc.lastIndexOf('</body>');
         if (i < 0 || j < 0) throw new Error('front page has no <body>');
         zip.file(kit.front_page, doc.slice(0, i + 6) + '\n' + html + '\n' + doc.slice(j));
-        var note = zip.file('course_settings/canvas_export.txt');
-        var stamp = 'Home page customized in Course Kit for ' + (home.teacherName || 'a teacher') + ' on ' + new Date().toISOString().slice(0, 10) + '.\n';
-        return (note ? note.async('string') : Promise.resolve('')).then(function (t) {
-          zip.file('course_settings/canvas_export.txt', t + stamp);
-          return zip.generateAsync({ type: type || 'blob', compression: 'DEFLATE' }).then(function (out) {
-            return { data: out, entries: Object.keys(zip.files).filter(function (n) { return !zip.files[n].dir; }).length, html: html };
+        return applyScheduleAndGradebook(zip).then(function () {
+          var note = zip.file('course_settings/canvas_export.txt');
+          var stamp = 'Home page customized in Course Kit for ' + (home.teacherName || 'a teacher') + ' on ' + new Date().toISOString().slice(0, 10) + '.\n';
+          return (note ? note.async('string') : Promise.resolve('')).then(function (t) {
+            zip.file('course_settings/canvas_export.txt', t + stamp);
+            return zip.generateAsync({ type: type || 'blob', compression: 'DEFLATE' }).then(function (out) {
+              return { data: out, entries: Object.keys(zip.files).filter(function (n) { return !zip.files[n].dir; }).length, html: html };
+            });
           });
         });
       });
     });
+  }
+
+  // ------------------------------------------------------------ XML patch helpers
+  // Small, deterministic string edits to the cartridge's own XML files. Only files
+  // named by kit.graded_items[].xml, kit.modules[].xml and kit.settings are touched,
+  // and only when the teacher's chosen value differs from the sidecar default, so an
+  // untouched kit produces byte-identical files.
+  function xmlEsc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function setEl(text, tag, value, anchorRe) {
+    var reOpen = new RegExp('<' + tag + '>[\\s\\S]*?<\\/' + tag + '>');
+    var reSelf = new RegExp('<' + tag + '\\s*\\/>');
+    if (value == null) {
+      if (reOpen.test(text)) return text.replace(reOpen, '');
+      if (reSelf.test(text)) return text.replace(reSelf, '');
+      return text;
+    }
+    var rep = '<' + tag + '>' + xmlEsc(value) + '</' + tag + '>';
+    if (reOpen.test(text)) return text.replace(reOpen, rep);
+    if (reSelf.test(text)) return text.replace(reSelf, rep);
+    var m = anchorRe.exec(text);
+    if (!m) return text; // no anchor and no existing tag: leave file alone rather than guess
+    var i = m.index + m[0].length;
+    return text.slice(0, i) + '\n  ' + rep + text.slice(i);
+  }
+  // Splits a file around its <assignment identifier="...">...</assignment> block.
+  // For assignment_settings.xml the root element itself matches, so the whole file
+  // becomes "body". For quiz/discussion files it isolates the nested assignment.
+  function splitAssignmentBlock(text) {
+    var m = /<assignment\b[^>]*>/.exec(text);
+    if (!m) return null;
+    var openIdx = m.index;
+    var closeIdx = text.indexOf('</assignment>', openIdx);
+    if (closeIdx < 0) return null;
+    var end = closeIdx + '</assignment>'.length;
+    return { pre: text.slice(0, openIdx), body: text.slice(openIdx, end), post: text.slice(end) };
+  }
+  var TITLE_ANCHOR = /<title>[\s\S]*?<\/title>/;
+  function patchAssignmentXml(text, eff) {
+    var split = splitAssignmentBlock(text);
+    if (!split) return text;
+    var body = split.body;
+    body = setEl(body, 'workflow_state', eff.published ? 'published' : 'unpublished', TITLE_ANCHOR);
+    body = setEl(body, 'assignment_group_identifierref', eff.group, TITLE_ANCHOR);
+    body = setEl(body, 'points_possible', eff.points != null ? fmtPoints(eff.points) : null, TITLE_ANCHOR);
+    body = setEl(body, 'due_at', eff.due_at, TITLE_ANCHOR);
+    body = setEl(body, 'unlock_at', eff.unlock_at, TITLE_ANCHOR);
+    body = setEl(body, 'lock_at', eff.lock_at, TITLE_ANCHOR);
+    body = setEl(body, 'all_day_date', allDayDate(eff.due_at), TITLE_ANCHOR);
+    return split.pre + body + split.post;
+  }
+  function patchDiscussionXml(text, eff) {
+    var split = splitAssignmentBlock(text);
+    var pre = split ? split.pre : text, body = split ? split.body : null, post = split ? split.post : '';
+    pre = pre.replace(/<workflow_state>[\s\S]*?<\/workflow_state>/, '<workflow_state>' + (eff.published ? 'active' : 'unpublished') + '</workflow_state>');
+    if (body) {
+      body = setEl(body, 'workflow_state', eff.published ? 'published' : 'unpublished', TITLE_ANCHOR);
+      body = setEl(body, 'assignment_group_identifierref', eff.group, TITLE_ANCHOR);
+      body = setEl(body, 'points_possible', eff.points != null ? fmtPoints(eff.points) : null, TITLE_ANCHOR);
+      body = setEl(body, 'due_at', eff.due_at, TITLE_ANCHOR);
+      body = setEl(body, 'unlock_at', eff.unlock_at, TITLE_ANCHOR);
+      body = setEl(body, 'lock_at', eff.lock_at, TITLE_ANCHOR);
+      body = setEl(body, 'all_day_date', allDayDate(eff.due_at), TITLE_ANCHOR);
+    }
+    return pre + (body || '') + post;
+  }
+  function patchQuizXml(text, eff) {
+    var split = splitAssignmentBlock(text);
+    var pre = split ? split.pre : text, body = split ? split.body : null, post = split ? split.post : '';
+    var descAnchor = /<description>[\s\S]*?<\/description>/;
+    pre = setEl(pre, 'due_at', eff.due_at, descAnchor);
+    pre = setEl(pre, 'unlock_at', eff.unlock_at, descAnchor);
+    pre = setEl(pre, 'lock_at', eff.lock_at, descAnchor);
+    pre = setEl(pre, 'all_day_date', allDayDate(eff.due_at), descAnchor);
+    if (/<available>/.test(pre)) pre = pre.replace(/<available>[\s\S]*?<\/available>/, '<available>' + (eff.published ? 'true' : 'false') + '</available>');
+    if (body) {
+      body = setEl(body, 'workflow_state', eff.published ? 'published' : 'unpublished', TITLE_ANCHOR);
+      body = setEl(body, 'assignment_group_identifierref', eff.group, TITLE_ANCHOR);
+      body = setEl(body, 'due_at', eff.due_at, TITLE_ANCHOR);
+      body = setEl(body, 'unlock_at', eff.unlock_at, TITLE_ANCHOR);
+      body = setEl(body, 'lock_at', eff.lock_at, TITLE_ANCHOR);
+      body = setEl(body, 'all_day_date', allDayDate(eff.due_at), TITLE_ANCHOR);
+      if (eff.group != null) post = setEl(post, 'assignment_group_identifierref', eff.group, /^/);
+    }
+    return pre + (body || '') + post;
+  }
+  function patchItemXml(item, text, eff) {
+    if (item.type === 'assignment') return patchAssignmentXml(text, eff);
+    if (item.type === 'quiz') return patchQuizXml(text, eff);
+    if (item.type === 'discussion') return patchDiscussionXml(text, eff);
+    return text;
+  }
+  function itemChanged(item, eff) {
+    return eff.due_at !== (item.due_at || null)
+      || eff.unlock_at !== (item.unlock_at || null)
+      || eff.lock_at !== (item.lock_at || null)
+      || eff.published !== item.published
+      || (item.type !== 'quiz' && Number(eff.points) !== Number(item.points))
+      || eff.group !== (item.group || null);
+  }
+  function patchModuleXml(text, m, wantPublished) {
+    var openTag = '<module identifier="' + m.gid + '">';
+    var openIdx = text.indexOf(openTag);
+    if (openIdx < 0) return text;
+    var closeIdx = text.indexOf('</module>', openIdx);
+    if (closeIdx < 0) return text;
+    var end = closeIdx + '</module>'.length;
+    var block = text.slice(openIdx, end);
+    var state = wantPublished ? 'active' : 'unpublished';
+    block = block.replace(/<workflow_state>[\s\S]*?<\/workflow_state>/, '<workflow_state>' + state + '</workflow_state>');
+    if (!wantPublished) {
+      block = block.replace(/<item identifier="[^"]*">[\s\S]*?<\/item>/g, function (itemBlock) {
+        return itemBlock.replace(/<workflow_state>[\s\S]*?<\/workflow_state>/, '<workflow_state>unpublished</workflow_state>');
+      });
+    }
+    return text.slice(0, openIdx) + block + text.slice(end);
+  }
+  function groupsChanged() {
+    if (!home.groups || !kit.groups) return false;
+    var orig = {};
+    kit.groups.forEach(function (g) { orig[g.id] = g; });
+    return home.groups.some(function (g) {
+      var o = orig[g.id];
+      return !o || o.title !== g.title || Number(o.weight) !== Number(g.weight);
+    });
+  }
+  function patchGroupsXml(text) {
+    home.groups.forEach(function (g) {
+      var re = new RegExp('(<assignmentGroup identifier="' + g.id + '">)([\\s\\S]*?)(<\\/assignmentGroup>)');
+      if (re.test(text)) {
+        text = text.replace(re, function (m0, open, body, close) {
+          body = body.replace(/<title>[\s\S]*?<\/title>/, '<title>' + xmlEsc(g.title) + '</title>');
+          body = body.replace(/<group_weight>[\s\S]*?<\/group_weight>/, '<group_weight>' + Number(g.weight || 0).toFixed(1) + '</group_weight>');
+          return open + body + close;
+        });
+      } else {
+        var block = '  <assignmentGroup identifier="' + g.id + '">\n' +
+          '    <title>' + xmlEsc(g.title) + '</title>\n' +
+          '    <position>' + (g.position || 1) + '</position>\n' +
+          '    <group_weight>' + Number(g.weight || 0).toFixed(1) + '</group_weight>\n' +
+          '  </assignmentGroup>\n';
+        text = text.replace('</assignmentGroups>', block + '</assignmentGroups>');
+      }
+    });
+    return text;
+  }
+  function patchWeightingXml(text, weighted) {
+    var re = /<group_weighting_scheme>[\s\S]*?<\/group_weighting_scheme>/;
+    if (weighted) {
+      if (re.test(text)) return text.replace(re, '<group_weighting_scheme>percent</group_weighting_scheme>');
+      var anchor = /<default_view>[\s\S]*?<\/default_view>/.exec(text);
+      if (!anchor) return text;
+      var i = anchor.index + anchor[0].length;
+      return text.slice(0, i) + '\n  <group_weighting_scheme>percent</group_weighting_scheme>' + text.slice(i);
+    }
+    return re.test(text) ? text.replace(re, '') : text;
+  }
+  function chain(tasks) { return tasks.reduce(function (p, fn) { return p.then(fn); }, Promise.resolve()); }
+  function applyScheduleAndGradebook(zip) {
+    var tasks = [];
+    (kit.graded_items || []).forEach(function (item) {
+      tasks.push(function () {
+        var eff = effItem(item);
+        if (!itemChanged(item, eff)) return Promise.resolve();
+        var f = zip.file(item.xml);
+        if (!f) return Promise.resolve();
+        return f.async('string').then(function (text) { zip.file(item.xml, patchItemXml(item, text, eff)); });
+      });
+    });
+    var modChanges = (kit.modules || []).filter(function (m) { return modulePublished(m) !== m.published; });
+    if (modChanges.length) {
+      tasks.push(function () {
+        var path = (kit.settings && kit.settings.module_meta) || modChanges[0].xml || 'course_settings/module_meta.xml';
+        var f = zip.file(path);
+        if (!f) return Promise.resolve();
+        return f.async('string').then(function (text) {
+          modChanges.forEach(function (m) { text = patchModuleXml(text, m, modulePublished(m)); });
+          zip.file(path, text);
+        });
+      });
+    }
+    if (kit.settings && kit.settings.assignment_groups && groupsChanged()) {
+      tasks.push(function () {
+        var f = zip.file(kit.settings.assignment_groups);
+        if (!f) return Promise.resolve();
+        return f.async('string').then(function (text) { zip.file(kit.settings.assignment_groups, patchGroupsXml(text)); });
+      });
+    }
+    if (kit.settings && kit.settings.course_settings && !!home.weighted !== !!kit.weighted) {
+      tasks.push(function () {
+        var f = zip.file(kit.settings.course_settings);
+        if (!f) return Promise.resolve();
+        return f.async('string').then(function (text) { zip.file(kit.settings.course_settings, patchWeightingXml(text, home.weighted)); });
+      });
+    }
+    return chain(tasks);
   }
   function kitFilename() {
     return [slug(course.title), slug(kit.label), slug(home.teacherName) || 'teacher'].filter(Boolean).join('-') + '.imscc';
@@ -521,7 +986,7 @@
     });
     $('dl-plain').addEventListener('click', function () {
       status('Fetching the original kit…');
-      fetch(kit.file, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.blob(); })
+      fetch(BASE + kit.file, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.blob(); })
         .then(function (b) { saveBlob(b, kit.file.split('/').pop()); status('Downloaded the original kit. Its home page is the generic one.', 'ok'); })
         .catch(function (e) { status('Could not fetch the kit: ' + e.message, 'err'); });
     });
@@ -558,13 +1023,61 @@
     if (!k) { $('selftest-out').textContent = JSON.stringify({ ok: false, error: 'no ready kit ' + (kitId || '') }); return; }
     selectKit(k);
     home = exampleHome(); home.modules = k.modules.filter(function (m) { return m.published; }).map(function (m) { return { gid: m.gid, title: m.title, show: true }; });
-    fillForm(); renderMods(); renderPreview();
+    ensureKitDefaults();
+
+    // Exercise the dates + gradebook panels the way a teacher would, then verify
+    // the assertions below by reading the patched cartridge back after building it.
+    var dueItem = null, pointsItem = null, unpubItem = null;
+    var hasSchedule = kit.graded_items && kit.graded_items.length;
+    if (hasSchedule) {
+      home.courseStart = '2026-08-17';
+      proposeDates();
+      dueItem = kit.graded_items.filter(function (it) { return it.week != null; })[0];
+      pointsItem = kit.graded_items.filter(function (it) { return it.points_editable; })[0];
+      if (pointsItem) ensureOverride(pointsItem).points = 12;
+      var firstContentModule = (kit.modules || []).filter(function (m) {
+        return kit.graded_items.some(function (it) { return it.module === m.id; });
+      })[0];
+      if (firstContentModule) {
+        unpubItem = kit.graded_items.filter(function (it) { return it.module === firstContentModule.id; })[0];
+        if (unpubItem) ensureOverride(unpubItem).published = false;
+      }
+      if (home.groups && home.groups.length) home.groups[0].weight = 100;
+      home.weighted = true;
+    }
+
+    fillForm(); renderMods(); renderDates(); renderGradebook(); renderPreview();
     patchedKit('base64').then(function (r) {
       $('selftest-b64').textContent = r.data;
-      $('selftest-out').textContent = JSON.stringify({ ok: true, code: c.code, kit: k.id, frontPage: k.front_page, entries: r.entries,
+      var out = { ok: true, code: c.code, kit: k.id, frontPage: k.front_page, entries: r.entries,
         homeBytes: r.html.length, teacher: home.teacherName, moduleLinks: (r.html.match(/\$CANVAS_OBJECT_REFERENCE\$\/modules\//g) || []).length,
-        nonAscii: /[^\x00-\x7f]/.test(r.html), filename: kitFilename() });
-      document.title = 'Optima Course Kit [selftest done]';
+        nonAscii: /[^\x00-\x7f]/.test(r.html), filename: kitFilename() };
+      var checks = { datesApplied: false, weightingOn: false, pointsPatched: false, unpublished: false };
+      var verify = hasSchedule ? JSZip.loadAsync(r.data, { base64: true }) : Promise.resolve(null);
+      return verify.then(function (zip2) {
+        var reads = [];
+        if (zip2 && dueItem) reads.push(zip2.file(dueItem.xml).async('string').then(function (t) {
+          checks.datesApplied = /<due_at>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}<\/due_at>/.test(t);
+        }));
+        if (zip2 && pointsItem) reads.push(zip2.file(pointsItem.xml).async('string').then(function (t) {
+          checks.pointsPatched = /<points_possible>12(\.0)?<\/points_possible>/.test(t);
+        }));
+        if (zip2 && unpubItem) reads.push(zip2.file(unpubItem.xml).async('string').then(function (t) {
+          checks.unpublished = /<workflow_state>unpublished<\/workflow_state>/.test(t);
+        }));
+        if (zip2 && kit.settings && kit.settings.course_settings) reads.push(zip2.file(kit.settings.course_settings).async('string').then(function (t) {
+          checks.weightingOn = /<group_weighting_scheme>percent<\/group_weighting_scheme>/.test(t);
+        }));
+        return Promise.all(reads);
+      }).then(function () {
+        out.datesApplied = checks.datesApplied;
+        out.weightingOn = checks.weightingOn;
+        out.pointsPatched = checks.pointsPatched;
+        out.unpublished = checks.unpublished;
+        if (hasSchedule) out.ok = out.ok && checks.datesApplied && checks.weightingOn && checks.pointsPatched && checks.unpublished;
+        $('selftest-out').textContent = JSON.stringify(out);
+        document.title = 'Optima Course Kit [selftest done]';
+      });
     }).catch(function (e) {
       $('selftest-out').textContent = JSON.stringify({ ok: false, error: String(e && e.message || e) });
       document.title = 'Optima Course Kit [selftest failed]';
