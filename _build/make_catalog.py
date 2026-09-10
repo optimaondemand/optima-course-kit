@@ -13,6 +13,12 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
 
 def main():
+    global ROOT
+    import sys
+    if '--root' in sys.argv:
+        ROOT = os.path.abspath(sys.argv[sys.argv.index('--root') + 1])
+    elif os.environ.get('KIT_ROOT'):
+        ROOT = os.path.abspath(os.environ['KIT_ROOT'])
     with open(os.path.join(ROOT, 'catalog.seed.json'), encoding='utf-8') as fh:
         seed = json.load(fh)
     sidecars = {}
@@ -27,7 +33,12 @@ def main():
             if s:
                 used.add(kit['id'])
                 kit.update({k: s[k] for k in ('label', 'file', 'bytes', 'version', 'built', 'front_page', 'items',
-                                                'modules', 'counts', 'weights', 'weighted', 'source', 'status')})
+                                                'modules', 'counts', 'weights', 'weighted', 'source', 'status')
+                            if k in s})
+                # what the widget needs to patch dates, points, groups and published state
+                for k in ('groups', 'graded_items', 'settings'):
+                    if k in s:
+                        kit[k] = s[k]
                 kit['warnings'] = s['verify']['warnings']
                 if not course.get('canvas_title'):
                     course['canvas_title'] = s['title']

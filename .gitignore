@@ -5,3 +5,9 @@ specs/*.log
 cartridges/_selftest.imscc
 cartridges/_widget_patched.imscc
 __pycache__/
+
+# cartridges and the catalog now live in ../optima-course-cartridges
+cartridges/
+catalog.json
+catalog.seed.json
+specs/*.folder.json.bak

@@ -1,0 +1,41 @@
+{
+  "kit": "1001040-s2",
+  "code": "1001040",
+  "title": "M/J Language Arts 2 Sem 2",
+  "label": "Semester 2",
+  "harness": "C:/Users/JessicaDrexel/OneDrive - OptimaEd/Claude's Workshop/ELA Builds_Summer 2026/7th Grade ELA/03 Development/_build/s2",
+  "dev": "C:/Users/JessicaDrexel/OneDrive - OptimaEd/Claude's Workshop/ELA Builds_Summer 2026/7th Grade ELA/03 Development",
+  "final": "C:/Users/JessicaDrexel/OneDrive - OptimaEd/Claude's Workshop/ELA Builds_Summer 2026/7th Grade ELA/04_Final",
+  "pages_base": "https://optimaondemand.github.io/mj-english-language-arts-2",
+  "front_page_html": "04_Final/7th-Grade-ELA-Course-Home-CANVAS-paste-ready.html",
+  "modules": [
+    {"key": "m0", "title": "Module 0 \u2014 Start Here", "published": true, "shared": true},
+    {"key": "4",  "title": "Module 4 \u2014 The Outsiders", "folder": "Module 4 - The Outsiders", "gh_dir": "module-4-the-outsiders", "text": "The Outsiders", "published": true},
+    {"key": "4B", "title": "Module 4B \u2014 A Midsummer Night's Dream (Alternate to Module 4)", "folder": "Module 4B - A Midsummer Nights Dream", "gh_dir": "module-4b-a-midsummer-nights-dream", "text": "A Midsummer Night's Dream", "published": false},
+    {"key": "5",  "title": "Module 5 \u2014 Short Story Unit", "folder": "Module 5 - Short Story Unit", "gh_dir": "module-5-short-story-unit", "text": "Short Story Unit", "published": true},
+    {"key": "6",  "title": "Module 6 \u2014 The Scarlet Pimpernel", "folder": "Module 6 - The Scarlet Pimpernel", "gh_dir": "module-6-the-scarlet-pimpernel", "text": "The Scarlet Pimpernel", "published": true},
+    {"key": "tr", "title": "Teacher Resources", "published": false, "files": true}
+  ],
+  "shared_pages": [
+    {"title": "Start Here \u2014 Your OneDrive Course Folder", "gh": "_shared/start-here-your-onedrive-course-folder-page.html", "height": 1600},
+    {"title": "Reading Journal \u2014 Student Guidelines", "local": "Reading Journal - Student Guidelines.md"},
+    {"title": "How Arguments Work (Reference)", "gh": "_shared/how-arguments-work-reference.html", "height": 2200},
+    {"title": "Research Starting Points (Reference)", "gh": "_shared/research-starting-points-reference.html", "height": 2200},
+    {"title": "Research and JStor Access", "local": "Research and JStor Access (CANVAS-NATIVE).html"}
+  ],
+  "teacher_files": [
+    {"title": "Syllabus (PDF)", "path": "04_Final/MS-ELA7-Language-Arts-2-Syllabus-2026-2027.pdf"},
+    {"title": "Teacher Manual (PDF)", "path": "04_Final/MS-ELA7-Teacher-Manual-2026-2027.pdf"},
+    {"title": "Module 6 Teacher Reference (PDF)", "path": "03 Development/Module 6 - The Scarlet Pimpernel/Module 6 - The Scarlet Pimpernel (teacher reference).pdf"}
+  ],
+  "files_folder": "teacher-resources",
+  "points": {"quick-write": 15, "word-study": 10, "vr": 10, "week-assignment": 10, "outline-submit": 5,
+             "journal-setup": 5, "journal-check": 10, "module-discussion": 10},
+  "project_points": {"essay": 40, "creative": 0},
+  "project_rubric_half": ["Essay", "Suspense"],
+  "iframe_h": {"module-map": 1400, "work-session": 1400, "submission-checklist": 1400},
+  "default_h": 2200,
+  "quiz_attempts": 2,
+  "survey_attempts": 1,
+  "notes": "Mirrors _build/s2/deploy_canvas.py for Canvas course 236. Titles come from the deployed course."
+}

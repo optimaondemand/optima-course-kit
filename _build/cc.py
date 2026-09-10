@@ -255,8 +255,15 @@ class Cartridge:
                       '  <rubric_hide_outcome_results>false</rubric_hide_outcome_results>\n'
                       '  <rubric_hide_score_total>false</rubric_hide_score_total>\n'
                       % (self.G('rubric', a['rubric']), b(a.get('rubric_use_for_grading', True))))
+        dates = ''
+        for k in ('due_at', 'lock_at', 'unlock_at'):
+            if a.get(k):
+                dates += '  <%s>%s</%s>\n' % (k, x(str(a[k])), k)
+        if a.get('due_at') and len(str(a['due_at'])) >= 10:
+            dates += '  <all_day_date>%s</all_day_date>\n' % x(str(a['due_at'])[:10])
         return (
             '  <title>%s</title>\n'
+            '%s'
             '  <module_locked>false</module_locked>\n'
             '  <assignment_group_identifierref>%s</assignment_group_identifierref>\n'
             '  <workflow_state>%s</workflow_state>\n'
@@ -290,7 +297,7 @@ class Cartridge:
             '  <grader_names_visible_to_final_grader>true</grader_names_visible_to_final_grader>\n'
             '  <anonymous_instructor_annotations>false</anonymous_instructor_annotations>\n'
             '  <post_policy>\n    <post_manually>false</post_manually>\n  </post_policy>\n'
-            % (x(a['title']),
+            % (x(a['title']), dates,
                self.group_ref(a.get('group'), 'assignment %s' % a.get('id')),
                'published' if a.get('published', True) else 'unpublished',
                extra, rubric,
@@ -422,12 +429,14 @@ class Cartridge:
             assignment_block = ''
             if qtype in ('assignment', 'graded_survey'):
                 a = dict(id=q['id'], title=q['title'], group=q.get('group'), points=total,
-                         grading_type='points', submission_types='online_quiz', published=q.get('published', True))
+                         grading_type='points', submission_types='online_quiz', published=q.get('published', True),
+                         due_at=q.get('due_at'), lock_at=q.get('lock_at'), unlock_at=q.get('unlock_at'))
                 extra = '  <quiz_identifierref>%s</quiz_identifierref>\n' % g
                 assignment_block = ('  <assignment identifier="%s">\n%s  </assignment>\n'
                                     % (self.G('quizassignment', q['id']), self.assignment_xml(g, a, i, extra).replace('\n  ', '\n    ').replace('  <title>', '    <title>', 1)))
+            qdates = ''.join('  <%s>%s</%s>\n' % (k, x(str(q[k])), k) for k in ('due_at', 'lock_at', 'unlock_at') if q.get(k))
             meta = (XML_HEAD + '<quiz identifier="%s" %s>\n'
-                    '  <title>%s</title>\n  <description>%s</description>\n'
+                    '  <title>%s</title>\n  <description>%s</description>\n%s'
                     '  <shuffle_answers>%s</shuffle_answers>\n  <scoring_policy>keep_highest</scoring_policy>\n  <hide_results></hide_results>\n'
                     '  <quiz_type>%s</quiz_type>\n  <points_possible>%s</points_possible>\n'
                     '  <require_lockdown_browser>false</require_lockdown_browser>\n  <require_lockdown_browser_for_results>false</require_lockdown_browser_for_results>\n'
@@ -438,7 +447,7 @@ class Cartridge:
                     '  <show_correct_answers_last_attempt>false</show_correct_answers_last_attempt>\n  <only_visible_to_overrides>false</only_visible_to_overrides>\n  <module_locked>false</module_locked>\n'
                     '%s%s'
                     '  <assignment_overrides>\n  </assignment_overrides>\n</quiz>\n'
-                    % (g, CANVAS_NS, x(q['title']), x(self.links(q.get('description', ''), 'quiz %s' % q['id'])),
+                    % (g, CANVAS_NS, x(q['title']), x(self.links(q.get('description', ''), 'quiz %s' % q['id'])), qdates,
                        b(q.get('shuffle_answers', False)), qtype, pts(total), b(q.get('show_correct_answers', True)),
                        attempts, b(state == 'published'), assignment_block,
                        ('  <assignment_group_identifierref>%s</assignment_group_identifierref>\n' % self.group_ref(q.get('group'), 'quiz %s' % q['id']))
@@ -464,7 +473,7 @@ class Cartridge:
             if d.get('graded'):
                 a = dict(id=d['id'], title=d['title'], group=d.get('group'), points=d.get('points', 0),
                          grading_type='points', submission_types='discussion_topic', published=d.get('published', True),
-                         rubric=d.get('rubric'))
+                         rubric=d.get('rubric'), due_at=d.get('due_at'), lock_at=d.get('lock_at'), unlock_at=d.get('unlock_at'))
                 assignment_block = ('  <assignment identifier="%s">\n%s  </assignment>\n'
                                     % (self.G('discussionassignment', d['id']), self.assignment_xml(g, a, i).replace('\n  ', '\n    ').replace('  <title>', '    <title>', 1)))
             meta = (XML_HEAD + '<topicMeta identifier="%s" %s>\n'
@@ -504,8 +513,9 @@ class Cartridge:
             mg = self.G('module', m['id'])
             org_items = []
             mm.append('  <module identifier="%s">\n    <title>%s</title>\n    <workflow_state>%s</workflow_state>\n    <position>%d</position>\n'
-                      '    <require_sequential_progress>%s</require_sequential_progress>\n    <locked>false</locked>\n    <items>'
+                      '%s    <require_sequential_progress>%s</require_sequential_progress>\n    <locked>false</locked>\n    <items>'
                       % (mg, x(m['title']), 'active' if m.get('published', True) else 'unpublished', mpos,
+                         ('    <unlock_at>%s</unlock_at>\n' % x(str(m['unlock_at']))) if m.get('unlock_at') else '',
                          b(m.get('sequential', False))))
             for ipos, it in enumerate(m.get('items', []), 1):
                 ig = self.G('item', '%s:%d:%s' % (m['id'], ipos, it.get('ref') or it.get('title') or it.get('url')))
@@ -688,8 +698,53 @@ class Cartridge:
             items=sum(len(m.get('items', [])) for m in self.spec.get('modules', [])),
             front_page=('wiki_content/%s.html' % self.slugs[front[0]['id']]) if front else None,
             module_ids={m['id']: self.G('module', m['id']) for m in self.spec.get('modules', [])},
+            index=self.item_index(),
             warnings=self.warnings)
         return self.report
+
+    def item_index(self):
+        """Every graded item with the zip path the Course Kit widget must patch to
+        change its dates, points, group or published state."""
+        gid_of_group = {g['id']: self.G('group', g['id']) for g in self.spec.get('assignment_groups', [])}
+        mod_of = {}
+        for m in self.spec.get('modules', []):
+            for it in m.get('items', []):
+                wk = it.get('week')
+                if wk is None:
+                    # kits pulled from Canvas carry no week; the title usually does
+                    mw = re.search(r'\bWeek (\d+)\b', it.get('title') or '')
+                    wk = int(mw.group(1)) if mw else None
+                mod_of.setdefault((it.get('type'), it.get('ref')), (m['id'], wk))
+        out = []
+        for a in self.spec.get('assignments', []):
+            g = self.G('assignment', a['id']); mid, wk = mod_of.get(('assignment', a['id']), (None, None))
+            out.append(dict(id=a['id'], type='assignment', title=a['title'], gid=g, xml='%s/assignment_settings.xml' % g,
+                            module=mid, week=a.get('week') if a.get('week') is not None else wk, kind=a.get('kind'), points=float(a.get('points') or 0),
+                            points_editable=True, graded=True, group=gid_of_group.get(a.get('group')),
+                            published=bool(a.get('published', True)),
+                            due_at=a.get('due_at'), unlock_at=a.get('unlock_at'), lock_at=a.get('lock_at')))
+        for q in self.spec.get('quizzes', []):
+            g = self.G('quiz', q['id']); mid, wk = mod_of.get(('quiz', q['id']), (None, None))
+            total = q.get('points') or sum(float(qq.get('points', 1) or 0) for qq in (q.get('questions') or []))
+            graded = q.get('quiz_type', 'assignment') in ('assignment', 'graded_survey')
+            out.append(dict(id=q['id'], type='quiz', title=q['title'], gid=g, xml='%s/assessment_meta.xml' % g,
+                            module=mid, week=q.get('week') if q.get('week') is not None else wk, kind=q.get('kind'),
+                            points=float(total or 0) if graded else 0.0, points_editable=False,
+                            quiz_type=q.get('quiz_type', 'assignment'), graded=graded,
+                            group=gid_of_group.get(q.get('group')) if graded else None,
+                            published=bool(q.get('published', True)),
+                            due_at=q.get('due_at'), unlock_at=q.get('unlock_at'), lock_at=q.get('lock_at')))
+        for d in self.spec.get('discussions', []):
+            g = self.G('discussion', d['id']); meta = self.G('discussionmeta', d['id'])
+            mid, wk = mod_of.get(('discussion', d['id']), (None, None))
+            out.append(dict(id=d['id'], type='discussion', title=d['title'], gid=g, xml='%s.xml' % meta,
+                            module=mid, week=d.get('week') if d.get('week') is not None else wk, kind=d.get('kind'),
+                            points=float(d.get('points') or 0) if d.get('graded') else 0.0,
+                            points_editable=bool(d.get('graded')), graded=bool(d.get('graded')),
+                            group=gid_of_group.get(d.get('group')) if d.get('graded') else None,
+                            published=bool(d.get('published', True)),
+                            due_at=d.get('due_at'), unlock_at=d.get('unlock_at'), lock_at=d.get('lock_at')))
+        return out
 
 
 def build(spec, out_path):

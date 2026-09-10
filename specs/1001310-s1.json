@@ -8140,12 +8140,12 @@
  "files": [
   {
    "path": "Teacher Resources/English 1 - Syllabus (Editable).docx",
-   "src": "C:\\Users\\JessicaDrexel\\Documents\\GitHub\\optima-course-kit\\specs\\files\\1001310\\Teacher Resources\\English 1 - Syllabus (Editable).docx",
+   "src": "specs/files/1001310/Teacher Resources/English 1 - Syllabus (Editable).docx",
    "canvas_id": 3687
   },
   {
    "path": "Teacher Resources/English 1 - Teacher Manual.pdf",
-   "src": "C:\\Users\\JessicaDrexel\\Documents\\GitHub\\optima-course-kit\\specs\\files\\1001310\\Teacher Resources\\English 1 - Teacher Manual.pdf",
+   "src": "specs/files/1001310/Teacher Resources/English 1 - Teacher Manual.pdf",
    "canvas_id": 3688
   }
  ],

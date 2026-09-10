@@ -1,0 +1,226 @@
+{
+  "kit": "1001040-s1",
+  "code": "1001040",
+  "title": "M/J Language Arts 2 (7th Grade)",
+  "label": "Semester 1",
+  "harness": "C:/Users/JessicaDrexel/OneDrive - OptimaEd/Claude's Workshop/ELA Builds_Summer 2026/7th Grade ELA/03 Development/_build/s2",
+  "instruments_harness": "C:/Users/JessicaDrexel/OneDrive - OptimaEd/Claude's Workshop/ELA Builds_Summer 2026/7th Grade ELA/03 Development/_Course Shared/_build",
+  "extra_module": "ela7_s1_extra",
+  "dev": "C:/Users/JessicaDrexel/OneDrive - OptimaEd/Claude's Workshop/ELA Builds_Summer 2026/7th Grade ELA/03 Development",
+  "final": "C:/Users/JessicaDrexel/OneDrive - OptimaEd/Claude's Workshop/ELA Builds_Summer 2026/7th Grade ELA/04_Final",
+  "pages_base": "https://optimaondemand.github.io/mj-english-language-arts-2",
+  "front_page_html": "04_Final/7th-Grade-ELA-Course-Home-CANVAS-paste-ready.html",
+  "modules": [
+    {
+      "key": "m0",
+      "title": "Module 0 — Start Here",
+      "published": true,
+      "shared": true
+    },
+    {
+      "key": "1",
+      "num": 1,
+      "abbr": "GT",
+      "title": "Module 1 — Gulliver's Travels",
+      "folder": "Module 1 - Gullivers Travels",
+      "gh_dir": "module-1-gullivers-travels",
+      "text": "Gulliver's Travels",
+      "published": true,
+      "journal_mid_week": 4,
+      "placements": [
+        {
+          "match": "Voyage Documentary 1",
+          "after": "Week 2 Friday Check-up"
+        },
+        {
+          "match": "All-Class Forum 1",
+          "after": "Week 3 Friday Check-up"
+        },
+        {
+          "match": "Reading Journal Check — Mid-Module",
+          "after": "Week 4 Friday Check-up"
+        },
+        {
+          "match": "All-Class Forum 2",
+          "after": "Week 5 Friday Check-up"
+        },
+        {
+          "match": "Voyage Documentary 2",
+          "after": "Week 7 Friday Check-up"
+        },
+        {
+          "match": "Reading Journal Check — End of Module",
+          "after": "Voyage Documentary 2"
+        },
+        {
+          "match": "Module Discussion:",
+          "after": "Week 6 Friday Check-up"
+        }
+      ],
+      "journal_end_week": 7
+    },
+    {
+      "key": "2",
+      "num": 2,
+      "abbr": "CotW",
+      "title": "Module 2 — The Call of the Wild",
+      "folder": "Module 2 - The Call of the Wild",
+      "gh_dir": "module-2-call-of-the-wild",
+      "text": "The Call of the Wild",
+      "published": true,
+      "journal_mid_week": 3,
+      "placements": [
+        {
+          "match": "Field Dispatch 1",
+          "after": "Week 2 Friday Check-up"
+        },
+        {
+          "match": "All-Class Forum 1",
+          "after": "Week 3 Friday Check-up"
+        },
+        {
+          "match": "Reading Journal Check — Mid-Module",
+          "after": "All-Class Forum 1"
+        },
+        {
+          "match": "All-Class Forum 2",
+          "after": "Week 4 Friday Check-up"
+        },
+        {
+          "match": "Field Dispatch 2",
+          "after": "Week 5 Friday Check-up"
+        },
+        {
+          "match": "Reading Journal Check — End of Module",
+          "after": "Field Dispatch 2"
+        },
+        {
+          "match": "Module Discussion:",
+          "after": "Reading Journal Check — End of Module"
+        }
+      ],
+      "journal_end_week": 5
+    },
+    {
+      "key": "3",
+      "num": 3,
+      "abbr": "ACC",
+      "title": "Module 3 — A Christmas Carol",
+      "folder": "Module 3 - A Christmas Carol",
+      "gh_dir": "module-3-a-christmas-carol",
+      "text": "A Christmas Carol",
+      "published": true,
+      "single_project_title": "ACC Final Project",
+      "placements": [
+        {
+          "match": "Podcast Episode 1",
+          "after": "Week 1 Friday Check-up"
+        },
+        {
+          "match": "Module Discussion:",
+          "after": "Podcast Episode 1"
+        },
+        {
+          "match": "All-Class Forum 1",
+          "after": "Module Discussion:"
+        },
+        {
+          "match": "Podcast Episode 2",
+          "after": "Week 2 Friday Check-up"
+        },
+        {
+          "match": "Reading Journal Check — End of Module",
+          "after": "Podcast Episode 2"
+        },
+        {
+          "match": "All-Class Forum 2",
+          "after": "Reading Journal Check — End of Module"
+        }
+      ],
+      "journal_end_week": 2
+    },
+    {
+      "key": "tr",
+      "title": "Teacher Resources",
+      "published": false,
+      "files": true
+    }
+  ],
+  "shared_pages": [
+    {
+      "title": "Start Here — Your OneDrive Course Folder",
+      "gh": "_shared/start-here-your-onedrive-course-folder-page.html",
+      "height": 1600
+    },
+    {
+      "title": "Reading Journal — Student Guidelines",
+      "local": "Reading Journal - Student Guidelines.md"
+    },
+    {
+      "title": "How Arguments Work (Reference)",
+      "gh": "_shared/how-arguments-work-reference.html",
+      "height": 2200
+    },
+    {
+      "title": "Research Starting Points (Reference)",
+      "gh": "_shared/research-starting-points-reference.html",
+      "height": 2200
+    },
+    {
+      "title": "Research and JStor Access",
+      "local": "Research and JStor Access (CANVAS-NATIVE).html"
+    }
+  ],
+  "teacher_files": [
+    {
+      "title": "Syllabus (PDF)",
+      "path": "04_Final/MS-ELA7-Language-Arts-2-Syllabus-2026-2027.pdf"
+    },
+    {
+      "title": "Teacher Manual (PDF)",
+      "path": "04_Final/MS-ELA7-Teacher-Manual-2026-2027.pdf"
+    }
+  ],
+  "files_folder": "Teacher Resources",
+  "points": {
+    "quick-write": 10,
+    "word-study": 10,
+    "vr": 10,
+    "week-assignment": 10,
+    "outline-submit": 5,
+    "journal-setup": 5,
+    "journal-check": 10,
+    "module-discussion": 10,
+    "forum": 25,
+    "recording": 25
+  },
+  "project_points": {
+    "essay": 40,
+    "creative": 40
+  },
+  "project_rubric_half": [
+    "Written",
+    "Creative",
+    "Book Cover"
+  ],
+  "checkup_title": "Week %s Friday Check-up",
+  "work_session_title": "Week %d — Work Session %s: %s",
+  "iframe_h": {
+    "module-map": 1400,
+    "work-session": 1400,
+    "submission-checklist": 1400
+  },
+  "default_h": 2200,
+  "quiz_attempts": 2,
+  "survey_attempts": 1,
+  "notes": "Semester 1 as deployed to Canvas course 2 (July 2026) plus the twelve August instruments (deploy_instruments7.py). Titles come from the deployed course.",
+  "skip_kinds": [
+    "grammar-game",
+    "word-study-game"
+  ],
+  "project_half_order": [
+    "Written",
+    "Creative"
+  ],
+  "split_combined_questions": true
+}
