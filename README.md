@@ -69,7 +69,23 @@ The self-test fills the example teacher, builds the patched cartridge in the pag
 writes it (base64) into the DOM so the dump can be decoded and run through
 `verify_cartridge.py`. See the session notes for the exact command.
 
+## Verifying a kit in Canvas itself
+
+```
+python _build/import_test.py cartridges/<kit>.imscc "ZZ Kit test <kit> (delete me)" [canvas_cartridge_importer|common_cartridge_importer] [--new-quizzes]
+```
+
+Creates a scratch course on optimaoaoteam, uploads the cartridge, waits for the
+migration, and prints the migration issues plus every quiz's question count. Delete
+the scratch course afterwards. Verified 2026-09-10 on both importers: 0 issues, every
+survey intact. With `--new-quizzes` (Canvas's "Import existing quizzes as New Quizzes"
+checkbox) the graded quizzes convert but every ungraded survey becomes an unpublished,
+pointless external-tool assignment: an empty quiz. The widget's checklist tells
+teachers to leave that box unchecked.
+
 ## Known limits of this prototype
+- Ungraded surveys (module Intro and Outro) do not survive the New Quizzes import
+  option. Teachers must import as classic quizzes.
 
 - Classic quizzes only. New Quizzes need a separate QTI path.
 - Cartridges carry quiz answer keys. This repo is public. Move the cartridges to a
