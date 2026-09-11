@@ -7,8 +7,15 @@ Canvas is no longer a step in distribution: cartridges are generated from the
 course build folders and served from a repo.
 
 Live widget: https://optimaondemand.github.io/optima-course-kit/
-Cartridges + catalog: https://optimaondemand.github.io/optima-course-cartridges/
-(repo `optimaondemand/optima-course-cartridges`, checked out beside this one)
+Cartridges + catalog (current `DEFAULT_BASE`): https://optimaondemand.github.io/optima-course-cartridges/
+(repo `optimaondemand/optima-course-cartridges`, three 2026-27 kits, frozen)
+
+**Team content store for 2026-27:** `optimaondemand/optima-courses-2026-27`, one folder
+per course, built for 130+ courses and ~10 builders, with its own toolchain, gate and
+`CONTRIBUTING.md`. Its `catalog.json` is a light index; each kit row names a `sidecar`
+the widget fetches on selection (`loadKitDetail`). Switch the widget to it by changing
+`DEFAULT_BASE` in `index.html` once course content is authorized there; until then
+test it with `?base=https://optimaondemand.github.io/optima-courses-2026-27/`.
 
 ## How a course becomes a kit
 
@@ -31,6 +38,10 @@ course build folder (03 Development)         recipes/<kit>.json
                   v
         commit + push optima-course-cartridges; the widget reads it from Pages
 ```
+
+In the 2026-27 store the same spec goes to `courses/<code>/<kit>.spec.json` and
+`python _build/kit.py <kit>` there does build + verify + catalog + gate in one step;
+`folder_to_spec.py` and the recipes stay here as the 7th ELA spec producer.
 
 `folder_to_spec.py` delegates parsing to the course's own deploy harness (for 7th
 ELA: `03 Development/_build/s2`: `common.classify`, `quizparse`, `mapparse`,

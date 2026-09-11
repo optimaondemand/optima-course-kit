@@ -434,16 +434,41 @@
     course.kits.forEach(function (k) {
       var d = document.createElement('label');
       d.className = 'kit' + (k.status === 'ready' ? '' : ' pending') + (kit && kit.id === k.id ? ' sel' : '');
+      // a light catalog row has no modules[] yet; it carries student_modules as a count
+      var nMods = k.modules ? k.modules.filter(function (m) { return m.published; }).length : (k.student_modules != null ? k.student_modules : '?');
       var s = k.status === 'ready'
-        ? k.items + ' items &middot; ' + k.modules.filter(function (m) { return m.published; }).length + ' student modules &middot; ' + (k.bytes / 1048576).toFixed(1) + ' MB &middot; v' + escHtml(k.version) + '<br>' + escHtml(k.source || '')
-        : 'Not built yet';
+        ? k.items + ' items &middot; ' + nMods + ' student modules &middot; ' + (k.bytes / 1048576).toFixed(1) + ' MB &middot; v' + escHtml(k.version) + '<br>' + escHtml(k.source || '')
+        : (k.status === 'spec-only' ? 'Authored, not built yet' : 'Not built yet');
       d.innerHTML = '<input type="radio" name="kit" value="' + escHtml(k.id) + '"' + (k.status !== 'ready' ? ' disabled' : '') + (kit && kit.id === k.id ? ' checked' : '') + '>' +
         '<div><div class="l">' + escHtml(k.label) + (k.status === 'ready' ? '<span class="pill">READY</span>' : '<span class="pill grey">PENDING</span>') + '</div><div class="s">' + s + '</div></div>';
       if (k.status === 'ready') d.querySelector('input').addEventListener('change', function () { selectKit(k); });
       el.appendChild(d);
     });
   }
+  // A store built for 130+ courses (optima-courses-2026-27) publishes a LIGHT
+  // catalog.json: each kit row names its `sidecar` (cartridges/<kit>.json) and the
+  // per-kit detail the panels need (modules, groups, graded_items, settings) is
+  // fetched only when a teacher selects that kit. The older store embeds the
+  // detail in the catalog; then there is nothing to fetch and this resolves at once.
+  function loadKitDetail(k) {
+    if (!k.sidecar || k.graded_items) return Promise.resolve(k);
+    return fetch(BASE + k.sidecar, { cache: 'no-store' }).then(function (r) {
+      if (!r.ok) throw new Error('could not fetch ' + k.sidecar + ' (' + r.status + ')');
+      return r.json();
+    }).then(function (s) {
+      ['modules', 'groups', 'graded_items', 'settings', 'weights', 'weighted', 'front_page', 'file', 'bytes', 'items', 'counts', 'version'].forEach(function (f) {
+        if (s[f] !== undefined) k[f] = s[f];
+      });
+      if (!k.graded_items) k.graded_items = [];
+      return k;
+    });
+  }
   function selectKit(k) {
+    if (k.sidecar && !k.graded_items) {
+      status('Loading kit details…');
+      return loadKitDetail(k).then(function () { status(''); return selectKit(k); })
+        .catch(function (e) { status('Could not load this kit: ' + e.message, 'err'); throw e; });
+    }
     kit = k;
     var saved = loadSaved(k.id);
     home = saved || blankHome();
@@ -454,6 +479,7 @@
     lock(3, false); lock(4, false); lock(5, false); lock(6, false);
     ['dl', 'copy', 'dl-plain'].forEach(function (id) { $(id).disabled = false; });
     renderKits(); fillForm(); renderMods(); renderDates(); renderGradebook(); renderPreview();
+    return Promise.resolve(k);
   }
 
   // ------------------------------------------------------------ dates + gradebook state helpers
@@ -1021,7 +1047,7 @@
     $('code').value = c.code; course = c; renderCourse();
     var k = c.kits.filter(function (x) { return x.status === 'ready' && (!kitId || x.id === kitId); })[0];
     if (!k) { $('selftest-out').textContent = JSON.stringify({ ok: false, error: 'no ready kit ' + (kitId || '') }); return; }
-    selectKit(k);
+    selectKit(k).then(function () {
     home = exampleHome(); home.modules = k.modules.filter(function (m) { return m.published; }).map(function (m) { return { gid: m.gid, title: m.title, show: true }; });
     ensureKitDefaults();
 
@@ -1080,6 +1106,10 @@
       });
     }).catch(function (e) {
       $('selftest-out').textContent = JSON.stringify({ ok: false, error: String(e && e.message || e) });
+      document.title = 'Optima Course Kit [selftest failed]';
+    });
+    }).catch(function (e) {
+      $('selftest-out').textContent = JSON.stringify({ ok: false, error: 'kit detail: ' + String(e && e.message || e) });
       document.title = 'Optima Course Kit [selftest failed]';
     });
   }
