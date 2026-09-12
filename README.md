@@ -93,9 +93,10 @@ chrome --headless=new --dump-dom --virtual-time-budget=40000 "http://127.0.0.1:8
 ```
 
 The self-test fills the example teacher, applies sample dates, weights, points and
-a publish change, builds the patched cartridge in the page, asserts the patched XML,
-and writes the zip (base64) into the DOM so the dump can be decoded and run through
-`verify_cartridge.py`.
+a publish change, batch-dates one whole module, sets a graded quiz total (split evenly
+across its questions in the QTI file), toggles the preview off and on, builds the
+patched cartridge in the page, asserts the patched XML, and writes the zip (base64)
+into the DOM so the dump can be decoded and run through `verify_cartridge.py`.
 
 ## Verifying a kit in Canvas itself
 

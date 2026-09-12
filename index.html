@@ -31,7 +31,9 @@
   .top .tool { margin-left:auto; text-align:right; }
   .top .tool .name { font-size:24px; }
   .top .tool .tag { font-size:12px; color:var(--gold); letter-spacing:1px; }
-  .wrap { display:grid; grid-template-columns: minmax(340px, 600px) 1fr; gap:22px; padding:22px 28px; max-width:1500px; margin:0 auto; }
+  .wrap { display:grid; grid-template-columns: minmax(340px, 680px) 1fr; gap:22px; padding:22px 28px; max-width:1500px; margin:0 auto; }
+  .wrap.nopreview { grid-template-columns: 1fr; max-width:1180px; }
+  .wrap.nopreview .preview { display:none; }
   @media (max-width: 1000px) { .wrap { grid-template-columns: 1fr; } .preview { order: 2; } }
   .step { background:#fff; border:1px solid var(--line); border-top:4px solid var(--cyan); border-radius:8px; padding:18px 20px; margin-bottom:16px; }
   .step h2 { margin:0 0 10px; font-size:19px; font-weight:600; display:flex; align-items:center; gap:10px; }
@@ -84,6 +86,14 @@
   table.sched tbody tr:not(.modrow):not(.wkrow) td:first-child { min-width:200px; max-width:260px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   details.modblock { border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-top:10px; }
   details.modblock summary { margin-top:0; color:var(--navy); font-size:15px; }
+  button.sm { font-size:13px; padding:6px 14px; border-radius:16px; }
+  .previewbar button.sm { background:transparent; color:#fff; border-color:var(--cyan); }
+  #show-preview { position:fixed; right:18px; bottom:18px; z-index:5; box-shadow:0 2px 10px rgba(14,28,66,.3); }
+  .batchrow { display:grid; grid-template-columns:1fr 1fr 1fr auto auto; gap:8px; align-items:end; padding:10px 12px; margin-top:8px; background:#F9FAFD; border:1px dashed var(--line); border-radius:8px; }
+  .batchrow label { margin:0 0 3px; }
+  .batchrow input[type=datetime-local] { font-size:13px; padding:5px 7px; }
+  .batchrow .bl { grid-column:1 / -1; font-size:13px; color:var(--navy); font-weight:600; }
+  @media (max-width: 760px) { .batchrow { grid-template-columns:1fr 1fr; } }
 </style>
 </head>
 <body>
@@ -147,7 +157,7 @@
     </div>
 
     <div class="step locked" id="step5">
-      <h2><span class="n">5</span> Set up your gradebook</h2>
+      <h2><span class="n">5</span> Gradebook and publishing</h2>
       <div id="gradebook-panel"><div class="hint">Choose a kit first.</div></div>
     </div>
 
@@ -173,10 +183,11 @@
   </section>
 
   <section class="preview">
-    <div class="previewbar"><div>Home page preview</div><span id="preview-note">Links work after import, not here.</span></div>
+    <div class="previewbar"><div>Home page preview</div><div style="display:flex;gap:12px;align-items:center;"><span id="preview-note">Links work after import, not here.</span><button type="button" class="sm" id="hide-preview">Hide preview</button></div></div>
     <div id="preview" aria-label="Home page preview"></div>
   </section>
 </main>
+<button type="button" id="show-preview" hidden>Show home page preview</button>
 <div class="foot">Optima Course Kit &middot; kits are built from Optima course files &middot; this page never writes to Canvas</div>
 <pre id="selftest-out" hidden></pre>
 <pre id="selftest-b64" hidden></pre>
@@ -538,6 +549,83 @@
     return Number.isInteger(n) ? n.toFixed(1) : String(n);
   }
   function allDayDate(utcDue) { return utcDue ? utcDue.slice(0, 10) : null; }
+  // Assignments and discussions carry their own points. A graded quiz's total is
+  // editable too: the total is split evenly across its questions when the
+  // cartridge is patched (see patchQtiPoints). Ungraded surveys have no points.
+  function canEditPoints(it) {
+    return !!it.points_editable || (it.type === 'quiz' && it.quiz_type !== 'survey');
+  }
+  function itemsInScope(scope) {
+    var all = kit.graded_items || [];
+    return scope === 'all' ? all.slice() : all.filter(function (it) { return it.module === scope; });
+  }
+  // Batch dates: vals = { unlock_at, due_at, lock_at } as datetime-local strings;
+  // blank or missing fields leave the item's current value alone. Returns the items touched.
+  function applyBatch(scope, vals) {
+    var items = itemsInScope(scope);
+    items.forEach(function (it) {
+      var rec = home.dates[it.id] || (home.dates[it.id] = {});
+      ['unlock_at', 'due_at', 'lock_at'].forEach(function (f) { if (vals[f]) rec[f] = vals[f]; });
+    });
+    save();
+    return items;
+  }
+  function clearBatch(scope) {
+    itemsInScope(scope).forEach(function (it) { delete home.dates[it.id]; });
+    save();
+  }
+  function batchRow(scope, label, applyLabel) {
+    var id = function (f) { return 'bt-' + f + '-' + scope; };
+    return '<div class="batchrow" data-scope="' + escHtml(scope) + '">' +
+      '<div class="bl">' + escHtml(label) + '</div>' +
+      '<div><label for="' + id('unlock_at') + '">Opens</label><input type="datetime-local" id="' + id('unlock_at') + '"></div>' +
+      '<div><label for="' + id('due_at') + '">Due</label><input type="datetime-local" id="' + id('due_at') + '"></div>' +
+      '<div><label for="' + id('lock_at') + '">Closes</label><input type="datetime-local" id="' + id('lock_at') + '"></div>' +
+      '<button type="button" class="sm batch-apply" data-scope="' + escHtml(scope) + '">' + escHtml(applyLabel) + '</button>' +
+      '<button type="button" class="sm alt batch-clear" data-scope="' + escHtml(scope) + '">Clear these dates</button>' +
+      '</div>';
+  }
+  function wireBatchRows() {
+    document.querySelectorAll('.batch-apply').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var scope = this.dataset.scope, vals = {};
+        ['unlock_at', 'due_at', 'lock_at'].forEach(function (f) {
+          var inp = document.getElementById('bt-' + f + '-' + scope);
+          if (inp && inp.value) vals[f] = inp.value;
+        });
+        if (!vals.unlock_at && !vals.due_at && !vals.lock_at) return;
+        applyBatch(scope, vals);
+        renderDates();
+      });
+    });
+    document.querySelectorAll('.batch-clear').forEach(function (btn) {
+      btn.addEventListener('click', function () { clearBatch(this.dataset.scope); renderDates(); });
+    });
+  }
+  function setAllPublished(val) {
+    (kit.modules || []).forEach(function (m) { home.moduleOverrides[m.id] = { published: val }; });
+    (kit.graded_items || []).forEach(function (it) { ensureOverride(it).published = val; });
+    save(); renderGradebook(); renderDates();
+  }
+  // Split a quiz total evenly across every question in its QTI file. Two-decimal
+  // shares; the last question absorbs the rounding so the sum is exact.
+  function patchQtiPoints(text, total) {
+    var re = /(<fieldlabel>points_possible<\/fieldlabel>\s*<fieldentry>)([^<]*)(<\/fieldentry>)/g;
+    var n = (text.match(re) || []).length;
+    if (!n) return text;
+    total = Math.max(0, Number(total) || 0);
+    var share = Math.floor((total / n) * 100) / 100;
+    var last = Math.round((total - share * (n - 1)) * 100) / 100;
+    var i = 0;
+    return text.replace(re, function (m0, a, old, c) { i++; return a + fmtPoints(i === n ? last : share) + c; });
+  }
+  var UI_STORE = 'optima-course-kit-ui';
+  function uiPref() { try { return JSON.parse(localStorage.getItem(UI_STORE) || '{}'); } catch (e) { return {}; } }
+  function setPreviewShown(show) {
+    document.querySelector('.wrap').classList.toggle('nopreview', !show);
+    $('show-preview').hidden = !!show;
+    try { var u = uiPref(); u.previewHidden = !show; localStorage.setItem(UI_STORE, JSON.stringify(u)); } catch (e) { /* ignore */ }
+  }
   function desiredUtc(localVal) {
     if (!localVal) return null;
     var d = new Date(localVal);
@@ -583,13 +671,17 @@
     out.push('<label for="course-start">Course start date</label>');
     out.push('<input type="date" id="course-start" value="' + escHtml(home.courseStart || '') + '">');
     out.push('<div class="hint">Proposed: 11:59 PM on the last day of each item’s week. Edit any date, or leave a row blank.</div>');
+    out.push('<div class="hint">To set many at once, fill in a batch row and apply it. Blank batch fields leave existing dates alone. Times are your local time.</div>');
+    out.push(batchRow('all', 'Every graded item in this kit', 'Apply to all items'));
     out.push('<div class="actions"><button type="button" class="alt" id="dates-clear">Clear all dates</button></div>');
     (kit.modules || []).forEach(function (m) {
       var items = kit.graded_items.filter(function (it) { return it.module === m.id; });
       if (!items.length) return;
-      out.push('<details class="modblock"' + (m.published ? ' open' : '') + '>');
-      out.push('<summary>' + escHtml(m.title) + (m.published ? '' : ' <span class="pill grey">UNPUBLISHED</span>') + '</summary>');
-      if (!m.published) out.push('<div class="hint">This module is not published yet. Its dates still apply once you publish it.</div>');
+      var mp = modulePublished(m);
+      out.push('<details class="modblock"' + (mp ? ' open' : '') + '>');
+      out.push('<summary>' + escHtml(m.title) + (mp ? '' : ' <span class="pill grey">UNPUBLISHED</span>') + '</summary>');
+      if (!mp) out.push('<div class="hint">This module will import unpublished. Its dates still apply once you publish it.</div>');
+      out.push(batchRow(m.id, 'Every graded item in this module', 'Apply to this module'));
       out.push('<div class="dtable"><table class="sched"><thead><tr><th>Item</th><th>Type</th><th>Points</th><th>Opens</th><th>Due</th><th>Closes</th></tr></thead><tbody>');
       var byWeek = {}, weeks = [];
       items.forEach(function (it) {
@@ -607,6 +699,7 @@
     el.innerHTML = out.join('');
     $('course-start').addEventListener('change', function () { home.courseStart = this.value; proposeDates(); save(); renderDates(); });
     $('dates-clear').addEventListener('click', function () { home.dates = {}; save(); renderDates(); });
+    wireBatchRows();
     kit.graded_items.forEach(function (it) {
       ['unlock_at', 'due_at', 'lock_at'].forEach(function (f) {
         var input = document.getElementById('dt-' + f + '-' + it.id);
@@ -621,7 +714,7 @@
   }
   function dateRow(it) {
     var typeLabel = it.type === 'assignment' ? 'Assignment' : it.type === 'quiz' ? 'Quiz' : 'Discussion';
-    var pts = (it.type === 'quiz' && it.quiz_type === 'survey') ? 'ungraded' : fmtPoints(it.points);
+    var pts = (it.type === 'quiz' && it.quiz_type === 'survey') ? 'ungraded' : fmtPoints(effItem(it).points);
     return '<tr>' +
       '<td>' + escHtml(it.title) + '</td>' +
       '<td><span class="pill grey">' + typeLabel + '</span></td>' +
@@ -650,6 +743,8 @@
     out.push('</tbody></table></div>');
     out.push('<div class="actions"><button type="button" class="alt" id="gb-addgroup">Add group</button></div>');
     out.push('<div class="status" id="gb-summary"></div>');
+    out.push('<div class="hint" style="margin-top:14px;">Untick a module to import it unpublished with everything inside it, pages included. Untick one item to import just that item unpublished. A graded quiz total is split evenly across its questions when you change it.</div>');
+    out.push('<div class="actions"><button type="button" class="sm alt" id="gb-pub-all">Publish everything</button><button type="button" class="sm alt" id="gb-unpub-all">Unpublish everything</button></div>');
     (kit.modules || []).forEach(function (m) {
       var items = kit.graded_items.filter(function (it) { return it.module === m.id && !(it.type === 'quiz' && it.quiz_type === 'survey'); });
       if (!items.length) return;
@@ -662,7 +757,7 @@
         out.push('<td><select data-id="' + escHtml(it.id) + '" class="gb-group">' + home.groups.map(function (g) {
           return '<option value="' + escHtml(g.id) + '"' + (g.id === eff.group ? ' selected' : '') + '>' + escHtml(g.title) + '</option>';
         }).join('') + '</select></td>');
-        out.push('<td><input type="number" step="0.5" min="0" class="gb-points" data-id="' + escHtml(it.id) + '" value="' + escHtml(fmtPoints(eff.points)) + '"' + (it.points_editable ? '' : ' disabled title="Set by its questions"') + '></td>');
+        out.push('<td><input type="number" step="0.5" min="0" class="gb-points" data-id="' + escHtml(it.id) + '" value="' + escHtml(fmtPoints(eff.points)) + '"' + (canEditPoints(it) ? (it.type === 'quiz' ? ' title="Quiz total. Its questions share it evenly."' : '') : ' disabled title="Set by its questions"') + '></td>');
         out.push('<td><input type="checkbox" class="gb-pub" data-id="' + escHtml(it.id) + '"' + (eff.published ? ' checked' : '') + '></td>');
         out.push('</tr>');
       });
@@ -680,6 +775,8 @@
     document.querySelectorAll('.gb-gweight').forEach(function (inp) {
       inp.addEventListener('change', function () { home.groups[+this.dataset.gi].weight = parseFloat(this.value) || 0; save(); renderGradebook(); });
     });
+    $('gb-pub-all').addEventListener('click', function () { setAllPublished(true); });
+    $('gb-unpub-all').addEventListener('click', function () { setAllPublished(false); });
     $('gb-addgroup').addEventListener('click', function () {
       home.groups.push({ id: 'g' + randHex(32), title: 'New group', weight: 0, position: home.groups.length + 1 });
       save(); renderGradebook();
@@ -862,9 +959,12 @@
     pre = setEl(pre, 'lock_at', eff.lock_at, descAnchor);
     pre = setEl(pre, 'all_day_date', allDayDate(eff.due_at), descAnchor);
     if (/<available>/.test(pre)) pre = pre.replace(/<available>[\s\S]*?<\/available>/, '<available>' + (eff.published ? 'true' : 'false') + '</available>');
+    var setPts = eff.points != null && /<points_possible>/.test(pre);
+    if (setPts) pre = setEl(pre, 'points_possible', fmtPoints(eff.points), descAnchor);
     if (body) {
       body = setEl(body, 'workflow_state', eff.published ? 'published' : 'unpublished', TITLE_ANCHOR);
       body = setEl(body, 'assignment_group_identifierref', eff.group, TITLE_ANCHOR);
+      if (setPts) body = setEl(body, 'points_possible', fmtPoints(eff.points), TITLE_ANCHOR);
       body = setEl(body, 'due_at', eff.due_at, TITLE_ANCHOR);
       body = setEl(body, 'unlock_at', eff.unlock_at, TITLE_ANCHOR);
       body = setEl(body, 'lock_at', eff.lock_at, TITLE_ANCHOR);
@@ -884,7 +984,7 @@
       || eff.unlock_at !== (item.unlock_at || null)
       || eff.lock_at !== (item.lock_at || null)
       || eff.published !== item.published
-      || (item.type !== 'quiz' && Number(eff.points) !== Number(item.points))
+      || (canEditPoints(item) && Number(eff.points) !== Number(item.points))
       || eff.group !== (item.group || null);
   }
   function patchModuleXml(text, m, wantPublished) {
@@ -953,7 +1053,16 @@
         if (!itemChanged(item, eff)) return Promise.resolve();
         var f = zip.file(item.xml);
         if (!f) return Promise.resolve();
-        return f.async('string').then(function (text) { zip.file(item.xml, patchItemXml(item, text, eff)); });
+        return f.async('string').then(function (text) {
+          zip.file(item.xml, patchItemXml(item, text, eff));
+          // A graded quiz whose total changed: give every question an equal share.
+          if (item.type === 'quiz' && item.quiz_type === 'assignment' && Number(eff.points) !== Number(item.points)) {
+            var qtiPath = item.qti || (item.gid + '/assessment_qti.xml');
+            var q = zip.file(qtiPath);
+            if (!q) return;
+            return q.async('string').then(function (qt) { zip.file(qtiPath, patchQtiPoints(qt, eff.points)); });
+          }
+        });
       });
     });
     var modChanges = (kit.modules || []).filter(function (m) { return modulePublished(m) !== m.published; });
@@ -996,6 +1105,9 @@
 
   // ------------------------------------------------------------ wiring
   function wire() {
+    $('hide-preview').addEventListener('click', function () { setPreviewShown(false); });
+    $('show-preview').addEventListener('click', function () { setPreviewShown(true); });
+    if (uiPref().previewHidden) setPreviewShown(false);
     catalog.courses.forEach(function (c) {
       var o = document.createElement('option'); o.value = c.code; o.label = c.title + ' (grade ' + c.grade + ')'; o.textContent = c.title;
       $('codes').appendChild(o);
@@ -1053,7 +1165,8 @@
 
     // Exercise the dates + gradebook panels the way a teacher would, then verify
     // the assertions below by reading the patched cartridge back after building it.
-    var dueItem = null, pointsItem = null, unpubItem = null;
+    var dueItem = null, pointsItem = null, unpubItem = null, quizItem = null, batchItems = [];
+    var BATCH_DUE = '2026-10-09T23:59';
     var hasSchedule = kit.graded_items && kit.graded_items.length;
     if (hasSchedule) {
       home.courseStart = '2026-08-17';
@@ -1070,7 +1183,18 @@
       }
       if (home.groups && home.groups.length) home.groups[0].weight = 100;
       home.weighted = true;
+      // Batch: every graded item in the first content module due on one date.
+      if (firstContentModule) batchItems = applyBatch(firstContentModule.id, { due_at: BATCH_DUE });
+      // Quiz points: a graded quiz total of 20, split across its questions.
+      quizItem = kit.graded_items.filter(function (it) { return it.type === 'quiz' && it.quiz_type === 'assignment'; })[0];
+      if (quizItem) ensureOverride(quizItem).points = 20;
     }
+    // Preview toggle: hiding collapses the grid to one column and hides the panel.
+    setPreviewShown(false);
+    var previewToggle = document.querySelector('.wrap').classList.contains('nopreview')
+      && getComputedStyle(document.querySelector('.preview')).display === 'none'
+      && !$('show-preview').hidden;
+    setPreviewShown(true);
 
     fillForm(); renderMods(); renderDates(); renderGradebook(); renderPreview();
     patchedKit('base64').then(function (r) {
@@ -1078,7 +1202,7 @@
       var out = { ok: true, code: c.code, kit: k.id, frontPage: k.front_page, entries: r.entries,
         homeBytes: r.html.length, teacher: home.teacherName, moduleLinks: (r.html.match(/\$CANVAS_OBJECT_REFERENCE\$\/modules\//g) || []).length,
         nonAscii: /[^\x00-\x7f]/.test(r.html), filename: kitFilename() };
-      var checks = { datesApplied: false, weightingOn: false, pointsPatched: false, unpublished: false };
+      var checks = { datesApplied: false, weightingOn: false, pointsPatched: false, unpublished: false, batchDates: false, quizPoints: false };
       var verify = hasSchedule ? JSZip.loadAsync(r.data, { base64: true }) : Promise.resolve(null);
       return verify.then(function (zip2) {
         var reads = [];
@@ -1094,13 +1218,28 @@
         if (zip2 && kit.settings && kit.settings.course_settings) reads.push(zip2.file(kit.settings.course_settings).async('string').then(function (t) {
           checks.weightingOn = /<group_weighting_scheme>percent<\/group_weighting_scheme>/.test(t);
         }));
+        if (zip2 && batchItems.length) reads.push(Promise.all(batchItems.map(function (it) { return zip2.file(it.xml).async('string'); })).then(function (texts) {
+          var want = '<due_at>' + desiredUtc(BATCH_DUE) + '</due_at>';
+          checks.batchDates = texts.every(function (t) { return t.indexOf(want) >= 0; });
+        }));
+        if (zip2 && quizItem) reads.push(Promise.all([zip2.file(quizItem.xml).async('string'), zip2.file(quizItem.gid + '/assessment_qti.xml').async('string')]).then(function (r2) {
+          var metaHits = (r2[0].match(/<points_possible>20(\.0)?<\/points_possible>/g) || []).length;
+          var sum = 0, re = /<fieldlabel>points_possible<\/fieldlabel>\s*<fieldentry>([^<]*)<\/fieldentry>/g, mm;
+          while ((mm = re.exec(r2[1]))) sum += parseFloat(mm[1]) || 0;
+          checks.quizPoints = metaHits >= 2 && Math.abs(sum - 20) < 0.005;
+        }));
         return Promise.all(reads);
       }).then(function () {
         out.datesApplied = checks.datesApplied;
         out.weightingOn = checks.weightingOn;
         out.pointsPatched = checks.pointsPatched;
         out.unpublished = checks.unpublished;
-        if (hasSchedule) out.ok = out.ok && checks.datesApplied && checks.weightingOn && checks.pointsPatched && checks.unpublished;
+        out.batchDates = checks.batchDates; out.batchCount = batchItems.length;
+        out.quizPoints = checks.quizPoints; out.quiz = quizItem ? quizItem.title : null;
+        out.previewToggle = previewToggle;
+        if (hasSchedule) out.ok = out.ok && checks.datesApplied && checks.weightingOn && checks.pointsPatched && checks.unpublished
+          && checks.batchDates && (!quizItem || checks.quizPoints);
+        out.ok = out.ok && previewToggle;
         $('selftest-out').textContent = JSON.stringify(out);
         document.title = 'Optima Course Kit [selftest done]';
       });
