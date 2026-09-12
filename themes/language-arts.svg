@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 190" width="1200" height="190" role="img" aria-label="">
+  <style>
+    .ink { stroke-dasharray: 260; animation: ink 7s ease-in-out infinite; }
+    @keyframes ink {
+      0% { stroke-dashoffset: 260; opacity: 1; }
+      42% { stroke-dashoffset: 0; opacity: 1; }
+      80% { stroke-dashoffset: 0; opacity: 1; }
+      93% { stroke-dashoffset: 0; opacity: 0; }
+      100% { stroke-dashoffset: 260; opacity: 0; }
+    }
+    .float text { animation: drift 6.5s ease-in-out infinite; }
+    .float text:nth-of-type(2) { animation-delay: 1.3s; }
+    .float text:nth-of-type(3) { animation-delay: 2.6s; }
+    .float text:nth-of-type(4) { animation-delay: 3.9s; }
+    .float text:nth-of-type(5) { animation-delay: 5.2s; }
+    @keyframes drift { 0%,100% { transform: translateY(0); opacity: 0.35; } 50% { transform: translateY(-6px); opacity: 0.6; } }
+    .sway { transform-box: fill-box; transform-origin: center top; animation: sway 5s ease-in-out infinite; }
+    @keyframes sway { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(4deg); } }
+    .swirl { animation: swirl 8s linear infinite; }
+    @keyframes swirl { to { stroke-dashoffset: -66; } }
+    @media (prefers-reduced-motion: reduce) { [class] { animation: none !important; } }
+  </style>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0E1C42"/>
+      <stop offset="0.55" stop-color="#4A2230"/>
+      <stop offset="1" stop-color="#FBF4F2"/>
+    </linearGradient>
+    <linearGradient id="pageL" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#F3E2D9"/>
+      <stop offset="1" stop-color="#FFFDFB"/>
+    </linearGradient>
+    <linearGradient id="pageR" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFDFB"/>
+      <stop offset="1" stop-color="#F3E2D9"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="190" fill="url(#bg)"/>
+
+  <!-- faint drifting letters -->
+  <g class="float" fill="#E8A2AE" font-family="Georgia, 'Times New Roman', serif">
+    <text x="150" y="60" font-size="44" font-style="italic">a</text>
+    <text x="1043" y="76" font-size="52" font-style="italic">&#38;</text>
+    <text x="960" y="150" font-size="34" font-style="italic">w</text>
+    <text x="86" y="140" font-size="30" font-style="italic">e</text>
+    <text x="1130" y="120" font-size="30" font-style="italic">s</text>
+  </g>
+
+  <!-- open book -->
+  <g transform="translate(600,118)">
+    <path d="M-150 38 Q-150 52 -132 52 L-12 52 Q0 52 0 62 Q0 52 12 52 L132 52 Q150 52 150 38 L150 30 L138 30 L138 40 L-138 40 L-138 30 L-150 30 Z" fill="#B05263"/>
+    <path d="M0 -30 Q-58 -56 -138 -44 L-138 40 Q-58 30 0 52 Z" fill="url(#pageL)"/>
+    <path d="M0 -30 Q58 -56 138 -44 L138 40 Q58 30 0 52 Z" fill="url(#pageR)"/>
+    <path d="M0 -30 Q-58 -56 -138 -44 M0 -30 Q58 -56 138 -44 M0 -30V52" fill="none" stroke="#B05263" stroke-width="2"/>
+    <g stroke="#D9AFB6" stroke-width="1.6" fill="none" stroke-linecap="round">
+      <path d="M-116 -28 Q-62 -42 -20 -24 M-116 -12 Q-62 -26 -20 -8 M-116 4 Q-62 -10 -20 8 M-116 20 Q-62 6 -20 24"/>
+      <path d="M116 -28 Q62 -42 20 -24 M116 -12 Q62 -26 20 -8 M116 4 Q62 -10 20 8 M116 20 Q62 6 20 24"/>
+    </g>
+    <!-- gold ribbon bookmark -->
+    <g class="sway"><path d="M30 -38 L30 -6 L38 -14 L46 -6 L46 -40" fill="#E0A82E"/></g>
+  </g>
+
+  <!-- quill, left, with an ink line flowing right -->
+  <g transform="translate(205,96) rotate(-18)">
+    <path d="M0 46 C-10 8 4 -34 40 -58 C30 -22 26 8 8 44 Z" fill="#E8A2AE"/>
+    <path d="M0 46 C6 16 16 -18 40 -58" fill="none" stroke="#8E3B4A" stroke-width="2"/>
+    <path d="M0 46 L-7 62" stroke="#8E3B4A" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <path class="ink" d="M196 162 C300 176 356 148 442 158" fill="none" stroke="#B05263" stroke-width="2.4" stroke-linecap="round"/>
+  <circle cx="196" cy="162" r="3" fill="#8E3B4A"/>
+
+  <!-- ink swirl, right -->
+  <path class="swirl" d="M790 150 C860 168 918 138 986 152 C1046 164 1082 150 1122 156" fill="none" stroke="#B05263" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="30 3"/>
+  <path d="M868 136 c10 -14 30 -12 32 2 c2 12 -14 20 -24 12" fill="none" stroke="#E8A2AE" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- quotation marks -->
+  <g fill="#FBEAE6" opacity="0.9">
+    <path d="M330 44 q-16 4 -16 22 q0 14 12 14 q11 0 11 -11 q0 -10 -9 -11 q2 -8 8 -11 z"/>
+    <path d="M356 44 q-16 4 -16 22 q0 14 12 14 q11 0 11 -11 q0 -10 -9 -11 q2 -8 8 -11 z"/>
+  </g>
+
+  <rect y="186" width="1200" height="4" fill="#B05263"/>
+</svg>

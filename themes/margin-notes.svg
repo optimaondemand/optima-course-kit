@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 190" width="1200" height="190" role="img" aria-label="">
+  <style>
+    .pen { stroke-dasharray: 420; animation: pen 9s ease-in-out infinite; }
+    @keyframes pen {
+      0% { stroke-dashoffset: 420; opacity: 1; }
+      50% { stroke-dashoffset: 0; opacity: 1; }
+      82% { stroke-dashoffset: 0; opacity: 1; }
+      94% { stroke-dashoffset: 0; opacity: 0; }
+      100% { stroke-dashoffset: 420; opacity: 0; }
+    }
+    .aplus { stroke-dasharray: 250; animation: aplus 8s ease-in-out infinite; }
+    @keyframes aplus {
+      0%,35% { stroke-dashoffset: 250; }
+      70% { stroke-dashoffset: 0; }
+      100% { stroke-dashoffset: 0; }
+    }
+    .sway { transform-box: fill-box; transform-origin: center top; animation: sway 5.6s ease-in-out infinite; }
+    @keyframes sway { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(-2.5deg); } }
+    .tw { transform-box: fill-box; transform-origin: center; animation: tw 4s ease-in-out infinite; }
+    @keyframes tw { 0%,100% { opacity: 0.9; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.88); } }
+    @media (prefers-reduced-motion: reduce) { [class] { animation: none !important; } }
+  </style>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0E1C42"/>
+      <stop offset="0.5" stop-color="#2A3A5C"/>
+      <stop offset="1" stop-color="#FBF9F3"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="190" fill="url(#bg)"/>
+
+  <!-- ruled lines, fading in as the page emerges -->
+  <g stroke="#A9C7E8" stroke-width="1.6">
+    <line x1="0" y1="66"  x2="1200" y2="66"  opacity="0.18"/>
+    <line x1="0" y1="90"  x2="1200" y2="90"  opacity="0.30"/>
+    <line x1="0" y1="114" x2="1200" y2="114" opacity="0.45"/>
+    <line x1="0" y1="138" x2="1200" y2="138" opacity="0.60"/>
+    <line x1="0" y1="162" x2="1200" y2="162" opacity="0.72"/>
+  </g>
+  <!-- red margin line -->
+  <line x1="150" y1="40" x2="150" y2="186" stroke="#C23A2E" stroke-width="2.6" opacity="0.9"/>
+
+  <!-- spiral binding: full coils angling through punched holes -->
+  <g>
+    <g fill="none" stroke="#AFC3D9" stroke-width="4" stroke-linecap="round">
+      <ellipse cx="40" cy="44" rx="16" ry="6.5" transform="rotate(-28 40 44)"/>
+      <ellipse cx="40" cy="82" rx="16" ry="6.5" transform="rotate(-28 40 82)"/>
+      <ellipse cx="40" cy="120" rx="16" ry="6.5" transform="rotate(-28 40 120)"/>
+      <ellipse cx="40" cy="158" rx="16" ry="6.5" transform="rotate(-28 40 158)"/>
+    </g>
+  </g>
+
+  <!-- highlighter swipe behind the first written line -->
+  <rect x="196" y="78" width="288" height="20" rx="10" fill="#E0A82E" opacity="0.42"/>
+
+  <!-- penned lines: ink squiggles sitting on the rules -->
+  <g fill="none" stroke="#3D64A8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path class="pen" d="M200 88 q10 -11 20 0 q10 11 20 0 q10 -11 20 0 q10 11 20 0 q10 -11 20 0 q10 11 20 0 q10 -11 20 0 q10 11 20 0 q10 -11 20 0 q10 11 20 0 q10 -11 20 0 q10 11 20 0 q10 -11 20 0"/>
+    <path d="M200 112 q10 -11 20 0 q10 11 20 0 q10 -11 20 0 q10 11 20 0 q10 -11 20 0 q10 11 20 0 q10 -11 20 0 q10 11 20 0"/>
+    <path d="M200 136 q10 -11 20 0 q10 11 20 0 q10 -11 20 0 q10 11 20 0 q10 -11 20 0"/>
+  </g>
+  <!-- red correction: scribbled underline plus a caret -->
+  <g fill="none" stroke="#C23A2E" stroke-width="2.6" stroke-linecap="round">
+    <path d="M368 146 C396 140 424 141 452 144 C440 148 420 149 404 152 C428 150 452 149 474 146"/>
+    <path d="M540 140 l10 -12 10 12"/>
+  </g>
+
+  <!-- sticky note, top right -->
+  <g transform="translate(880,58) rotate(-5)">
+    <g class="sway">
+      <path d="M-46 -40 H46 V26 L26 46 H-46 Z" fill="#F2CF6B"/>
+      <path d="M46 26 L26 46 L26 26 Z" fill="#D9AE3F"/>
+      <g fill="none" stroke="#8A6A1C" stroke-width="2.6" stroke-linecap="round">
+        <path d="M-30 -18 H30 M-30 0 H18 M-30 18 H26"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- A+ circled in red, right -->
+  <g transform="translate(1064,120)">
+    <ellipse class="aplus" rx="46" ry="32" fill="none" stroke="#C23A2E" stroke-width="3" transform="rotate(-6)"/>
+    <g stroke="#C23A2E" stroke-width="5" stroke-linecap="round" fill="none">
+      <path d="M-24 14 L-10 -16 L4 14 M-17 3 H-3"/>
+      <path d="M16 -2 H36 M26 -12 V8"/>
+    </g>
+  </g>
+
+  <!-- paper clip, top left of the page area -->
+  <g transform="translate(196,34) rotate(14)" fill="none" stroke="#AFC3D9" stroke-width="3.4" stroke-linecap="round">
+    <path d="M0 26 V-8 a9 9 0 0 1 18 0 V22 a15 15 0 0 1 -30 0 V-6"/>
+  </g>
+
+  <!-- doodle star -->
+  <path class="tw" d="M624 52 l5 10.4 11.4 1.6 -8.2 8 1.9 11.3 -10.1 -5.3 -10.1 5.3 1.9 -11.3 -8.2 -8 11.4 -1.6z"
+        fill="none" stroke="#3D64A8" stroke-width="2.6" stroke-linejoin="round"/>
+
+  <rect y="186" width="1200" height="4" fill="#C23A2E"/>
+</svg>

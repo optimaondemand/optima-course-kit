@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 190" width="1200" height="190" role="img" aria-label="">
+  <style>
+    .cur { animation: blink 1.15s steps(1) infinite; }
+    @keyframes blink { 0%,49% { opacity: 0.85; } 50%,100% { opacity: 0; } }
+    .core { transform-box: fill-box; transform-origin: center; animation: core 3.2s ease-in-out infinite; }
+    @keyframes core { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.18); opacity: 0.8; } }
+    .bin text { animation: bin 5s ease-in-out infinite; }
+    .bin text:nth-of-type(2) { animation-delay: 1.4s; }
+    .bin text:nth-of-type(3) { animation-delay: 2.7s; }
+    .bin text:nth-of-type(4) { animation-delay: 3.9s; }
+    @keyframes bin { 0%,100% { opacity: 0.30; } 50% { opacity: 0.08; } }
+    .px rect { animation: px 2.8s ease-in-out infinite; }
+    .px rect:nth-of-type(2n) { animation-delay: 0.9s; }
+    .px rect:nth-of-type(3n) { animation-delay: 1.8s; }
+    @keyframes px { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+    @media (prefers-reduced-motion: reduce) {
+      [class] { animation: none !important; }
+      .rmh { display: none; }
+    }
+  </style>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0E1C42"/>
+      <stop offset="0.55" stop-color="#232064"/>
+      <stop offset="1" stop-color="#F5F4FE"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="190" fill="url(#bg)"/>
+
+  <!-- faint binary field -->
+  <g class="bin" fill="#A9A2F5" font-family="Consolas, 'Courier New', monospace" font-size="15">
+    <text x="656" y="34">01001</text>
+    <text x="988" y="26">110</text>
+    <text x="80" y="26">1011</text>
+    <text x="356" y="20">0110</text>
+  </g>
+
+  <!-- circuit traces spanning the banner -->
+  <g fill="none" stroke="#6C5CE7" stroke-width="2.4" stroke-linecap="round">
+    <path d="M-10 120 H150 L190 80 H320"/>
+    <path id="tr1" d="M-10 152 H210 L250 112 H388 L420 144 H520"/>
+    <path d="M700 60 H820 L860 100 H980"/>
+    <path id="tr2" d="M760 150 H900 L940 110 H1080 L1110 140 H1210"/>
+  </g>
+  <!-- signal pulses running the traces -->
+  <g class="rmh">
+    <circle r="4.5" fill="#F0C982">
+      <animateMotion dur="6s" repeatCount="indefinite"><mpath href="#tr1"/></animateMotion>
+    </circle>
+    <circle r="4.5" fill="#A9A2F5">
+      <animateMotion dur="7.5s" begin="2s" repeatCount="indefinite"><mpath href="#tr2"/></animateMotion>
+    </circle>
+  </g>
+  <g fill="#F5F4FE" stroke="#6C5CE7" stroke-width="2.4">
+    <circle cx="320" cy="80" r="6"/>
+    <circle cx="520" cy="144" r="6"/>
+    <circle cx="700" cy="60" r="6"/>
+    <circle cx="980" cy="100" r="6"/>
+    <circle cx="760" cy="150" r="6"/>
+  </g>
+  <g fill="#E0A82E">
+    <rect x="144" y="114" width="12" height="12" rx="2"/>
+    <rect x="1074" y="104" width="12" height="12" rx="2"/>
+  </g>
+
+  <!-- chip -->
+  <g transform="translate(600,96)">
+    <rect x="-44" y="-44" width="88" height="88" rx="10" fill="#161240" stroke="#A9A2F5" stroke-width="2.6"/>
+    <rect x="-26" y="-26" width="52" height="52" rx="6" fill="none" stroke="#6C5CE7" stroke-width="2.2"/>
+    <circle class="core" r="9" fill="#E0A82E"/>
+    <g stroke="#A9A2F5" stroke-width="2.6" stroke-linecap="round">
+      <line x1="-16" y1="-52" x2="-16" y2="-44"/><line x1="0" y1="-52" x2="0" y2="-44"/><line x1="16" y1="-52" x2="16" y2="-44"/>
+      <line x1="-16" y1="44" x2="-16" y2="52"/><line x1="0" y1="44" x2="0" y2="52"/><line x1="16" y1="44" x2="16" y2="52"/>
+      <line x1="-52" y1="-16" x2="-44" y2="-16"/><line x1="-52" y1="0" x2="-44" y2="0"/><line x1="-52" y1="16" x2="-44" y2="16"/>
+      <line x1="44" y1="-16" x2="52" y2="-16"/><line x1="44" y1="0" x2="52" y2="0"/><line x1="44" y1="16" x2="52" y2="16"/>
+    </g>
+  </g>
+
+  <!-- code window, left -->
+  <g transform="translate(240,84)">
+    <rect x="-84" y="-52" width="168" height="104" rx="9" fill="#161240" stroke="#A9A2F5" stroke-width="2.4"/>
+    <line x1="-84" y1="-30" x2="84" y2="-30" stroke="#A9A2F5" stroke-width="1.6"/>
+    <circle cx="-68" cy="-41" r="4" fill="#D95D4E"/>
+    <circle cx="-54" cy="-41" r="4" fill="#E0A82E"/>
+    <circle cx="-40" cy="-41" r="4" fill="#76C043"/>
+    <g stroke-linecap="round" stroke-width="4">
+      <line x1="-66" y1="-14" x2="-22" y2="-14" stroke="#A9A2F5"/>
+      <line x1="-56" y1="2" x2="10" y2="2" stroke="#6C5CE7"/>
+      <line x1="-56" y1="18" x2="-14" y2="18" stroke="#55C8E8"/>
+      <line x1="-66" y1="34" x2="-40" y2="34" stroke="#A9A2F5"/>
+      <line x1="24" y1="2" x2="52" y2="2" stroke="#E0A82E"/>
+    </g>
+    <rect class="cur" x="56" y="26" width="12" height="16" fill="#F5F4FE" opacity="0.85"/>
+  </g>
+
+  <!-- angle brackets and slash, right -->
+  <g transform="translate(1000,66)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M-24 -22 L-52 0 L-24 22" stroke="#A9A2F5" stroke-width="6"/>
+    <path d="M24 -22 L52 0 L24 22" stroke="#A9A2F5" stroke-width="6"/>
+    <line x1="8" y1="-26" x2="-8" y2="26" stroke="#E0A82E" stroke-width="6"/>
+  </g>
+
+  <!-- pixel cluster -->
+  <g class="px" transform="translate(880,150)" fill="#6C5CE7">
+    <rect x="0" y="0" width="10" height="10"/><rect x="12" y="0" width="10" height="10" opacity="0.7"/>
+    <rect x="0" y="12" width="10" height="10" opacity="0.7"/><rect x="24" y="0" width="10" height="10" opacity="0.4"/>
+    <rect x="12" y="12" width="10" height="10" opacity="0.4"/><rect x="0" y="24" width="10" height="10" opacity="0.4"/>
+  </g>
+
+  <rect y="186" width="1200" height="4" fill="#6C5CE7"/>
+</svg>

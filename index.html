@@ -87,6 +87,17 @@
   details.modblock { border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-top:10px; }
   details.modblock summary { margin-top:0; color:var(--navy); font-size:15px; }
   button.sm { font-size:13px; padding:6px 14px; border-radius:16px; }
+  .swatches { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:8px; margin-top:4px; }
+  .swatch { border:2px solid var(--line); border-radius:8px; padding:0; background:#fff; color:var(--ink); text-align:left; overflow:hidden; cursor:pointer; }
+  .swatch:hover { border-color:var(--cyan); }
+  .swatch[aria-pressed="true"] { border-color:var(--navy); box-shadow:0 0 0 2px var(--cyan); }
+  .swatch img, .swatch .none { display:block; width:100%; height:36px; object-fit:cover; }
+  .swatch .none { background:linear-gradient(90deg, #0E1C42 60%, #55C8E8); }
+  .swatch .sw-name { display:block; font-size:13px; font-weight:600; padding:6px 8px 0; line-height:1.2; }
+  .swatch .sw-sub { display:block; font-size:11px; color:var(--mute); padding:1px 8px 7px; line-height:1.25; }
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:20px; overflow:hidden; background:#fff; }
+  .seg button { border:0; border-radius:0; background:#fff; color:var(--navy); font-size:13px; padding:7px 14px; }
+  .seg button[aria-pressed="true"] { background:var(--navy); color:#fff; }
   .previewbar button.sm { background:transparent; color:#fff; border-color:var(--cyan); }
   #show-preview { position:fixed; right:18px; bottom:18px; z-index:5; box-shadow:0 2px 10px rgba(14,28,66,.3); }
   .batchrow { display:grid; grid-template-columns:1fr 1fr 1fr auto auto; gap:8px; align-items:end; padding:10px 12px; margin-top:8px; background:#F9FAFD; border:1px dashed var(--line); border-radius:8px; }
@@ -121,6 +132,7 @@
 
     <div class="step locked" id="step3">
       <h2><span class="n">3</span> Customize your home page</h2>
+      <div id="style-panel"><div class="hint">Choose a kit first.</div></div>
       <div class="row">
         <div><label for="f-teacherName">Your name, as students see it</label><input type="text" id="f-teacherName" placeholder="Ms. Rivera"></div>
         <div><label for="f-teacherTitle">Title</label><input type="text" id="f-teacherTitle" placeholder="Course Instructor"></div>
@@ -205,6 +217,146 @@
     nightingale: { label: 'Nightingale', virtue: 'Service',         color: '#10467F', img: 'nightingale.png' },
     odysseus:    { label: 'Odysseus',    virtue: 'Self-Governance', color: '#4A2472', img: 'odysseus.png' }
   };
+  // Where the banner and spark SVGs live. Canvas keeps <img> tags but strips
+  // data: URIs, so the home page must point at hosted files.
+  var ASSET_BASE = 'https://optimaondemand.github.io/optima-course-kit/';
+
+  // ------------------------------------------------------------ themes
+  // One pick carries the banner (themes/), the palette (dark clears 4.5:1 on
+  // white and on the wash; bright clears 4.5:1 on navy), the spark card
+  // (spotlights/), the motif, and the starter wording.
+  var THEMES = {
+    classic: { label: 'Optima Classic', subject: 'Any course',
+      accent: '#55C8E8', dark: '#33788B', bright: '#55c8e8', wash: '#F4F6FB',
+      chipBorder: 'rgba(85,200,232,0.45)', rule: '#D0D9E8', banner: '', spot: 'classic.svg', motif: '\u2728',
+      tagline: 'Course Home \u00b7 Start here every week.',
+      quote: { q: '', a: '', p: '' } },
+    math: { label: 'Blueprint', subject: 'Math',
+      accent: '#3D7DD8', dark: '#2E5FA3', bright: '#8FBAF0', wash: '#F2F6FC',
+      chipBorder: 'rgba(143,186,240,0.5)', rule: '#3D7DD8', banner: 'math.svg', spot: 'math.svg', motif: '\ud83d\udca1',
+      tagline: 'Everything adds up from here.',
+      quote: { q: 'Pure mathematics is, in its way, the poetry of logical ideas.', a: 'Albert Einstein',
+               p: 'Copy this week\u2019s line into your commonplace book. Then find one pattern from class \u2014 or from your own life \u2014 that felt like poetry to you.' } },
+    ela: { label: 'Storybook', subject: 'Language Arts & English',
+      accent: '#B05263', dark: '#8E3B4A', bright: '#E8A2AE', wash: '#FBF4F2',
+      chipBorder: 'rgba(232,162,174,0.5)', rule: '#B05263', banner: 'language-arts.svg', spot: 'ela.svg', motif: '\u2712\ufe0f',
+      tagline: 'Every great story starts on this page.',
+      quote: { q: 'There is no frigate like a book to take us lands away.', a: 'Emily Dickinson',
+               p: 'Copy this week\u2019s line into your commonplace book. Where did a book take you this week \u2014 and what did it show you there?' } },
+    science: { label: 'Field Lab', subject: 'Science',
+      accent: '#76C043', dark: '#4C7C2B', bright: '#76C043', wash: '#F3F9F0',
+      chipBorder: 'rgba(118,192,67,0.5)', rule: '#76C043', banner: 'science.svg', spot: 'science.svg', motif: '\ud83d\udd2d',
+      tagline: 'Observe closely. Question everything. Start here.',
+      quote: { q: 'Nothing in life is to be feared, it is only to be understood.', a: 'Marie Curie',
+               p: 'Copy this week\u2019s line into your commonplace book. What did you understand this week that used to seem mysterious?' } },
+    history: { label: 'Chronicle', subject: 'History & Civics',
+      accent: '#C77A3B', dark: '#9A5522', bright: '#E5C9A8', wash: '#FAF5EC',
+      chipBorder: 'rgba(229,201,168,0.5)', rule: '#C77A3B', banner: 'history.svg', spot: 'history.svg', motif: '\ud83d\udd70\ufe0f',
+      tagline: 'Your story picks up where the past left off.',
+      quote: { q: 'To be ignorant of what occurred before you were born is to remain always a child.', a: 'Cicero',
+               p: 'Copy this week\u2019s line into your commonplace book. What did you learn this week that made the present make more sense?' } },
+    social: { label: 'Crossroads', subject: 'Social Studies',
+      accent: '#1794B4', dark: '#0E5568', bright: '#5FC6DC', wash: '#EFF7F9',
+      chipBorder: 'rgba(95,198,220,0.5)', rule: '#1794B4', banner: 'social-studies.svg', spot: 'social.svg', motif: '\ud83c\udf0d',
+      tagline: 'Your community starts here.',
+      quote: { q: 'Injustice anywhere is a threat to justice everywhere.', a: 'Martin Luther King Jr.',
+               p: 'Copy this week\u2019s line into your commonplace book. Where did you see fairness matter this week \u2014 close to home or far away?' } },
+    art: { label: 'Open Studio', subject: 'Art',
+      accent: '#C4519F', dark: '#A53E97', bright: '#E289CB', wash: '#FCF3FA',
+      chipBorder: 'rgba(226,137,203,0.5)', rule: '#C4519F', banner: 'art.svg', spot: 'art.svg', motif: '\ud83c\udfa8',
+      tagline: 'Your studio door is open.',
+      quote: { q: 'Painting is poetry that is seen rather than felt.', a: 'Leonardo da Vinci',
+               p: 'Copy this week\u2019s line into your commonplace book. What did you make or notice this week that said something words couldn\u2019t?' } },
+    music: { label: 'Crescendo', subject: 'Music',
+      accent: '#8B5CB8', dark: '#67308F', bright: '#B99CD6', wash: '#F7F3FB',
+      chipBorder: 'rgba(185,156,214,0.5)', rule: '#8B5CB8', banner: 'music.svg', spot: 'music.svg', motif: '\ud83c\udfb6',
+      tagline: 'Take it from the top \u2014 everything you need is here.',
+      quote: { q: 'Music is enough for a lifetime, but a lifetime is not enough for music.', a: 'Sergei Rachmaninoff',
+               p: 'Copy this week\u2019s line into your commonplace book. What piece of music stayed with you this week, and why?' } },
+    health: { label: 'Momentum', subject: 'Health & Fitness',
+      accent: '#F78F1E', dark: '#A05C13', bright: '#FFB25E', wash: '#FFF6EC',
+      chipBorder: 'rgba(255,178,94,0.5)', rule: '#F78F1E', banner: 'health-fitness.svg', spot: 'health.svg', motif: '\ud83d\udc9b',
+      tagline: 'Warm up here \u2014 everything you need is on this page.',
+      quote: { q: 'Take care of your body. It\u2019s the only place you have to live.', a: 'Jim Rohn',
+               p: 'Copy this week\u2019s line into your commonplace book. What is one way you took care of yourself this week?' } },
+    world: { label: 'Passport', subject: 'World Languages',
+      accent: '#D95D4E', dark: '#A83A2D', bright: '#F5A093', wash: '#FCF4F2',
+      chipBorder: 'rgba(245,160,147,0.5)', rule: '#D95D4E', banner: 'world-languages.svg', spot: 'world.svg', motif: '\ud83d\udcac',
+      tagline: 'Every language starts with hello. Start here.',
+      quote: { q: 'To have another language is to possess a second soul.', a: 'Attributed to Charlemagne',
+               p: 'Copy this week\u2019s line into your commonplace book. What did you manage to say this week that you couldn\u2019t say last month?' } },
+    latin: { label: 'Forum', subject: 'Latin & Classical Studies',
+      accent: '#C7922C', dark: '#8B661E', bright: '#C7922C', wash: '#FAF7EE',
+      chipBorder: 'rgba(199,146,44,0.5)', rule: '#C7922C', banner: 'latin-classical.svg', spot: 'latin.svg', motif: '\ud83c\udfdb\ufe0f',
+      tagline: 'Salvete, discipuli! Your course begins here.',
+      quote: { q: 'We learn not for school but for life.', a: 'Adapted from Seneca',
+               p: 'Copy this week\u2019s line into your commonplace book \u2014 in English or in Latin. Where did something from this course show up in real life?' } },
+    cs: { label: 'Circuit', subject: 'Computer Science & Digital',
+      accent: '#6C5CE7', dark: '#4A3EC8', bright: '#A9A2F5', wash: '#F5F4FE',
+      chipBorder: 'rgba(169,162,245,0.5)', rule: '#6C5CE7', banner: 'computer-science.svg', spot: 'cs.svg', motif: '\u26a1',
+      tagline: 'Hello, world! Your course runs from this page.',
+      quote: { q: 'The most dangerous phrase in the language is: we\u2019ve always done it this way.', a: 'Grace Hopper',
+               p: 'Copy this week\u2019s line into your commonplace book. What is one thing you tried a new way this week?' } },
+    chalk: { label: 'Chalkboard', subject: 'Any course',
+      accent: '#5B7089', dark: '#44566E', bright: '#AFC3D9', wash: '#F2F5F8',
+      chipBorder: 'rgba(175,195,217,0.5)', rule: '#5B7089', banner: 'chalkboard.svg', spot: 'chalk.svg', motif: '\u2b50',
+      tagline: 'Eyes up front \u2014 everything you need is on the board.',
+      quote: { q: 'The mind is not a vessel to be filled but a fire to be kindled.', a: 'Adapted from Plutarch',
+               p: 'Copy this week\u2019s line into your commonplace book. What lit a spark for you this week \u2014 in any class, or outside school?' } },
+    notes: { label: 'Margin Notes', subject: 'Any course',
+      accent: '#C23A2E', dark: '#9B2F24', bright: '#A9C7E8', wash: '#FBF9F3',
+      chipBorder: 'rgba(169,199,232,0.5)', rule: '#C23A2E', banner: 'margin-notes.svg', spot: 'notes.svg', motif: '\ud83d\udccc',
+      tagline: 'Fresh page, sharp pencil \u2014 let\u2019s begin.',
+      quote: { q: 'You can\u2019t use up creativity. The more you use, the more you have.', a: 'Maya Angelou',
+               p: 'Copy this week\u2019s line into your commonplace book. What did you make this week that didn\u2019t exist the week before?' } },
+    reading: { label: 'Reading Room', subject: 'Any course',
+      accent: '#3B7D5D', dark: '#2C5E45', bright: '#8FC9AC', wash: '#F0F7F2',
+      chipBorder: 'rgba(143,201,172,0.5)', rule: '#3B7D5D', banner: 'reading-room.svg', spot: 'reading.svg', motif: '\ud83d\udcda',
+      tagline: 'Settle in \u2014 your seat in the reading room is saved.',
+      quote: { q: 'Reading is to the mind what exercise is to the body.', a: 'Joseph Addison',
+               p: 'Copy this week\u2019s line into your commonplace book. What did you read this week that stretched you a little?' } },
+    general: { label: 'Compass', subject: 'Electives & everything else',
+      accent: '#2E7E8F', dark: '#0E5568', bright: '#6FB9C9', wash: '#F1F7F8',
+      chipBorder: 'rgba(111,185,201,0.5)', rule: '#2E7E8F', banner: 'general.svg', spot: 'general.svg', motif: '\u2728',
+      tagline: 'Your course, all in one place. Start here.',
+      quote: { q: 'The beginning is the most important part of the work.', a: 'Plato',
+               p: 'Copy this week\u2019s line into your commonplace book. What did you begin this week \u2014 and what would a strong next step be?' } }
+  };
+  var THEME_ORDER = ['classic', 'math', 'ela', 'science', 'history', 'social', 'art', 'music',
+                     'health', 'world', 'latin', 'cs', 'chalk', 'notes', 'reading', 'general'];
+  function themeForSubject(subject) {
+    var s = String(subject || '').toLowerCase();
+    if (/language arts|english|reading|journalism/.test(s)) return 'ela';
+    if (/latin|classical|philosophy|humanities/.test(s)) return 'latin';
+    if (/computer|digital|technology/.test(s)) return 'cs';
+    if (/math|algebra|geometry|calculus|statistics/.test(s)) return 'math';
+    if (/science|biology|chemistry|physics/.test(s)) return 'science';
+    if (/social studies|sociology/.test(s)) return 'social';
+    if (/history|civics|government|economics/.test(s)) return 'history';
+    if (/art|studio|drawing|ceramics/.test(s)) return 'art';
+    if (/music|band|chorus|orchestra/.test(s)) return 'music';
+    if (/health|fitness|physical education/.test(s)) return 'health';
+    if (/spanish|french|german|chinese|world language/.test(s)) return 'world';
+    return 'general';
+  }
+
+  // Suggestions follow the theme only while nobody has typed over them: a
+  // field that is blank, or still equal to some theme's suggestion, follows.
+  function followsTheme(val, pick) {
+    var v = String(val == null ? '' : val).trim();
+    if (!v) return true;
+    for (var k in THEMES) { if (pick(THEMES[k]) === v) return true; }
+    return false;
+  }
+  function applyTheme(key) {
+    if (!THEMES[key]) return;
+    if (followsTheme(home.tagline, function (t) { return t.tagline; })) home.tagline = THEMES[key].tagline;
+    if (followsTheme(home.quote, function (t) { return t.quote.q; })) {
+      home.quote = THEMES[key].quote.q; home.author = THEMES[key].quote.a; home.prompt = THEMES[key].quote.p;
+    }
+    home.theme = key;
+  }
+
   var STORE = 'optima-course-kit-v1';
   var DEFAULT_BASE = 'https://optimaondemand.github.io/optima-course-cartridges/';
   var BASE = (function () {
@@ -221,6 +373,7 @@
   function blankHome() {
     return { teacherName: '', teacherTitle: '', teacherEmail: '', mode: 'On-Demand', term: '', section: '', meeting: '',
              studyHall: '', blurb: '', house: '', tagline: '', annWhen: '', annText: '', quote: '', author: '', prompt: '',
+             theme: '', spotlight: 'on', modStyle: 'journey',
              modules: [], courseStart: '', dates: {}, itemOverrides: {}, moduleOverrides: {}, groups: null, weighted: null };
   }
   function exampleHome() {
@@ -290,24 +443,31 @@
 
   function buildHome(c, k, h) {
     var title = (c.title || 'Course').toUpperCase();
+    var TH = THEMES[h.theme] || THEMES.classic;
+    var HEADER = 'background: #0E1C42; border-bottom: 5px solid ' + TH.accent + '; padding: 24px 34px; border-radius: 10px 10px 0 0;';
+    var BODYS = 'background: ' + TH.wash + '; padding: 24px; border-radius: 0 0 10px 10px;';
+    var FOOTS = 'background: #0E1C42; border-top: 3px solid ' + TH.accent + '; padding: 18px 34px; text-align: center; border-radius: 0 0 10px 10px; margin-top: 4px;';
+    var TILE = 'box-sizing: border-box; flex: 1; min-width: 190px; text-decoration: none; background: #FFFFFF; border: 1px solid #D0D9E8; border-top: 4px solid ' + TH.accent + '; border-radius: 8px; padding: 22px 16px; text-align: center; display: block;';
+    var CHIPT = 'background: rgba(255,255,255,0.10); border: 1px solid ' + TH.chipBorder + '; border-radius: 20px; padding: 6px 15px; font-size: 15px; color: #ffffff;';
+    var CHIP_LABELT = 'color: ' + TH.bright + '; letter-spacing: 0.5px; font-size: 12px; margin-right: 7px;';
     var out = [];
-    out.push('<!-- ' + esc(title) + ' - COURSE HOME PAGE (Optima Academy Online). Built by Course Kit for ' + esc(k.label) + ', kit version ' + esc(k.version || '') + '. All styling inline: Canvas strips <style> and <script>. -->');
+    out.push('<!-- ' + esc(title) + ' - COURSE HOME PAGE (Optima Academy Online). Built by Course Kit for ' + esc(k.label) + ', kit version ' + esc(k.version || '') + ', theme ' + esc(TH.label) + '. All styling inline: Canvas strips <style> and <script>. -->');
     out.push('<div style="' + S.wrap + '">');
-    out.push('  <div style="' + S.header + '">');
-    out.push('    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 12px;">');
-    out.push('      <div style="width: 52px; height: 52px; border-radius: 50%; background: #FFFFFF; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><img src="' + OWL + '" alt="Optima Academy" style="width: 50px; height: 40px; object-fit: contain;" /></div>');
-    out.push('      <div><div style="font-size: 24px; color: #ffffff; line-height: 1.2;">Optima Academy Online</div><div style="font-size: 12px; color: #55c8e8;">An Education Experience Company</div></div>');
-    out.push('    </div>');
-    out.push('    <div style="font-size: 40px; color: #ffffff; margin-bottom: 4px; letter-spacing: 0.5px;">' + esc(title) + '</div>');
-    var tagline = String(h.tagline || '').trim() || 'Course Home · Start here every week.';
-    out.push('    <div style="font-size: 16px; color: rgba(255,255,255,0.75);">' + esc(tagline) + '</div>');
+    out.push('<div style="' + HEADER + '">');
+    out.push('<div style="display: flex; align-items: center; gap: 14px; margin-bottom: 12px;">');
+    out.push('<div style="width: 52px; height: 52px; border-radius: 50%; background: #FFFFFF; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><img src="' + OWL + '" alt="Optima Academy" style="width: 50px; height: 40px; object-fit: contain;" /></div>');
+    out.push('<div><div style="font-size: 24px; color: #ffffff; line-height: 1.2;">Optima Academy Online</div><div style="font-size: 12px; color: ' + TH.bright + ';">An Education Experience Company</div></div>');
+    out.push('</div>');
+    out.push('<div style="font-size: 40px; color: #ffffff; margin-bottom: 4px; letter-spacing: 0.5px;">' + esc(title) + '</div>');
+    var tagline = String(h.tagline || '').trim() || 'Course Home \u00b7 Start here every week.';
+    out.push('<div style="font-size: 16px; color: rgba(255,255,255,0.75);">' + esc(tagline) + '</div>');
     var chips = [];
     function chip(label, value, inner) {
       if (!String(value || '').trim()) return;
-      chips.push('      <div style="' + CHIP + '"><span style="' + CHIP_LABEL + '">' + esc(String(label).toUpperCase()) + '</span>' + (inner || esc(value)) + '</div>');
+      chips.push('<div style="' + CHIPT + '"><span style="' + CHIP_LABELT + '">' + esc(String(label).toUpperCase()) + '</span>' + (inner || esc(value)) + '</div>');
     }
     chip('Term', h.term);
-    chip('Section', [h.section, h.mode].filter(function (v) { return String(v || '').trim(); }).join(' · '));
+    chip('Section', [h.section, h.mode].filter(function (v) { return String(v || '').trim(); }).join(' \u00b7 '));
     chip('Meets', h.meeting);
     var teacher = String(h.teacherName || '').trim();
     if (teacher) {
@@ -315,97 +475,126 @@
       var name = email ? '<a href="mailto:' + esc(email) + '" style="color: #ffffff; text-decoration: underline;">' + esc(teacher) + '</a>' : esc(teacher);
       chip(String(h.teacherTitle || '').trim() || 'Your teacher', teacher, name);
     }
-    if (chips.length) out.push('    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px;">\n' + chips.join('\n') + '\n    </div>');
-    out.push('  </div>');
-    out.push('  <div style="' + S.body + '">');
+    if (chips.length) out.push('<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px;">' + chips.join('') + '</div>');
+    out.push('</div>');
+    // The theme's animated banner: just an <img> to Canvas, which is exactly
+    // why the motion survives the paste.
+    if (TH.banner) {
+      out.push('<img src="' + ASSET_BASE + 'themes/' + TH.banner + '" alt="" style="width: 100%; display: block;" />');
+    }
+    out.push('<div style="' + BODYS + '">');
 
     if (String(h.annText || '').trim()) {
-      out.push('    <!-- ANNOUNCEMENTS: update each week -->');
-      out.push('    <div style="background: #FFFFFF; border: 1px solid #D0D9E8; border-top: 4px solid #E0A82E; border-radius: 8px; padding: 20px 24px; margin-bottom: 22px;">');
-      out.push('      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;"><span style="font-size: 20px;">&#128226;</span><div><div style="font-size: 12px; letter-spacing: 1px; color: #E0A82E; font-weight: 600;">ANNOUNCEMENTS</div><div style="font-size: 21px; color: #0e1c42;">Latest Updates</div></div></div>');
-      out.push('      <div style="background: #FDF6E7; border-left: 4px solid #E0A82E; border-radius: 4px; padding: 12px 16px;">');
-      if (String(h.annWhen || '').trim()) out.push('        <div style="font-size: 13.5px; color: #b07d1a; margin-bottom: 5px;">' + esc(h.annWhen) + '</div>');
-      out.push('        <div style="font-size: 17px; color: #333; line-height: 1.5;">' + escML(h.annText) + '</div>');
-      out.push('      </div>');
-      out.push('    </div>');
+      out.push('<div style="background: #FFFFFF; border: 1px solid #D0D9E8; border-top: 4px solid #E0A82E; border-radius: 8px; padding: 20px 24px; margin-bottom: 22px;">');
+      out.push('<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;"><span style="font-size: 20px;">&#128226;</span><div><div style="font-size: 12px; letter-spacing: 1px; color: #E0A82E; font-weight: 600;">ANNOUNCEMENTS</div><div style="font-size: 21px; color: #0e1c42;">Latest Updates</div></div></div>');
+      out.push('<div style="background: #FDF6E7; border-left: 4px solid #E0A82E; border-radius: 4px; padding: 12px 16px;">');
+      if (String(h.annWhen || '').trim()) out.push('<div style="font-size: 13.5px; color: #b07d1a; margin-bottom: 5px;">' + esc(h.annWhen) + '</div>');
+      out.push('<div style="font-size: 17px; color: #333; line-height: 1.5;">' + escML(h.annText) + '</div>');
+      out.push('</div></div>');
+    }
+
+    if ((h.spotlight || 'on') !== 'off' && TH.spot) {
+      out.push('<img src="' + ASSET_BASE + 'spotlights/' + TH.spot + '" alt="Today\'s spark: a rotating prompt from this course" style="width: 100%; display: block; margin-bottom: 22px;" />');
     }
 
     var tiles = [
-      { icon: '📜', label: 'Syllabus', desc: 'Grading, pacing & policies', url: T.syllabus },
-      { icon: '📚', label: 'Modules', desc: 'Every week, in order', url: T.modules },
-      { icon: '🔧', label: 'Tech Help', desc: 'Live support with the tech team', url: TEAMS_TECH_HELP, blank: true }
+      { icon: '\ud83d\udcdc', label: 'Syllabus', desc: 'Grading, pacing & policies', url: T.syllabus },
+      { icon: '\ud83d\udcda', label: 'Modules', desc: 'Every week, in order', url: T.modules },
+      { icon: '\ud83d\udd27', label: 'Tech Help', desc: 'Live support with the tech team', url: TEAMS_TECH_HELP, blank: true }
     ];
-    if (String(h.studyHall || '').trim()) tiles.push({ icon: '🎓', label: 'Study Hall', desc: h.meeting || 'Office hours & support', url: h.studyHall, blank: true });
-    out.push('    <!-- QUICK-ACCESS TILES -->');
-    out.push('    <div style="display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 26px;">');
+    // The fourth tile only exists once a teacher has a study hall link.
+    if (String(h.studyHall || '').trim()) {
+      tiles.push({ icon: '\ud83c\udf93', label: 'Study Hall', desc: h.meeting || 'Office hours & support', url: h.studyHall, blank: true });
+    }
+    out.push('<div style="display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 26px;">');
     tiles.forEach(function (t) {
-      out.push('      <a href="' + href(t.url) + '"' + (t.blank ? ' target="_blank" rel="noopener"' : '') + ' style="' + S.tile + '">');
-      out.push('        <span style="' + BLOCK + 'font-size: 30px; margin-bottom: 8px;">' + esc(t.icon) + '</span>');
-      out.push('        <span style="' + BLOCK + 'font-size: 19px; color: #0e1c42;">' + esc(t.label) + '</span>');
-      out.push('        <span style="' + BLOCK + 'font-size: 14px; color: #6b7a99; margin-top: 5px;">' + esc(t.desc) + '</span>');
-      out.push('      </a>');
+      out.push('<a href="' + href(t.url) + '"' + (t.blank ? ' target="_blank" rel="noopener"' : '') + ' style="' + TILE + '">');
+      out.push('<span style="' + BLOCK + 'font-size: 30px; margin-bottom: 8px;">' + esc(t.icon) + '</span>');
+      out.push('<span style="' + BLOCK + 'font-size: 19px; color: #0e1c42;">' + esc(t.label) + '</span>');
+      out.push('<span style="' + BLOCK + 'font-size: 14px; color: #6b7a99; margin-top: 5px;">' + esc(t.desc) + '</span>');
+      out.push('</a>');
     });
-    out.push('    </div>');
+    out.push('</div>');
 
+    // Meet the teacher, and every line in it, appears only when it has
+    // something to say - so blanking a field here removes it from the page.
     var hasTeacherBits = teacher || String(h.blurb || '').trim() || h.house;
     if (hasTeacherBits) {
       var who = teacher || 'Your teacher';
-      out.push('    <!-- MEET THE TEACHER -->');
-      out.push('    <div style="background: #FFFFFF; border: 1px solid #D0D9E8; border-top: 4px solid #55C8E8; border-radius: 8px; padding: 24px 26px; margin-bottom: 22px; display: flex; flex-wrap: wrap; gap: 26px; align-items: flex-start;">');
-      out.push('      <div style="flex: 0 0 auto;"><div style="width: 150px; height: 150px; border-radius: 50%; border: 4px solid #55C8E8; background: #EDF1F9; color: #0e1c42; font-size: 46px; text-align: center; line-height: 142px; letter-spacing: 1px;">' + esc(initialsFor(who)) + '</div></div>');
-      out.push('      <div style="flex: 1 1 300px; min-width: 0;">');
-      out.push('        <div style="font-size: 12px; letter-spacing: 1px; color: #6b7a99;">YOUR TEACHER</div>');
-      out.push('        <div style="font-size: 25px; color: #0e1c42; margin-top: 3px;">' + esc(who) + '</div>');
-      if (String(h.teacherTitle || '').trim()) out.push('        <div style="font-size: 15px; color: #6b7a99;">' + esc(h.teacherTitle) + '</div>');
-      if (String(h.blurb || '').trim()) out.push('        <div style="font-size: 17px; color: #333; margin-top: 13px; line-height: 1.5;">' + escML(h.blurb) + '</div>');
-      if (String(h.teacherEmail || '').trim()) out.push('        <div style="margin-top: 14px;"><a href="mailto:' + esc(h.teacherEmail) + '" style="display: inline-block; text-decoration: none; font-size: 16px; color: #0e1c42; border: 1px solid #D0D9E8; border-radius: 24px; padding: 10px 20px;">Email me</a></div>');
+      out.push('<div style="background: #FFFFFF; border: 1px solid #D0D9E8; border-top: 4px solid ' + TH.accent + '; border-radius: 8px; padding: 24px 26px; margin-bottom: 22px; display: flex; flex-wrap: wrap; gap: 26px; align-items: flex-start;">');
+      out.push('<div style="flex: 0 0 auto;"><div style="width: 150px; height: 150px; border-radius: 50%; border: 4px solid ' + TH.accent + '; background: #EDF1F9; color: #0e1c42; font-size: 46px; text-align: center; line-height: 142px; letter-spacing: 1px;">' + esc(initialsFor(who)) + '</div></div>');
+      out.push('<div style="flex: 1 1 300px; min-width: 0;">');
+      out.push('<div style="font-size: 12px; letter-spacing: 1px; color: #6b7a99;">YOUR TEACHER</div>');
+      out.push('<div style="font-size: 25px; color: #0e1c42; margin-top: 3px;">' + esc(who) + '</div>');
+      if (String(h.teacherTitle || '').trim()) out.push('<div style="font-size: 15px; color: #6b7a99;">' + esc(h.teacherTitle) + '</div>');
+      if (String(h.blurb || '').trim()) out.push('<div style="font-size: 17px; color: #333; margin-top: 13px; line-height: 1.5;">' + escML(h.blurb) + '</div>');
+      if (String(h.teacherEmail || '').trim()) out.push('<div style="margin-top: 14px;"><a href="mailto:' + esc(h.teacherEmail) + '" style="display: inline-block; text-decoration: none; font-size: 16px; color: #0e1c42; border: 1px solid #D0D9E8; border-radius: 24px; padding: 10px 20px;">Email me</a></div>');
       if (h.house && HOUSES[h.house]) {
         var H = HOUSES[h.house];
-        out.push('        <div style="display: flex; align-items: center; gap: 13px; margin-top: 16px; border-top: 1px solid #D0D9E8; padding-top: 14px;">');
-        out.push('          <div style="background: #0E1C42; border-radius: 8px; padding: 4px; border-left: 3px solid ' + H.color + '; flex-shrink: 0; line-height: 0;"><img src="' + CREST_BASE + H.img + '" alt="' + esc(H.label) + ' house crest" style="width: 46px; height: 46px; object-fit: contain; display: block;" /></div>');
-        out.push('          <div><div style="font-size: 11px; letter-spacing: 1px; color: #6b7a99;">' + esc((teacher ? who + ' is in' : 'Your teacher is in').toUpperCase()) + '</div><div style="font-size: 18px; color: #0e1c42;">House ' + esc(H.label) + '</div><div style="font-size: 14px; color: #6b7a99;">' + esc(H.virtue) + '</div></div>');
-        out.push('        </div>');
+        out.push('<div style="display: flex; align-items: center; gap: 13px; margin-top: 16px; border-top: 1px solid #D0D9E8; padding-top: 14px;">');
+        out.push('<div style="background: #0E1C42; border-radius: 8px; padding: 4px; border-left: 3px solid ' + H.color + '; flex-shrink: 0; line-height: 0;"><img src="' + CREST_BASE + H.img + '" alt="' + esc(H.label) + ' house crest" style="width: 46px; height: 46px; object-fit: contain; display: block;" /></div>');
+        out.push('<div><div style="font-size: 11px; letter-spacing: 1px; color: #6b7a99;">' + esc((teacher ? who + ' is in' : 'Your teacher is in').toUpperCase()) + '</div><div style="font-size: 18px; color: #0e1c42;">House ' + esc(H.label) + '</div><div style="font-size: 14px; color: #6b7a99;">' + esc(H.virtue) + '</div></div>');
+        out.push('</div>');
       }
-      out.push('      </div>');
-      out.push('    </div>');
+      out.push('</div></div>');
     }
 
     var mods = (h.modules || []).filter(function (m) { return m.show && String(m.title || '').trim(); });
-    out.push('    <!-- COURSE MODULES: each card links to the real module after import -->');
-    out.push('    <div style="display: flex; align-items: baseline; justify-content: space-between; border-bottom: 2px solid #D0D9E8; padding-bottom: 8px; margin-bottom: 16px;">');
-    out.push('      <div style="font-size: 24px; color: #0e1c42;">Course Modules</div>');
-    out.push('      <div style="font-size: 15px; color: #6b7a99;">' + esc(k.label) + ' &middot; select a module to begin</div>');
-    out.push('    </div>');
-    if (mods.length) {
-      out.push('    <div style="display: flex; flex-wrap: wrap; gap: 14px;">');
+    out.push('<div style="display: flex; align-items: baseline; justify-content: space-between; border-bottom: 2px solid ' + TH.rule + '; padding-bottom: 8px; margin-bottom: 16px;">');
+    out.push('<div style="font-size: 24px; color: #0e1c42;">Course Modules</div>');
+    out.push('<div style="font-size: 15px; color: #6b7a99;">' + esc(k.label) + ' &middot; select a module to begin</div>');
+    out.push('</div>');
+    if (mods.length && (h.modStyle || 'journey') === 'grid') {
+      out.push('<div style="display: flex; flex-wrap: wrap; gap: 14px;">');
       mods.forEach(function (m, i) {
-        out.push('      <a href="' + href(T.module(m.gid)) + '" style="' + S.modCard + '">');
-        out.push('        <span style="' + S.modNum + '">' + (i + 1) + '</span>');
-        out.push('        <span style="' + BLOCK + 'min-width: 0;"><span style="' + S.eyebrow + '">MODULE ' + (i + 1) + '</span><span style="' + BLOCK + 'font-size: 18px; color: #0e1c42;">' + esc(m.title) + '</span></span>');
-        out.push('      </a>');
+        out.push('<a href=\"' + href(T.module(m.gid)) + '\" style=\"' + S.modCard + '">');
+        out.push('<span style="' + S.modNum + '">' + (i + 1) + '</span>');
+        out.push('<span style="' + BLOCK + 'min-width: 0;"><span style="' + S.eyebrow + '">MODULE ' + (i + 1) + '</span><span style="' + BLOCK + 'font-size: 18px; color: #0e1c42;">' + esc(m.title) + '</span></span>');
+        out.push('</a>');
       });
-      out.push('    </div>');
+      out.push('</div>');
+    } else if (mods.length) {
+      // The journey trail: a dashed rail with one numbered stop per module,
+      // each stop the real link. Everything inside each <a> stays a <span>.
+      out.push('<div style="border-left: 3px dashed ' + TH.accent + '; margin-left: 20px; padding: 2px 0 2px 0;">');
+      out.push('<div style="display: flex; align-items: center; gap: 13px; margin: 0 0 14px -13px;">');
+      out.push('<span style="display: block; width: 16px; height: 16px; border-radius: 50%; background: ' + TH.accent + '; flex-shrink: 0;"></span>');
+      out.push('<span style="font-size: 12px; letter-spacing: 1px; color: #6b7a99;">START HERE ' + esc(TH.motif) + '</span>');
+      out.push('</div>');
+      mods.forEach(function (m, i) {
+        out.push('<a href=\"' + href(T.module(m.gid)) + '\" style=\"display: flex; align-items: center; gap: 14px; text-decoration: none; margin: 0 14px 12px -23px;">');
+        out.push('<span style="display: flex; width: 40px; height: 40px; border-radius: 50%; background: #0E1C42; border: 3px solid ' + TH.accent + '; color: #ffffff; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0;">' + (i + 1) + '</span>');
+        out.push('<span style="' + BLOCK + 'flex: 1; min-width: 0; background: #FFFFFF; border: 1px solid #D0D9E8; border-radius: 8px; padding: 11px 16px;">');
+        out.push('<span style="display: block; font-size: 11px; letter-spacing: 1px; color: #6b7a99;">STOP ' + (i + 1) + '</span>');
+        out.push('<span style="display: block; font-size: 18px; color: #0e1c42;">' + esc(m.title) + '</span>');
+        out.push('</span>');
+        out.push('<span style="font-size: 18px; color: ' + TH.dark + '; flex-shrink: 0;">&rarr;</span>');
+        out.push('</a>');
+      });
+      out.push('<div style="display: flex; align-items: center; gap: 13px; margin: 0 0 2px -23px;">');
+      out.push('<span style="display: flex; width: 40px; height: 40px; border-radius: 50%; background: #FDF6E7; border: 3px solid #E0A82E; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">&#127942;</span>');
+      out.push('<span style="font-size: 15px; color: #6b7a99;">Finish line &mdash; every module done. Go celebrate.</span>');
+      out.push('</div></div>');
     }
-    out.push('    <div style="margin-top: 20px;"><a href="' + href(T.modules) + '" style="display: inline-block; text-decoration: none; background: #0E1C42; color: #ffffff; border: 2px solid #55C8E8; border-radius: 28px; padding: 14px 30px; font-size: 17px;">See all modules &rarr;</a></div>');
+    out.push('<div style="margin-top: 20px;"><a href=\"' + href(T.modules) + '\" style=\"display: inline-block; text-decoration: none; background: #0E1C42; color: #ffffff; border: 2px solid ' + TH.accent + '; border-radius: 28px; padding: 14px 30px; font-size: 17px;">See all modules &rarr;</a></div>');
 
     if (String(h.quote || '').trim() || String(h.prompt || '').trim()) {
-      out.push('    <!-- COMMONPLACE CORNER -->');
-      out.push('    <div style="background: #0E1C42; border-radius: 10px; padding: 24px 28px; margin-top: 26px;">');
-      out.push('      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;"><span style="font-size: 20px;">&#10024;</span><div><div style="font-size: 11px; letter-spacing: 1px; color: #55c8e8; font-weight: 600;">COMMONPLACE CORNER</div><div style="font-size: 21px; color: #ffffff;">This Week\'s Idea Worth Keeping</div></div></div>');
+      out.push('<div style="background: #0E1C42; border-radius: 10px; padding: 24px 28px; margin-top: 26px;">');
+      out.push('<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;"><span style="font-size: 20px;">' + esc(TH.motif) + '</span><div><div style="font-size: 11px; letter-spacing: 1px; color: ' + TH.bright + '; font-weight: 600;">COMMONPLACE CORNER</div><div style="font-size: 21px; color: #ffffff;">This Week\'s Idea Worth Keeping</div></div></div>');
       if (String(h.quote || '').trim()) {
-        out.push('      <div style="border-left: 4px solid #55c8e8; padding: 4px 18px; margin-bottom: 14px;"><div style="font-size: 20px; color: #ffffff; font-style: italic; line-height: 1.4;">&#8220;' + esc(h.quote) + '&#8221;</div>' +
-                 (String(h.author || '').trim() ? '<div style="font-size: 15px; color: rgba(255,255,255,0.6); margin-top: 8px;">&mdash; ' + esc(h.author) + '</div>' : '') + '</div>');
+        out.push('<div style="border-left: 4px solid ' + TH.bright + '; padding: 4px 18px; margin-bottom: 14px;"><div style="font-size: 20px; color: #ffffff; font-style: italic; line-height: 1.4;">&#8220;' + esc(h.quote) + '&#8221;</div>' +
+          (String(h.author || '').trim() ? '<div style="font-size: 15px; color: rgba(255,255,255,0.6); margin-top: 8px;">&mdash; ' + esc(h.author) + '</div>' : '') + '</div>');
       }
-      if (String(h.prompt || '').trim()) out.push('      <div style="font-size: 16px; color: rgba(255,255,255,0.85); line-height: 1.55;">' + escML(h.prompt) + '</div>');
-      out.push('    </div>');
+      if (String(h.prompt || '').trim()) out.push('<div style="font-size: 16px; color: rgba(255,255,255,0.85); line-height: 1.55;">' + escML(h.prompt) + '</div>');
+      out.push('</div>');
     }
-    out.push('  </div>');
-    var foot = '<span style="color: #55c8e8;">Optima Academy Online</span> &middot; ' + esc(title);
+    out.push('</div>');
+    var foot = '<span style="color: ' + TH.bright + ';">Optima Academy Online</span> &middot; ' + esc(title);
     if (String(h.section || '').trim()) foot += ' &middot; ' + esc(h.section);
     if (teacher) foot += ' &middot; ' + esc(teacher);
-    out.push('  <div style="' + S.footer + '"><div style="font-size: 18px; color: #ffffff; margin-bottom: 7px;">' + foot + '</div><div style="font-size: 13px; color: rgba(255,255,255,0.4);">&copy; Optima Academy Online &middot; An Education Experience Company &middot; kit ' + esc(k.version || '') + '</div></div>');
+    out.push('<div style="' + FOOTS + '"><div style="font-size: 18px; color: #ffffff; margin-bottom: 7px;">' + foot + '</div><div style="font-size: 13px; color: rgba(255,255,255,0.4);">&copy; Optima Academy Online &middot; An Education Experience Company &middot; kit ' + esc(k.version || '') + '</div></div>');
     out.push('</div>');
-    return out.join('\n');
+    return out.join('');
   }
 
   // ------------------------------------------------------------ catalog
@@ -487,9 +676,14 @@
       home.modules = k.modules.filter(function (m) { return m.published; }).map(function (m) { return { gid: m.gid, title: m.title, show: true }; });
     }
     ensureKitDefaults();
+    // A first visit (or a home saved before themes existed) gets the theme the
+    // catalog's subject suggests; a theme the teacher already picked stays.
+    if (!home.theme || !THEMES[home.theme]) applyTheme(themeForSubject(course.subject));
+    if (!home.spotlight) home.spotlight = 'on';
+    if (!home.modStyle) home.modStyle = 'journey';
     lock(3, false); lock(4, false); lock(5, false); lock(6, false);
     ['dl', 'copy', 'dl-plain'].forEach(function (id) { $(id).disabled = false; });
-    renderKits(); fillForm(); renderMods(); renderDates(); renderGradebook(); renderPreview();
+    renderKits(); fillForm(); renderStyle(); renderMods(); renderDates(); renderGradebook(); renderPreview();
     return Promise.resolve(k);
   }
 
@@ -815,6 +1009,44 @@
     }
     el.textContent = msg;
   }
+  // ------------------------------------------------------------ style panel
+  function renderStyle() {
+    var el = $('style-panel'); if (!el) return;
+    if (!kit) { el.innerHTML = '<div class="hint">Choose a kit first.</div>'; return; }
+    var out = [];
+    out.push('<label>Look and feel</label>');
+    out.push('<div class="swatches">' + THEME_ORDER.map(function (key) {
+      var t = THEMES[key];
+      var strip = t.banner ? '<img src="' + ASSET_BASE + 'themes/' + t.banner + '" alt="" loading="lazy">' : '<span class="none"></span>';
+      return '<button type="button" class="swatch" data-theme="' + key + '" aria-pressed="' + (home.theme === key ? 'true' : 'false') + '">' + strip +
+        '<span class="sw-name">' + escHtml(t.label) + '</span><span class="sw-sub">' + escHtml(t.subject) + '</span></button>';
+    }).join('') + '</div>');
+    var suggested = THEMES[themeForSubject(course.subject)];
+    var cur = THEMES[home.theme] || THEMES.classic;
+    out.push('<div class="hint" id="style-hint">' + (cur === suggested
+      ? escHtml(suggested.label) + ' is the theme suggested for ' + escHtml(course.subject) + '.'
+      : 'Showing ' + escHtml(cur.label) + '. Suggested for ' + escHtml(course.subject) + ': ' + escHtml(suggested.label) + '.') +
+      ' The banner and spark card are hosted images; their motion runs in Canvas and stops for students who have reduced motion turned on.</div>');
+    out.push('<div class="row" style="margin-top:10px;">');
+    out.push('<div><label>Module list</label><div class="seg" id="mod-seg"><button type="button" data-v="journey" aria-pressed="' + (home.modStyle !== 'grid') + '">Journey trail</button><button type="button" data-v="grid" aria-pressed="' + (home.modStyle === 'grid') + '">Classic grid</button></div></div>');
+    out.push('<div><label>Today\'s Spark card</label><div class="seg" id="spark-seg"><button type="button" data-v="on" aria-pressed="' + (home.spotlight !== 'off') + '">On</button><button type="button" data-v="off" aria-pressed="' + (home.spotlight === 'off') + '">Off</button></div></div>');
+    out.push('</div>');
+    el.innerHTML = out.join('');
+    el.querySelectorAll('.swatch').forEach(function (b) {
+      b.addEventListener('click', function () {
+        applyTheme(this.dataset.theme);
+        save(); fillForm(); renderStyle(); renderPreview();
+      });
+    });
+    $('mod-seg').addEventListener('click', function (e) {
+      var v = e.target.dataset && e.target.dataset.v; if (!v) return;
+      home.modStyle = v; save(); renderStyle(); renderPreview();
+    });
+    $('spark-seg').addEventListener('click', function (e) {
+      var v = e.target.dataset && e.target.dataset.v; if (!v) return;
+      home.spotlight = v; save(); renderStyle(); renderPreview();
+    });
+  }
   function renderMods() {
     var el = $('mods'); el.innerHTML = '';
     (home.modules || []).forEach(function (m, i) {
@@ -1057,10 +1289,16 @@
           zip.file(item.xml, patchItemXml(item, text, eff));
           // A graded quiz whose total changed: give every question an equal share.
           if (item.type === 'quiz' && item.quiz_type === 'assignment' && Number(eff.points) !== Number(item.points)) {
-            var qtiPath = item.qti || (item.gid + '/assessment_qti.xml');
-            var q = zip.file(qtiPath);
-            if (!q) return;
-            return q.async('string').then(function (qt) { zip.file(qtiPath, patchQtiPoints(qt, eff.points)); });
+            // Canvas rebuilds the quiz from its question bank on import, so the bank
+            // copy (non_cc_assessments) must carry the same shares as the quiz QTI.
+            var paths = [item.qti || (item.gid + '/assessment_qti.xml'), 'non_cc_assessments/' + item.gid + '.xml.qti'];
+            return chain(paths.map(function (qtiPath) {
+              return function () {
+                var q = zip.file(qtiPath);
+                if (!q) return Promise.resolve();
+                return q.async('string').then(function (qt) { zip.file(qtiPath, patchQtiPoints(qt, eff.points)); });
+              };
+            }));
           }
         });
       });
@@ -1189,6 +1427,24 @@
       quizItem = kit.graded_items.filter(function (it) { return it.type === 'quiz' && it.quiz_type === 'assignment'; })[0];
       if (quizItem) ensureOverride(quizItem).points = 20;
     }
+    // Themes: the catalog subject picks one; its banner and spark card must be
+    // hosted URLs (never data:), the journey trail must render, and Classic with
+    // the grid and the spark off must carry no theme assets at all.
+    var themeKey = themeForSubject(c.subject);
+    applyTheme(themeKey);
+    home.modStyle = 'journey'; home.spotlight = 'on';
+    var themedHtml = currentHtml(), TT = THEMES[themeKey];
+    var themeOk = themedHtml.indexOf(ASSET_BASE + 'themes/' + TT.banner) >= 0
+      && themedHtml.indexOf(ASSET_BASE + 'spotlights/' + TT.spot) >= 0
+      && themedHtml.indexOf('data:') < 0
+      && themedHtml.indexOf('STOP 1') >= 0
+      && themedHtml.indexOf(TT.accent) >= 0;
+    var keepTheme = home.theme;
+    applyTheme('classic'); home.modStyle = 'grid'; home.spotlight = 'off';
+    var classicHtml = currentHtml();
+    var classicClean = classicHtml.indexOf('themes/') < 0 && classicHtml.indexOf('spotlights/') < 0
+      && classicHtml.indexOf('STOP 1') < 0 && classicHtml.indexOf('MODULE 1') >= 0;
+    applyTheme(keepTheme); home.modStyle = 'journey'; home.spotlight = 'on';
     // Preview toggle: hiding collapses the grid to one column and hides the panel.
     setPreviewShown(false);
     var previewToggle = document.querySelector('.wrap').classList.contains('nopreview')
@@ -1196,7 +1452,7 @@
       && !$('show-preview').hidden;
     setPreviewShown(true);
 
-    fillForm(); renderMods(); renderDates(); renderGradebook(); renderPreview();
+    fillForm(); renderStyle(); renderMods(); renderDates(); renderGradebook(); renderPreview();
     patchedKit('base64').then(function (r) {
       $('selftest-b64').textContent = r.data;
       var out = { ok: true, code: c.code, kit: k.id, frontPage: k.front_page, entries: r.entries,
@@ -1222,11 +1478,17 @@
           var want = '<due_at>' + desiredUtc(BATCH_DUE) + '</due_at>';
           checks.batchDates = texts.every(function (t) { return t.indexOf(want) >= 0; });
         }));
-        if (zip2 && quizItem) reads.push(Promise.all([zip2.file(quizItem.xml).async('string'), zip2.file(quizItem.gid + '/assessment_qti.xml').async('string')]).then(function (r2) {
+        if (zip2 && quizItem) reads.push(Promise.all([zip2.file(quizItem.xml).async('string'), zip2.file(quizItem.gid + '/assessment_qti.xml').async('string'),
+            zip2.file('non_cc_assessments/' + quizItem.gid + '.xml.qti') ? zip2.file('non_cc_assessments/' + quizItem.gid + '.xml.qti').async('string') : Promise.resolve(null)]).then(function (r2) {
           var metaHits = (r2[0].match(/<points_possible>20(\.0)?<\/points_possible>/g) || []).length;
-          var sum = 0, re = /<fieldlabel>points_possible<\/fieldlabel>\s*<fieldentry>([^<]*)<\/fieldentry>/g, mm;
-          while ((mm = re.exec(r2[1]))) sum += parseFloat(mm[1]) || 0;
-          checks.quizPoints = metaHits >= 2 && Math.abs(sum - 20) < 0.005;
+          var sumOf = function (txt) {
+            var sum = 0, re = /<fieldlabel>points_possible<\/fieldlabel>\s*<fieldentry>([^<]*)<\/fieldentry>/g, mm;
+            while ((mm = re.exec(txt))) sum += parseFloat(mm[1]) || 0;
+            return sum;
+          };
+          // Both copies of the questions (quiz QTI and its bank) must sum to the new total.
+          checks.quizPoints = metaHits >= 2 && Math.abs(sumOf(r2[1]) - 20) < 0.005 && (r2[2] == null || Math.abs(sumOf(r2[2]) - 20) < 0.005);
+          out.quizBankPatched = r2[2] != null;
         }));
         return Promise.all(reads);
       }).then(function () {
@@ -1237,6 +1499,8 @@
         out.batchDates = checks.batchDates; out.batchCount = batchItems.length;
         out.quizPoints = checks.quizPoints; out.quiz = quizItem ? quizItem.title : null;
         out.previewToggle = previewToggle;
+        out.theme = themeKey; out.themeOk = themeOk; out.classicClean = classicClean;
+        out.ok = out.ok && themeOk && classicClean;
         if (hasSchedule) out.ok = out.ok && checks.datesApplied && checks.weightingOn && checks.pointsPatched && checks.unpublished
           && checks.batchDates && (!quizItem || checks.quizPoints);
         out.ok = out.ok && previewToggle;

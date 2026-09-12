@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 190" width="1200" height="190" role="img" aria-label="">
+  <style>
+    .draw { stroke-dasharray: 175; animation: draw 6.5s ease-in-out infinite; }
+    @keyframes draw {
+      0% { stroke-dashoffset: 175; opacity: 1; }
+      40% { stroke-dashoffset: 0; opacity: 1; }
+      78% { stroke-dashoffset: 0; opacity: 1; }
+      92% { stroke-dashoffset: 0; opacity: 0; }
+      100% { stroke-dashoffset: 175; opacity: 0; }
+    }
+    .rays { transform-box: fill-box; transform-origin: center; animation: rays 40s linear infinite; }
+    @keyframes rays { to { transform: rotate(360deg); } }
+    .dust circle { animation: mote 5s ease-in-out infinite; }
+    .dust circle:nth-of-type(2) { animation-delay: 1s; }
+    .dust circle:nth-of-type(3) { animation-delay: 2s; }
+    .dust circle:nth-of-type(4) { animation-delay: 3s; }
+    .dust circle:nth-of-type(5) { animation-delay: 4s; }
+    @keyframes mote { 0%,100% { transform: translateY(0); opacity: 0.6; } 50% { transform: translateY(-7px); opacity: 0.25; } }
+    @media (prefers-reduced-motion: reduce) { [class] { animation: none !important; } }
+  </style>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0E1C42"/>
+      <stop offset="0.55" stop-color="#334357"/>
+      <stop offset="1" stop-color="#F2F5F8"/>
+    </linearGradient>
+    <linearGradient id="tray" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#C29A6B"/>
+      <stop offset="1" stop-color="#9C7648"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="190" fill="url(#bg)"/>
+
+  <!-- chalk doodles -->
+  <g fill="none" stroke="#F3F6F5" stroke-linecap="round" stroke-linejoin="round">
+    <!-- tic-tac-toe, mid-left -->
+    <g transform="translate(150,84)" stroke-width="3" opacity="0.92">
+      <path d="M-14 -34 C-15 -12 -15 12 -13 34 M14 -35 C13 -12 14 12 15 34"/>
+      <path d="M-34 -13 C-12 -14 12 -14 34 -12 M-34 13 C-12 12 12 14 34 13"/>
+      <path d="M-30 -30 L-19 -19 M-19 -30 L-30 -19" stroke="#F0C982"/>
+      <circle cx="0" cy="0" r="7.5"/>
+      <path d="M20 20 L31 31 M31 20 L20 31" stroke="#F0C982"/>
+      <circle cx="25" cy="-25" r="7.5"/>
+    </g>
+    <!-- tally marks -->
+    <g transform="translate(300,52)" stroke-width="3.2" opacity="0.85">
+      <path d="M0 -18 C1 -6 0 6 0 18 M14 -18 C15 -6 14 6 14 18 M28 -18 C29 -6 28 6 28 18 M42 -18 C43 -6 42 6 42 18"/>
+      <path d="M-8 12 C8 2 28 -6 50 -14"/>
+    </g>
+    <!-- scribble word with underline -->
+    <g transform="translate(430,120)" stroke-width="3" opacity="0.8">
+      <path d="M0 0 q9 -14 18 0 q9 14 18 0 q9 -14 18 0 q9 14 18 0 q9 -14 18 0"/>
+      <path d="M-2 14 C28 10 62 10 94 13"/>
+    </g>
+    <!-- spiral -->
+    <path d="M585 58 c14 -2 16 14 4 18 c-16 5 -26 -12 -12 -24 c18 -15 40 4 32 24 c-9 22 -38 22 -50 4"
+          stroke-width="3" opacity="0.85"/>
+    <!-- sun doodle -->
+    <g transform="translate(700,110)" stroke-width="3" opacity="0.88">
+      <circle r="16"/>
+      <g class="rays"><path d="M0 -24 L0 -32 M17 -17 L23 -23 M24 0 L32 0 M17 17 L23 23 M0 24 L0 32 M-17 17 L-23 23 M-24 0 L-32 0 M-17 -17 L-23 -23"/></g>
+    </g>
+    <!-- arrow doodle with loop -->
+    <path d="M790 70 C840 46 890 88 942 62 C960 53 972 56 984 62 M984 62 l-16 -2 M984 62 l-10 12"
+          stroke-width="3" opacity="0.85"/>
+    <!-- heart -->
+    <path d="M1052 96 C1044 82 1024 86 1024 102 C1024 116 1042 126 1052 134 C1062 126 1080 116 1080 102 C1080 86 1060 82 1052 96 Z"
+          stroke-width="3" opacity="0.88"/>
+  </g>
+  <!-- gold chalk star, drawing itself over and over -->
+  <path class="draw" d="M920 108 l7.4 15 16.6 2.4 -12 11.7 2.8 16.5 -14.8 -7.8 -14.8 7.8 2.8 -16.5 -12 -11.7 16.6 -2.4z"
+        fill="none" stroke="#F0C982" stroke-width="3" stroke-linejoin="round"/>
+
+  <!-- chalk tray -->
+  <rect x="0" y="158" width="1200" height="13" rx="3" fill="url(#tray)"/>
+  <rect x="0" y="155" width="1200" height="4" rx="2" fill="#D9B586"/>
+  <!-- chalk sticks and eraser on the tray -->
+  <g>
+    <rect x="238" y="146" width="52" height="9" rx="4.5" fill="#F3F6F5" transform="rotate(-2 264 150)"/>
+    <rect x="318" y="147" width="40" height="8" rx="4" fill="#F0C982" transform="rotate(1.5 338 151)"/>
+    <g transform="translate(806,138) rotate(-1)">
+      <rect x="0" y="0" width="74" height="18" rx="4" fill="#40536B"/>
+      <rect x="0" y="-7" width="74" height="10" rx="4" fill="#AFC3D9"/>
+    </g>
+  </g>
+  <!-- chalk dust -->
+  <g class="dust" fill="#F3F6F5">
+    <circle cx="300" cy="151" r="1.6"/><circle cx="392" cy="153" r="1.3"/><circle cx="270" cy="143" r="1.2"/>
+    <circle cx="906" cy="150" r="1.5"/><circle cx="700" cy="152" r="1.2"/>
+  </g>
+
+  <rect y="186" width="1200" height="4" fill="#5B7089"/>
+</svg>

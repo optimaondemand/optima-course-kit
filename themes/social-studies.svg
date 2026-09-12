@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 190" width="1200" height="190" role="img" aria-label="">
+  <style>
+    .route { animation: crawl 8s linear infinite; }
+    @keyframes crawl { to { stroke-dashoffset: -100; } }
+    .pin { animation: pin 3.8s ease-in-out infinite; }
+    @keyframes pin { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+    .tilt { transform-box: fill-box; transform-origin: center top; animation: tilt 5.5s ease-in-out infinite; }
+    @keyframes tilt { 0%,100% { transform: rotate(-2.5deg); } 50% { transform: rotate(2.5deg); } }
+    .tw { animation: tw 3.8s ease-in-out infinite; }
+    @keyframes tw { 0%,100% { opacity: 0.85; } 50% { opacity: 0.25; } }
+    @media (prefers-reduced-motion: reduce) { [class] { animation: none !important; } }
+  </style>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0E1C42"/>
+      <stop offset="0.55" stop-color="#0F3D4C"/>
+      <stop offset="1" stop-color="#EFF7F9"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="190" fill="url(#bg)"/>
+
+  <!-- globe, left -->
+  <g transform="translate(190,96)">
+    <circle r="64" fill="none" stroke="#BFE7EF" stroke-width="2.6"/>
+    <ellipse rx="26" ry="64" fill="none" stroke="#5FC6DC" stroke-width="1.6"/>
+    <ellipse rx="48" ry="64" fill="none" stroke="#5FC6DC" stroke-width="1.2" opacity="0.6"/>
+    <line x1="-64" y1="0" x2="64" y2="0" stroke="#5FC6DC" stroke-width="1.6"/>
+    <path d="M-56 -31 Q0 -14 56 -31 M-56 31 Q0 14 56 31" fill="none" stroke="#5FC6DC" stroke-width="1.2" opacity="0.6"/>
+    <path d="M-30 -34 q14 -10 26 -2 q12 8 2 16 q-16 6 -28 -2 z" fill="#1794B4" opacity="0.8"/>
+    <path d="M6 8 q18 -6 26 6 q6 12 -8 16 q-16 2 -22 -10 z" fill="#1794B4" opacity="0.8"/>
+    <circle r="64" fill="none" stroke="#BFE7EF" stroke-width="2.6"/>
+  </g>
+
+  <!-- dotted route with map pins -->
+  <path class="route" d="M275 70 C400 20 520 96 640 60 C740 32 820 84 920 62" fill="none" stroke="#BFE7EF" stroke-width="2" stroke-dasharray="2 8" stroke-linecap="round"/>
+  <g transform="translate(430,66)">
+    <g class="pin">
+      <path d="M0 0 C-10 -12 -13 -19 -13 -25 A13 13 0 1 1 13 -25 C13 -19 10 -12 0 0 Z" fill="#E0A82E"/>
+      <circle cy="-25" r="5" fill="#0F3D4C"/>
+    </g>
+  </g>
+  <g transform="translate(640,78)">
+    <g class="pin" style="animation-delay:1.3s">
+      <path d="M0 0 C-10 -12 -13 -19 -13 -25 A13 13 0 1 1 13 -25 C13 -19 10 -12 0 0 Z" fill="#5FC6DC"/>
+      <circle cy="-25" r="5" fill="#0F3D4C"/>
+    </g>
+  </g>
+  <g transform="translate(920,80)">
+    <g class="pin" style="animation-delay:2.6s">
+      <path d="M0 0 C-10 -12 -13 -19 -13 -25 A13 13 0 1 1 13 -25 C13 -19 10 -12 0 0 Z" fill="#E0A82E"/>
+      <circle cy="-25" r="5" fill="#0F3D4C"/>
+    </g>
+  </g>
+
+  <!-- community: linked people -->
+  <g transform="translate(560,140)">
+    <g fill="none" stroke="#5FC6DC" stroke-width="1.8" opacity="0.85">
+      <path d="M-96 6 Q-48 -26 0 4 Q48 30 96 2"/>
+    </g>
+    <g fill="#EFF7F9">
+      <circle cx="-96" cy="-6" r="9"/><path d="M-110 22 q14 -18 28 0 q-6 6 -14 6 q-8 0 -14 -6z"/>
+      <circle cx="0" cy="-10" r="10"/><path d="M-16 20 q16 -20 32 0 q-7 7 -16 7 q-9 0 -16 -7z"/>
+      <circle cx="96" cy="-8" r="9"/><path d="M82 20 q14 -18 28 0 q-6 6 -14 6 q-8 0 -14 -6z"/>
+    </g>
+  </g>
+
+  <!-- ballot box, right -->
+  <g transform="translate(1024,116)">
+    <rect x="-38" y="-8" width="76" height="52" rx="6" fill="none" stroke="#BFE7EF" stroke-width="3"/>
+    <rect x="-16" y="-14" width="32" height="6" rx="3" fill="#E0A82E"/>
+    <path d="M-12 -24 l18 -18 10 10 -18 18 z" fill="#5FC6DC"/>
+    <path d="M-24 14 l9 9 20 -20" fill="none" stroke="#5FC6DC" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- scales of civics, upper right -->
+  <g transform="translate(880,34)" opacity="0.9">
+    <g class="tilt">
+    <line x1="0" y1="-8" x2="0" y2="26" stroke="#BFE7EF" stroke-width="2.4"/>
+    <line x1="-34" y1="-2" x2="34" y2="-2" stroke="#BFE7EF" stroke-width="2.4"/>
+    <circle cx="0" cy="-8" r="3" fill="#E0A82E"/>
+    <path d="M-34 -2 l-10 20 h20 z M34 -2 l-10 20 h20 z" fill="none" stroke="#5FC6DC" stroke-width="1.8"/>
+    <path d="M-44 18 a10 10 0 0 0 20 0 M24 18 a10 10 0 0 0 20 0" fill="none" stroke="#5FC6DC" stroke-width="1.8"/>
+    </g>
+  </g>
+
+  <!-- small stars -->
+  <g fill="#BFE7EF">
+    <path class="tw" d="M760 26 l2.8 6 6.6 0.7 -5 4.4 1.4 6.5 -5.8 -3.4 -5.8 3.4 1.4 -6.5 -5 -4.4 6.6 -0.7z"/>
+    <path class="tw" style="animation-delay:1.9s" d="M338 128 l2.4 5 5.6 0.6 -4.2 3.8 1.2 5.6 -5 -2.9 -5 2.9 1.2 -5.6 -4.2 -3.8 5.6 -0.6z"/>
+  </g>
+
+  <rect y="186" width="1200" height="4" fill="#1794B4"/>
+</svg>

@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 190" width="1200" height="190" role="img" aria-label="">
+  <style>
+    .route { animation: crawl 7s linear infinite; }
+    @keyframes crawl { to { stroke-dashoffset: -100; } }
+    .fly { animation: flyfade 11s linear infinite; }
+    @keyframes flyfade { 0% { opacity: 0; } 6% { opacity: 1; } 86% { opacity: 1; } 96% { opacity: 0; } 100% { opacity: 0; } }
+    .bob { transform-box: fill-box; transform-origin: center; animation: bob 4.4s ease-in-out infinite; }
+    .bob2 { transform-box: fill-box; transform-origin: center; animation: bob 4.4s ease-in-out 1.6s infinite; }
+    @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+    .tw { animation: tw 3.6s ease-in-out infinite; }
+    @keyframes tw { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+    .rms { display: none; }
+    @media (prefers-reduced-motion: reduce) {
+      [class] { animation: none !important; }
+      .rmh { display: none; } .rms { display: inline; }
+    }
+  </style>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0E1C42"/>
+      <stop offset="0.55" stop-color="#54221C"/>
+      <stop offset="1" stop-color="#FCF4F2"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="190" fill="url(#bg)"/>
+
+  <!-- skyline of world landmarks, faded along the bottom -->
+  <g fill="#F5A093" opacity="0.35">
+    <path d="M80 186 v-60 l6 -10 6 10 v60 z"/>
+    <path d="M120 186 v-34 h30 v34 z M125 152 l10 -14 10 14 z"/>
+    <path d="M980 186 v-30 q0 -22 20 -22 q20 0 20 22 v30 z M996 134 h8 l-4 -12 z"/>
+    <path d="M1060 186 l16 -70 4 -14 4 14 16 70 z"/>
+    <path d="M840 186 v-26 h44 v26 z M846 160 v-12 h8 v12 z M858 160 v-12 h8 v12 z M870 160 v-12 h8 v12 z M836 160 h52 l-26 -18 z"/>
+  </g>
+
+  <!-- big speech bubbles conversing -->
+  <g transform="translate(300,74)">
+    <g class="bob">
+      <path d="M-92 -42 h184 q14 0 14 14 v52 q0 14 -14 14 h-118 l-26 24 v-24 h-40 q-14 0 -14 -14 v-52 q0 -14 14 -14 z"
+            fill="#D95D4E"/>
+      <g fill="#FCF4F2">
+        <circle cx="-34" cy="-1" r="6"/><circle cx="0" cy="-1" r="6"/><circle cx="34" cy="-1" r="6"/>
+      </g>
+    </g>
+  </g>
+  <g transform="translate(520,120)">
+    <g class="bob2">
+      <path d="M-70 -34 h140 q12 0 12 12 v40 q0 12 -12 12 h-96 l-22 20 v-20 h-22 q-12 0 -12 -12 v-40 q0 -12 12 -12 z"
+            fill="none" stroke="#F5A093" stroke-width="3"/>
+      <g fill="none" stroke="#F5A093" stroke-width="3.4" stroke-linecap="round">
+        <line x1="-42" y1="0" x2="-14" y2="0"/>
+        <line x1="-2" y1="0" x2="18" y2="0"/>
+        <line x1="30" y1="0" x2="44" y2="0"/>
+        <path d="M-34 -14 q7 -7 14 0"/>
+        <circle cx="37" cy="-13" r="2.4"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- postcard with stamp -->
+  <g transform="translate(796,72) rotate(-7)">
+    <rect x="-78" y="-48" width="156" height="96" rx="6" fill="#FCF4F2"/>
+    <rect x="-78" y="-48" width="156" height="96" rx="6" fill="none" stroke="#D95D4E" stroke-width="2.6"/>
+    <line x1="0" y1="-34" x2="0" y2="34" stroke="#E8B4AC" stroke-width="2"/>
+    <g stroke="#E8B4AC" stroke-width="2.4" stroke-linecap="round">
+      <line x1="12" y1="-12" x2="62" y2="-12"/><line x1="12" y1="4" x2="62" y2="4"/><line x1="12" y1="20" x2="50" y2="20"/>
+    </g>
+    <g stroke="#A83A2D" stroke-width="2.2" stroke-linecap="round">
+      <line x1="-64" y1="-8" x2="-16" y2="-8"/><line x1="-64" y1="8" x2="-24" y2="8"/><line x1="-64" y1="24" x2="-32" y2="24"/>
+    </g>
+    <rect x="34" y="-40" width="30" height="26" fill="#E0A82E" stroke="#FCF4F2" stroke-width="2" stroke-dasharray="3 3"/>
+    <circle cx="49" cy="-27" r="8" fill="none" stroke="#A83A2D" stroke-width="1.6" opacity="0.7"/>
+  </g>
+
+  <!-- paper plane on a dotted route -->
+  <path class="route" d="M870 140 C950 120 1020 110 1096 74" fill="none" stroke="#F5A093" stroke-width="2" stroke-dasharray="2 8" stroke-linecap="round"/>
+  <g class="rms" transform="translate(1108,66) rotate(14)">
+    <path d="M0 0 L-44 14 L-12 20 L-8 36 L0 22 L18 30 Z" fill="#FCF4F2"/>
+    <path d="M-12 20 L18 30 L0 0 Z" fill="#F5A093"/>
+  </g>
+  <g class="rmh fly">
+    <g transform="rotate(14)">
+      <path d="M0 0 L-44 14 L-12 20 L-8 36 L0 22 L18 30 Z" fill="#FCF4F2"/>
+      <path d="M-12 20 L18 30 L0 0 Z" fill="#F5A093"/>
+    </g>
+    <animateMotion dur="11s" repeatCount="indefinite" path="M858 152 C950 126 1030 114 1108 66"/>
+  </g>
+
+  <!-- little sun/star accents -->
+  <g fill="#E0A82E">
+    <path class="tw" d="M96 44 l3 7 7.6 0.8 -5.6 5 1.5 7.4 -6.5 -3.8 -6.5 3.8 1.5 -7.4 -5.6 -5 7.6 -0.8z"/>
+    <circle class="tw" style="animation-delay:1.8s" cx="668" cy="34" r="4"/>
+  </g>
+
+  <rect y="186" width="1200" height="4" fill="#D95D4E"/>
+</svg>

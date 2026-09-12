@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 190" width="1200" height="190" role="img" aria-label="">
+  <style>
+    .route { animation: crawl 9s linear infinite; }
+    @keyframes crawl { to { stroke-dashoffset: -110; } }
+    .star { transform-box: fill-box; transform-origin: center; animation: star 4.2s ease-in-out infinite; }
+    @keyframes star { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.15); opacity: 0.75; } }
+    .needle { transform-box: fill-box; transform-origin: center; animation: needle 7s ease-in-out infinite; }
+    @keyframes needle { 0%,100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
+    .flame { transform-box: fill-box; transform-origin: center bottom; animation: flame 1.4s ease-in-out infinite; }
+    @keyframes flame { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.9,1.12); opacity: 0.85; } }
+    .tw { animation: tw 4s ease-in-out infinite; }
+    .tw2 { animation: tw 4s ease-in-out 1.4s infinite; }
+    .tw3 { animation: tw 4s ease-in-out 2.8s infinite; }
+    @keyframes tw { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+    @media (prefers-reduced-motion: reduce) { [class] { animation: none !important; } }
+  </style>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0E1C42"/>
+      <stop offset="0.55" stop-color="#123A44"/>
+      <stop offset="1" stop-color="#F1F7F8"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="190" fill="url(#bg)"/>
+
+  <!-- topographic contours -->
+  <g fill="none" stroke="#6FB9C9" stroke-width="1.1" opacity="0.30">
+    <path d="M660 190 q-20 -60 40 -84 q70 -26 120 10 q46 34 110 22 q70 -14 110 18 q30 24 90 20"/>
+    <path d="M700 190 q-12 -44 36 -62 q60 -22 102 8 q40 30 96 20 q64 -12 100 14 q26 18 76 16"/>
+    <path d="M60 190 q10 -40 60 -44 q54 -4 84 22 q22 18 60 14"/>
+  </g>
+
+  <!-- compass rose -->
+  <g transform="translate(220,96)">
+    <circle r="64" fill="none" stroke="#BFE3EA" stroke-width="2.6"/>
+    <circle r="52" fill="none" stroke="#6FB9C9" stroke-width="1.2" opacity="0.7"/>
+    <g stroke="#6FB9C9" stroke-width="1.6">
+      <line x1="0" y1="-64" x2="0" y2="-72"/><line x1="0" y1="64" x2="0" y2="72"/>
+      <line x1="-64" y1="0" x2="-72" y2="0"/><line x1="64" y1="0" x2="72" y2="0"/>
+      <line x1="45" y1="-45" x2="51" y2="-51"/><line x1="-45" y1="45" x2="-51" y2="51"/>
+      <line x1="45" y1="45" x2="51" y2="51"/><line x1="-45" y1="-45" x2="-51" y2="-51"/>
+    </g>
+    <g class="needle">
+      <path d="M0 -46 L10 0 L0 46 L-10 0 Z" fill="#E0A82E"/>
+      <path d="M-46 0 L0 -10 L46 0 L0 10 Z" fill="#BFE3EA"/>
+      <path d="M0 -46 L10 0 L0 10 L-10 0 Z" fill="#F6E3B4" opacity="0.5"/>
+    </g>
+    <circle r="7" fill="#0E1C42" stroke="#BFE3EA" stroke-width="2.4"/>
+  </g>
+
+  <!-- winding dotted journey to a star -->
+  <path class="route" d="M300 128 C420 96 470 150 570 128 C680 104 700 60 800 62 C880 64 920 96 1010 82"
+        fill="none" stroke="#BFE3EA" stroke-width="2.2" stroke-dasharray="2 9" stroke-linecap="round"/>
+  <g transform="translate(1048,74)">
+    <path class="star" d="M0 -22 l5.6 12 13 1.5 -9.6 8.7 2.7 12.8 -11.7 -6.6 -11.7 6.6 2.7 -12.8 -9.6 -8.7 13 -1.5z" fill="#E0A82E"/>
+  </g>
+  <!-- waypoint flags -->
+  <g>
+    <line x1="570" y1="128" x2="570" y2="98" stroke="#BFE3EA" stroke-width="2.4"/>
+    <path d="M570 98 h24 l-7 8 7 8 h-24z" fill="#2E7E8F"/>
+    <circle cx="570" cy="130" r="4" fill="#6FB9C9"/>
+    <line x1="800" y1="62" x2="800" y2="36" stroke="#BFE3EA" stroke-width="2.4"/>
+    <path d="M800 36 h22 l-6 7 6 7 h-22z" fill="#E0A82E"/>
+    <circle cx="800" cy="64" r="4" fill="#6FB9C9"/>
+  </g>
+
+  <!-- lantern of learning, right -->
+  <g transform="translate(1130,128)">
+    <path d="M-3 -46 h6 v6 h-6z" fill="#BFE3EA"/>
+    <path d="M-16 -40 h32 l4 10 h-40 z" fill="#2E7E8F"/>
+    <rect x="-14" y="-30" width="28" height="34" rx="4" fill="none" stroke="#BFE3EA" stroke-width="2.6"/>
+    <path class="flame" d="M0 -22 q7 9 0 18 q-7 -9 0 -18z" fill="#E0A82E"/>
+    <path d="M-18 4 h36 l-4 8 h-28 z" fill="#2E7E8F"/>
+  </g>
+
+  <!-- scattered stars -->
+  <g fill="#BFE3EA">
+    <circle class="tw" cx="420" cy="34" r="2"/><circle class="tw2" cx="540" cy="20" r="1.6"/><circle class="tw3" cx="120" cy="24" r="1.8"/>
+    <circle class="tw2" cx="920" cy="26" r="2"/><circle class="tw" cx="1160" cy="36" r="1.6"/>
+    <path class="tw3" d="M660 28 l2.4 5.2 5.7 0.6 -4.3 3.9 1.2 5.6 -5 -2.9 -5 2.9 1.2 -5.6 -4.3 -3.9 5.7 -0.6z"/>
+  </g>
+
+  <rect y="186" width="1200" height="4" fill="#2E7E8F"/>
+</svg>

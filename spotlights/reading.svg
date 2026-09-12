@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 250" width="1200" height="250" role="img" aria-label="Today's spark: a rotating prompt from this course">
+  <style>
+    text { font-family: 'Segoe UI', Arial, sans-serif; }
+    .s { opacity: 0; animation: cyc 32s linear infinite; }
+    .s1 { animation-delay: 0s; } .s2 { animation-delay: 8s; }
+    .s3 { animation-delay: 16s; } .s4 { animation-delay: 24s; }
+    @keyframes cyc { 0% { opacity: 0; } 2.5% { opacity: 1; } 22% { opacity: 1; } 25% { opacity: 0; } 100% { opacity: 0; } }
+    .tw { animation: tw 4.5s ease-in-out infinite; } .tw.d1 { animation-delay: 1.5s; } .tw.d2 { animation-delay: 3s; }
+    @keyframes tw { 0%,100% { opacity: 0.9; } 50% { opacity: 0.2; } }
+    @media (prefers-reduced-motion: reduce) { [class] { animation: none !important; } .s { opacity: 0; } .s1 { opacity: 1; } }
+  </style>
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0E1C42"/><stop offset="1" stop-color="#1E3B2E"/></linearGradient></defs>
+  <rect width="1200" height="250" rx="10" fill="url(#bg)"/>
+  <path d="M60 74 l3.4 7.4 8 1 -5.9 5.5 1.5 8 -7 -4 -7 4 1.5 -8 -5.9 -5.5 8 -1z" fill="#8FC9AC"/>
+  <text x="90" y="66" font-size="15" font-weight="600" letter-spacing="3" fill="#8FC9AC">TODAY&#8217;S SPARK</text>
+  <line x1="90" y1="78" x2="270" y2="78" stroke="#8FC9AC" stroke-width="1.4" opacity="0.45"/>
+  <g fill="#8FC9AC">
+    <circle class="tw" cx="1108" cy="52" r="2.6"/><circle class="tw d1" cx="1146" cy="76" r="2"/><circle class="tw d2" cx="1122" cy="106" r="1.7"/>
+  </g>
+  <g class="s s1">
+    <text x="90" y="140" font-size="33" fill="#FFFFFF" font-style="italic">&#8220;Reading is to the mind what</text>
+    <text x="90" y="182" font-size="33" fill="#FFFFFF" font-style="italic">exercise is to the body.&#8221;</text>
+    <text x="90" y="218" font-size="17" fill="#8FC9AC">&#8212; Joseph Addison</text>
+  </g>
+  <g class="s s2">
+    <text x="90" y="140" font-size="33" fill="#FFFFFF">Read one page of anything today --</text>
+    <text x="90" y="182" font-size="33" fill="#FFFFFF">then one more if it earned it.</text>
+  </g>
+  <g class="s s3">
+    <text x="90" y="140" font-size="33" fill="#FFFFFF">Which book would you hand to a friend</text>
+    <text x="90" y="182" font-size="33" fill="#FFFFFF">having a hard week?</text>
+  </g>
+  <g class="s s4">
+    <text x="90" y="156" font-size="33" fill="#FFFFFF">What are you reading when nobody assigns it?</text>
+  </g>
+</svg>

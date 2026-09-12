@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 190" width="1200" height="190" role="img" aria-label="">
+  <style>
+    .spin { transform-box: fill-box; transform-origin: center; animation: spin 40s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .drip > * { animation: drip 3.8s ease-in infinite; }
+    .drip > *:nth-child(2) { animation-delay: 1.3s; }
+    .drip > *:nth-child(3) { animation-delay: 2.5s; }
+    @keyframes drip { 0% { transform: translateY(0); opacity: 1; } 70% { opacity: 1; } 100% { transform: translateY(14px); opacity: 0; } }
+    .spk circle { animation: spk 4.2s ease-in-out infinite; }
+    .spk circle:nth-of-type(2n) { animation-delay: 1.4s; }
+    .spk circle:nth-of-type(3n) { animation-delay: 2.8s; }
+    @keyframes spk { 0%,100% { opacity: 0.85; } 50% { opacity: 0.25; } }
+    @media (prefers-reduced-motion: reduce) { [class] { animation: none !important; } }
+  </style>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0E1C42"/>
+      <stop offset="0.55" stop-color="#4A1D42"/>
+      <stop offset="1" stop-color="#FCF3FA"/>
+    </linearGradient>
+    <linearGradient id="ribbon" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#C4519F"/>
+      <stop offset="0.5" stop-color="#E289CB"/>
+      <stop offset="1" stop-color="#C4519F"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="190" fill="url(#bg)"/>
+
+  <!-- grand paint swash across the banner -->
+  <path d="M-30 96 C160 30 300 156 520 108 C740 60 820 148 1040 106 C1120 90 1180 96 1230 88
+           L1230 108 C1170 116 1120 110 1046 126 C830 170 736 84 526 130 C312 176 168 52 -30 120 Z"
+        fill="url(#ribbon)" opacity="0.92"/>
+  <path d="M-30 96 C160 30 300 156 520 108 C740 60 820 148 1040 106 C1120 90 1180 96 1230 88"
+        fill="none" stroke="#F6D8EE" stroke-width="1.6" opacity="0.8"/>
+
+  <!-- palette, left -->
+  <g transform="translate(170,92) rotate(-10)">
+    <path d="M0 -54 C36 -54 66 -30 66 2 C66 20 52 26 38 22 C24 18 20 26 24 36 C28 48 18 58 0 58 C-38 58 -68 32 -68 0 C-68 -32 -36 -54 0 -54 Z"
+          fill="#F7E9F3" stroke="#A53E97" stroke-width="3"/>
+    <circle cx="-34" cy="-22" r="9" fill="#C4519F"/>
+    <circle cx="-4" cy="-34" r="9" fill="#E0A82E"/>
+    <circle cx="30" cy="-24" r="9" fill="#55C8E8"/>
+    <circle cx="-40" cy="10" r="9" fill="#76C043"/>
+    <circle cx="-12" cy="30" r="9" fill="#67308F"/>
+    <ellipse cx="18" cy="-2" rx="12" ry="9" fill="#FCF3FA" stroke="#A53E97" stroke-width="2"/>
+  </g>
+
+  <!-- paintbrush, angled over the swash -->
+  <g transform="translate(560,84) rotate(24)">
+    <rect x="-6" y="-84" width="12" height="70" rx="5" fill="#F6D8EE"/>
+    <rect x="-6" y="-84" width="12" height="70" rx="5" fill="none" stroke="#A53E97" stroke-width="2"/>
+    <rect x="-7" y="-16" width="14" height="14" rx="2" fill="#E0A82E"/>
+    <path d="M-6 -2 h12 q4 14 -1 26 q-5 10 -5 14 q0 -4 -5 -14 q-5 -12 -1 -26z" fill="#C4519F"/>
+  </g>
+  <!-- drips from the brush -->
+  <g class="drip" fill="#C4519F">
+    <circle cx="596" cy="150" r="5"/>
+    <circle cx="612" cy="168" r="3.4"/>
+    <path d="M577 128 q4 12 0 16 q-4 -4 0 -16z"/>
+  </g>
+
+  <!-- color wheel, right -->
+  <g transform="translate(950,84)">
+    <g class="spin" stroke="#FCF3FA" stroke-width="2">
+      <path d="M0 0 L0 -46 A46 46 0 0 1 39.8 -23 Z" fill="#E0A82E"/>
+      <path d="M0 0 L39.8 -23 A46 46 0 0 1 39.8 23 Z" fill="#F78F1E"/>
+      <path d="M0 0 L39.8 23 A46 46 0 0 1 0 46 Z" fill="#C4519F"/>
+      <path d="M0 0 L0 46 A46 46 0 0 1 -39.8 23 Z" fill="#67308F"/>
+      <path d="M0 0 L-39.8 23 A46 46 0 0 1 -39.8 -23 Z" fill="#1794B4"/>
+      <path d="M0 0 L-39.8 -23 A46 46 0 0 1 0 -46 Z" fill="#76C043"/>
+    </g>
+    <circle r="12" fill="#0E1C42" stroke="#F6D8EE" stroke-width="2"/>
+  </g>
+
+  <!-- pencil, lower right -->
+  <g transform="translate(1085,148) rotate(-18)">
+    <rect x="-52" y="-8" width="88" height="16" rx="3" fill="#F6D8EE" stroke="#A53E97" stroke-width="2"/>
+    <path d="M36 -8 L58 0 L36 8 Z" fill="#E8C9A0" stroke="#A53E97" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M50 -3 L58 0 L50 3 Z" fill="#4A1D42"/>
+    <rect x="-62" y="-8" width="10" height="16" rx="3" fill="#E0A82E"/>
+  </g>
+
+  <!-- floating specks -->
+  <g class="spk" fill="#E289CB">
+    <circle cx="330" cy="38" r="4"/><circle cx="760" cy="30" r="5"/><circle cx="860" cy="150" r="3.6"/>
+    <circle cx="420" cy="24" r="2.6"/><circle cx="1150" cy="42" r="3"/>
+  </g>
+
+  <rect y="186" width="1200" height="4" fill="#C4519F"/>
+</svg>

@@ -83,6 +83,20 @@ reports those items as "moved", not as differences.
    `python _build/make_catalog.py --root ../optima-course-cartridges`, commit and push that repo.
 6. Optional: `python _build/import_test.py ../optima-course-cartridges/cartridges/<kit>.imscc "ZZ Kit test (delete me)"`.
 
+## Home page themes
+
+Step 3 opens with a theme picker. A theme carries a banner (`themes/<name>.svg`), a
+palette, a Today's Spark card (`spotlights/<name>.svg`), a motif and starter wording
+for the tagline and Commonplace Corner. The catalog's subject pre-picks one; the
+teacher can choose any of the sixteen. Two more switches: module list as a journey
+trail or the classic grid, and the spark card on or off. Optima Classic + Classic
+grid + spark off is the pre-theme page.
+
+The SVGs are hosted here on Pages and reach Canvas as plain `<img>` tags (Canvas
+strips `data:` images). Their CSS animation runs inside `<img>` and every file
+honours `prefers-reduced-motion`. The themed page is still pure ASCII with inline
+styles only. Source of the design: the theme-and-motion review artifact (2026-09-12).
+
 ## Verifying the widget end to end
 
 Serve the parent folder of both repos, then load the widget with a local base:
