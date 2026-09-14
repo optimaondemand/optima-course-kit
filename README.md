@@ -99,12 +99,14 @@ styles only. Source of the design: the theme-and-motion review artifact (2026-09
 
 ## Course tiles tab
 
-The second tab makes Canvas dashboard tiles (1920 x 1080 PNG). A batch is one course:
-say how many tiles, then fill in tile style, course title, teacher, the Live / On-Demand
-pill (or none), days, time and period. Each detail is either shared by the whole batch or
-set per tile, so five sections that differ only by period are one batch of five, and one
-art, one science and two history sections are one batch of four with the style per tile.
-The form pane and the preview pane scroll independently. Every tile previews on the page and downloads alone or as one zip.
+The second tab makes Canvas dashboard tiles (1920 x 1080 PNG). Set how many tiles, then
+click tiles on the right to select them (Ctrl-click adds to the selection) and fill in
+course title, teacher, the Live / On-Demand pill (or none), period, days, time and the
+tile style on the left. What you type goes on every selected tile, so select all five
+sections for the shared details and one at a time for the period. A field that differs
+across the selection shows "(varies)". A new tile starts as a copy of the last one. The
+form pane and the preview pane scroll independently; each tile downloads alone or all
+together as a zip.
 
 Backgrounds live in `tiles/` (one per band and subject, `tiles/manifest.json` names
 the source tile each came from). They are the 2026-27 tile set with the course title

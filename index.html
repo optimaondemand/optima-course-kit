@@ -112,7 +112,11 @@
   .styles .grp { grid-column:1 / -1; font-size:12px; color:var(--mute); font-weight:600; letter-spacing:.5px; margin-top:6px; }
   .styles .stylebtn span { font-size:11.5px; }
   .tilegrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:14px; }
-  .tilecard canvas { display:block; width:100%; height:auto; border:1px solid var(--line); border-radius:8px; background:#fff; }
+  .tilecard canvas { display:block; width:100%; height:auto; border:2px solid var(--line); border-radius:8px; background:#fff; cursor:pointer; }
+  .tilecard.sel canvas { border-color:var(--navy); box-shadow:0 0 0 3px var(--cyan); }
+  .tilecard .num { display:inline-flex; width:22px; height:22px; border-radius:50%; background:#D0D9E8; color:var(--navy); font-size:12px; font-weight:600; align-items:center; justify-content:center; margin-right:6px; }
+  .tilecard.sel .num { background:var(--navy); color:#fff; }
+  .tilegrid { margin-top:10px; }
   .tilecard .cap { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:13px; color:var(--mute); margin-top:6px; }
   .tilecard .cap b { color:var(--ink); font-weight:600; }
   .styles { display:grid; grid-template-columns:repeat(auto-fill, minmax(118px, 1fr)); gap:8px; margin-top:4px; }
@@ -240,32 +244,27 @@
 <main class="wrap tileswrap" id="tiles-view" hidden>
   <section class="col">
     <div class="step">
-      <h2><span class="n">1</span> Set up your batch</h2>
-      <div class="hint">One batch makes every tile for one course. Five sections of the same course are one batch of five tiles that differ only where you say they differ.</div>
-      <label for="tile-count">How many tiles</label>
-      <input type="number" id="tile-count" min="1" max="24" step="1" value="1" style="max-width:120px;">
-    </div>
-    <div class="step">
-      <h2><span class="n">2</span> Fill in the details</h2>
-      <div class="hint">Tick <b>Same for all</b> when a detail is identical on every tile. Untick it to set it per tile below. A teacher with one art, one science and two history sections unticks <b>Tile style</b> and <b>Period</b>.</div>
-      <div id="tile-fields"></div>
-      <div id="tile-styles-wrap"><label>Tile style, for every tile</label><div class="styles" id="tile-styles"></div></div>
-      <div id="tile-per"></div>
-    </div>
-    <div class="step">
-      <h2><span class="n">3</span> Download</h2>
-      <div class="actions">
-        <button type="button" id="tiles-zip">Download all tiles (.zip)</button>
+      <h2><span class="n">1</span> How many tiles</h2>
+      <div class="row" style="align-items:end;">
+        <div><input type="number" id="tile-count" min="1" max="24" step="1" value="1"></div>
+        <div><button type="button" id="tiles-zip" style="width:100%;">Download all (.zip)</button></div>
       </div>
       <div class="status" id="tiles-status"></div>
-      <ol class="check">
-        <li>In your Canvas course: <b>Settings</b> &rarr; <b>Course Details</b> &rarr; <b>Image</b> &rarr; upload the tile for that section.</li>
-        <li>Dashboard cards are small, so the text on these tiles is set large on purpose. Check one card on your own dashboard before doing the rest.</li>
-      </ol>
+    </div>
+    <div class="step">
+      <h2><span class="n">2</span> Fill in the selected tiles</h2>
+      <div class="hint" id="tile-selhint"></div>
+      <div id="tile-form"></div>
+      <label>Tile style</label>
+      <div class="styles" id="tile-styles"></div>
+      <div class="hint">In Canvas: <b>Settings</b> &rarr; <b>Course Details</b> &rarr; <b>Image</b> &rarr; upload the tile for that section. Dashboard cards are small, so the text is set large on purpose.</div>
     </div>
   </section>
   <section class="tilepane">
-    <div class="hint" id="tiles-hint">Every tile in the batch, as students will see it. Each one downloads on its own or all together as a zip.</div>
+    <div class="cap" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div class="hint" style="margin:0;">Click a tile to select it. Select several to fill them in together.</div>
+      <div class="actions" style="margin:0;"><button type="button" class="sm alt" id="tiles-selall">Select all</button><button type="button" class="sm alt" id="tiles-selnone">Select none</button></div>
+    </div>
     <div class="tilegrid" id="tilegrid"></div>
   </section>
 </main>
@@ -1446,26 +1445,34 @@
   var TILE_W = 1920, TILE_H = 1080;
   var TILE_INK = "#133255", TILE_NAME = "#506e91", TILE_PILL = "#052558";
   var TILE_FIELDS = [
-    { k: 'style',   label: 'Tile style',          style: true },
-    { k: 'title',   label: 'Course title',        ph: 'English 1' },
-    { k: 'teacher', label: 'Teacher name',        ph: 'Ms. Thalia Trussell' },
+    { k: 'title',   label: 'Course title',          ph: 'English 1' },
+    { k: 'teacher', label: 'Teacher name',          ph: 'Ms. Thalia Trussell' },
     { k: 'mode',    label: 'Live / On-Demand pill', select: ['Live', 'On-Demand', 'None'] },
-    { k: 'days',    label: 'Days',                ph: 'Mon & Wed' },
-    { k: 'time',    label: 'Time',                ph: '10:00–10:50 AM ET' },
-    { k: 'period',  label: 'Period or section',   ph: 'Period 3' }
+    { k: 'period',  label: 'Period or section',     ph: 'Period 3' },
+    { k: 'days',    label: 'Days',                  ph: 'Mon & Wed' },
+    { k: 'time',    label: 'Time',                  ph: '10:00–10:50 AM ET' }
   ];
   var TILES_STORE = 'optima-course-kit-tiles';
-  function blankTiles() {
-    return { count: 1,
-      shared: { style: true, title: true, teacher: true, mode: true, days: true, time: true, period: false },
-      values: { style: 'upper/english', title: '', teacher: '', mode: 'Live', days: '', time: '', period: '' },
-      per: [{}] };
-  }
+  // Every tile carries its own details. Editing applies to whichever tiles are selected.
+  function blankTile() { return { style: 'upper/english', title: '', teacher: '', mode: 'Live', days: '', time: '', period: '' }; }
+  function blankTiles() { return { count: 1, per: [blankTile()], sel: [true] }; }
   var tiles = blankTiles();
   function loadTiles() {
     try {
       var t = JSON.parse(localStorage.getItem(TILES_STORE) || 'null');
-      if (t && t.values && t.shared) tiles = t;
+      if (t && t.per) {
+        tiles = { count: t.count, per: [], sel: t.sel || [] };
+        // Older batches kept shared values apart from per-tile ones: fold them in.
+        for (var i = 0; i < (parseInt(t.count, 10) || 1); i++) {
+          var d = blankTile(), p = t.per[i] || {};
+          Object.keys(d).forEach(function (k) {
+            var shared = t.shared && t.values && t.shared[k] !== false && (!t.shared.hasOwnProperty(k) || t.shared[k]);
+            var v = (t.shared ? (shared ? t.values[k] : p[k]) : p[k]);
+            if (v != null && v !== '') d[k] = v;
+          });
+          tiles.per.push(d);
+        }
+      }
     } catch (e) { /* ignore */ }
     fixTiles();
   }
@@ -1473,28 +1480,36 @@
   function fixTiles() {
     tiles.count = Math.max(1, Math.min(24, parseInt(tiles.count, 10) || 1));
     if (!tiles.per) tiles.per = [];
-    while (tiles.per.length < tiles.count) tiles.per.push({});
-    tiles.per.length = tiles.count;
-    if (tiles.shared.style == null) tiles.shared.style = true;
-    // Older saved batches kept band + style apart; fold them into one key.
-    if (tiles.style && !tiles.values.style) tiles.values.style = String(tiles.band || 'Upper').toLowerCase() + '/' + tiles.style;
-    if (!styleFor(tiles.values.style)) tiles.values.style = 'upper/english';
+    if (!tiles.sel) tiles.sel = [];
+    while (tiles.per.length < tiles.count) {
+      // A new tile starts as a copy of the last one, so only what differs needs typing.
+      var last = tiles.per[tiles.per.length - 1];
+      var d = last ? JSON.parse(JSON.stringify(last)) : blankTile();
+      if (last) d.period = '';
+      tiles.per.push(d); tiles.sel.push(true);
+    }
+    tiles.per.length = tiles.count; tiles.sel.length = tiles.count;
+    for (var i = 0; i < tiles.count; i++) {
+      if (!tiles.per[i]) tiles.per[i] = blankTile();
+      if (tiles.sel[i] == null) tiles.sel[i] = true;
+      if (!styleFor(tiles.per[i].style)) tiles.per[i].style = 'upper/english';
+    }
+    if (!tiles.sel.some(Boolean)) tiles.sel = tiles.sel.map(function () { return true; });
   }
   // Styles are keyed "band/subject", e.g. "upper/english" or "middle/math".
   function styleKey(s) { return s.band.toLowerCase() + '/' + s.key; }
   function styleFor(key) {
     return TILE_STYLES.filter(function (s) { return styleKey(s) === key; })[0] || null;
   }
-  function styleLabel(s) { return s.band + ' · ' + s.subject; }
-  function tileValue(i, k) {
-    if (tiles.shared[k]) return String(tiles.values[k] || '');
-    return String((tiles.per[i] || {})[k] || '');
+  function selectedIdx() {
+    var out = [];
+    for (var i = 0; i < tiles.count; i++) if (tiles.sel[i]) out.push(i);
+    return out;
   }
   function tileData(i) {
-    var d = {};
-    TILE_FIELDS.forEach(function (f) { d[f.k] = tileValue(i, f.k); });
+    var d = JSON.parse(JSON.stringify(tiles.per[i] || blankTile()));
     if (d.mode !== 'On-Demand' && d.mode !== 'None') d.mode = 'Live';
-    if (!styleFor(d.style)) d.style = tiles.values.style;
+    if (!styleFor(d.style)) d.style = 'upper/english';
     return d;
   }
   function tileFilename(d) {
@@ -1595,87 +1610,64 @@
   }
   function renderTiles() {
     fixTiles();
-    // the swatch grid sets the shared style; hidden when style is per tile
-    $('tile-styles-wrap').hidden = !tiles.shared.style;
-    var grid = [], lastBand = null;
+    $('tile-count').value = tiles.count;
+    var sel = selectedIdx();
+    $('tile-selhint').textContent = sel.length === tiles.count
+      ? 'All ' + tiles.count + ' tile' + (tiles.count === 1 ? '' : 's') + ' selected: what you type here goes on every tile.'
+      : sel.length === 1 ? 'Tile ' + (sel[0] + 1) + ' selected.'
+      : sel.length ? 'Tiles ' + sel.map(function (i) { return i + 1; }).join(', ') + ' selected: what you type here goes on each of them.'
+      : 'Select a tile on the right.';
+    // Shared value across the selection, or blank with a "varies" placeholder.
+    function common(k) {
+      var vals = sel.map(function (i) { return String(tileData(i)[k] || ''); });
+      return vals.every(function (v) { return v === vals[0]; }) ? vals[0] : null;
+    }
+    var out = ['<table class="fields"><tbody>'];
+    TILE_FIELDS.forEach(function (f) {
+      var v = common(f.k);
+      var attrs = ' class="tf" data-k="' + f.k + '"' + (sel.length ? '' : ' disabled');
+      var input;
+      if (f.select) {
+        input = '<select' + attrs + '>' + (v == null ? '<option value="" selected>(varies)</option>' : '') + f.select.map(function (o) {
+          return '<option value="' + o + '"' + (v === o ? ' selected' : '') + '>' + o + '</option>';
+        }).join('') + '</select>';
+      } else {
+        input = '<input type="text"' + attrs + ' value="' + escHtml(v == null ? '' : v) + '" placeholder="' + escHtml(v == null ? '(varies)' : (f.ph || '')) + '" autocomplete="off">';
+      }
+      out.push('<tr><td>' + escHtml(f.label) + '</td><td>' + input + '</td></tr>');
+    });
+    out.push('</tbody></table>');
+    $('tile-form').innerHTML = out.join('');
+    $('tile-form').querySelectorAll('.tf').forEach(function (inp) {
+      var h = function () {
+        var k = this.dataset.k, val = this.value;
+        if (this.tagName === 'SELECT' && val === '') return;
+        selectedIdx().forEach(function (i) { tiles.per[i][k] = val; });
+        saveTiles(); scheduleDraw();
+      };
+      inp.addEventListener('input', h); inp.addEventListener('change', h);
+    });
+    var curStyle = common('style'), grid = [], lastBand = null;
     TILE_STYLES.forEach(function (s) {
       if (s.band !== lastBand) { grid.push('<div class="grp">' + escHtml(s.band === 'Middle' ? 'Middle (6–8)' : 'Upper (9–12)') + '</div>'); lastBand = s.band; }
-      grid.push('<button type="button" class="stylebtn" data-key="' + escHtml(styleKey(s)) + '" aria-pressed="' + (styleKey(s) === tiles.values.style ? 'true' : 'false') + '"><img src="' + escHtml(s.file) + '" alt="" loading="lazy"><span>' + escHtml(s.subject) + '</span></button>');
+      grid.push('<button type="button" class="stylebtn" data-key="' + escHtml(styleKey(s)) + '" aria-pressed="' + (styleKey(s) === curStyle ? 'true' : 'false') + '"' + (sel.length ? '' : ' disabled') + '><img src="' + escHtml(s.file) + '" alt="" loading="lazy"><span>' + escHtml(s.subject) + '</span></button>');
     });
     $('tile-styles').innerHTML = grid.join('');
     $('tile-styles').querySelectorAll('.stylebtn').forEach(function (b) {
-      b.addEventListener('click', function () { tiles.values.style = this.dataset.key; saveTiles(); renderTiles(); });
-    });
-    $('tile-count').value = tiles.count;
-    // shared fields
-    var out = ['<table class="fields"><thead><tr><th>Detail</th><th>Same for all</th><th>Value</th></tr></thead><tbody>'];
-    TILE_FIELDS.forEach(function (f) {
-      var sh = !!tiles.shared[f.k];
-      out.push('<tr><td>' + escHtml(f.label) + '</td>');
-      out.push('<td class="same"><input type="checkbox" class="tf-same" data-k="' + f.k + '"' + (sh ? ' checked' : '') + '></td>');
-      out.push('<td>' + fieldInput(f, tiles.values[f.k], 'tf-shared', '', !sh) + '</td></tr>');
-    });
-    out.push('</tbody></table>');
-    $('tile-fields').innerHTML = out.join('');
-    // per-tile fields
-    var perFields = TILE_FIELDS.filter(function (f) { return !tiles.shared[f.k]; });
-    if (!perFields.length) {
-      $('tile-per').innerHTML = '<div class="hint" style="margin-top:10px;">Every detail is shared, so all ' + tiles.count + ' tiles are identical. Untick <b>Same for all</b> on the detail that changes from section to section.</div>';
-    } else {
-      var p = ['<label>Per tile</label><div class="pertable"><table class="fields"><thead><tr><th>Tile</th>'];
-      perFields.forEach(function (f) { p.push('<th>' + escHtml(f.label) + '</th>'); });
-      p.push('</tr></thead><tbody>');
-      for (var i = 0; i < tiles.count; i++) {
-        p.push('<tr><td>' + (i + 1) + '</td>');
-        perFields.forEach(function (f) { p.push('<td>' + fieldInput(f, (tiles.per[i] || {})[f.k], 'tf-per', String(i), false) + '</td>'); });
-        p.push('</tr>');
-      }
-      p.push('</tbody></table></div>');
-      $('tile-per').innerHTML = p.join('');
-    }
-    wireTileFields();
-    return drawAllTiles();
-  }
-  function fieldInput(f, val, cls, idx, disabled) {
-    var data = ' class="' + cls + '" data-k="' + f.k + '"' + (idx ? ' data-i="' + idx + '"' : '');
-    if (f.style) {
-      if (cls === 'tf-shared') return '<span class="hint" style="margin:0;">' + escHtml(styleLabel(styleFor(tiles.values.style) || TILE_STYLES[0])) + (disabled ? '' : ' — pick below') + '</span>';
-      var cur = styleFor(val) ? val : tiles.values.style, lastBand = null, opts = [];
-      TILE_STYLES.forEach(function (s) {
-        if (s.band !== lastBand) { if (lastBand) opts.push('</optgroup>'); opts.push('<optgroup label="' + escHtml(s.band) + '">'); lastBand = s.band; }
-        opts.push('<option value="' + escHtml(styleKey(s)) + '"' + (styleKey(s) === cur ? ' selected' : '') + '>' + escHtml(s.subject) + '</option>');
-      });
-      opts.push('</optgroup>');
-      return '<select' + data + '>' + opts.join('') + '</select>';
-    }
-    if (f.select) {
-      return '<select' + data + (disabled ? ' disabled' : '') + '>' + f.select.map(function (o) {
-        return '<option value="' + o + '"' + (String(val || f.select[0]) === o ? ' selected' : '') + '>' + o + '</option>';
-      }).join('') + '</select>';
-    }
-    return '<input type="text"' + data + ' value="' + escHtml(val || '') + '" placeholder="' + escHtml(f.ph || '') + '"' + (disabled ? ' disabled' : '') + ' autocomplete="off">';
-  }
-  var drawTimer = null, drawSeq = 0;
-  function scheduleDraw() { clearTimeout(drawTimer); drawTimer = setTimeout(drawAllTiles, 120); }
-  function wireTileFields() {
-    document.querySelectorAll('.tf-same').forEach(function (cb) {
-      cb.addEventListener('change', function () {
-        var k = this.dataset.k; tiles.shared[k] = this.checked;
-        if (!this.checked) {
-          // Start every tile from the shared value so nothing goes blank.
-          for (var i = 0; i < tiles.count; i++) { tiles.per[i] = tiles.per[i] || {}; if (tiles.per[i][k] == null) tiles.per[i][k] = tiles.values[k]; }
-        }
+      b.addEventListener('click', function () {
+        var key = this.dataset.key;
+        selectedIdx().forEach(function (i) { tiles.per[i].style = key; });
         saveTiles(); renderTiles();
       });
     });
-    document.querySelectorAll('.tf-shared').forEach(function (inp) {
-      inp.addEventListener('input', function () { tiles.values[this.dataset.k] = this.value; saveTiles(); scheduleDraw(); });
-      inp.addEventListener('change', function () { tiles.values[this.dataset.k] = this.value; saveTiles(); scheduleDraw(); });
-    });
-    document.querySelectorAll('.tf-per').forEach(function (inp) {
-      var h = function () { var i = +this.dataset.i; tiles.per[i] = tiles.per[i] || {}; tiles.per[i][this.dataset.k] = this.value; saveTiles(); if (this.dataset.k === 'style') drawAllTiles(); else scheduleDraw(); };
-      inp.addEventListener('input', h); inp.addEventListener('change', h);
-    });
+    return drawAllTiles();
+  }
+  var drawTimer = null, drawSeq = 0;
+  function scheduleDraw() { clearTimeout(drawTimer); drawTimer = setTimeout(drawAllTiles, 120); }
+  function toggleTile(i, only) {
+    if (only) { tiles.sel = tiles.sel.map(function (_, j) { return j === i; }); }
+    else tiles.sel[i] = !tiles.sel[i];
+    saveTiles(); renderTiles();
   }
   function drawAllTiles() {
     var grid = $('tilegrid');
@@ -1684,9 +1676,13 @@
       grid.innerHTML = '';
       for (var i = 0; i < tiles.count; i++) {
         var card = document.createElement('div'); card.className = 'tilecard'; card.dataset.i = i;
-        card.innerHTML = '<canvas width="' + TILE_W + '" height="' + TILE_H + '" aria-label="Tile ' + (i + 1) + '"></canvas><div class="cap"><b></b><button type="button" class="sm alt tile-dl" data-i="' + i + '">Download PNG</button></div>';
+        card.innerHTML = '<canvas width="' + TILE_W + '" height="' + TILE_H + '" aria-label="Tile ' + (i + 1) + '" title="Click to select; Ctrl-click to add to the selection"></canvas>' +
+          '<div class="cap"><span><span class="num">' + (i + 1) + '</span><b></b></span><button type="button" class="sm alt tile-dl" data-i="' + i + '">Download PNG</button></div>';
         grid.appendChild(card);
       }
+      grid.querySelectorAll('canvas').forEach(function (cv) {
+        cv.addEventListener('click', function (e) { toggleTile(+this.parentNode.dataset.i, !(e.ctrlKey || e.metaKey || e.shiftKey)); });
+      });
       grid.querySelectorAll('.tile-dl').forEach(function (b) {
         b.addEventListener('click', function () {
           var i = +this.dataset.i, d = tileData(i), cv = grid.children[i].querySelector('canvas');
@@ -1694,6 +1690,7 @@
         });
       });
     }
+    for (var s = 0; s < tiles.count; s++) grid.children[s].classList.toggle('sel', !!tiles.sel[s]);
     var datas = [], bgs = [], seq = ++drawSeq;
     for (var j = 0; j < tiles.count; j++) { datas.push(tileData(j)); bgs.push(tileBg(styleFor(datas[j].style))); }
     return Promise.all([Promise.all(bgs), tileFonts()]).then(function (r) {
@@ -1731,10 +1728,12 @@
   function wireTiles() {
     loadTiles();
     $('tile-count').addEventListener('change', function () { tiles.count = this.value; saveTiles(); renderTiles(); });
+    $('tiles-selall').addEventListener('click', function () { tiles.sel = tiles.sel.map(function () { return true; }); saveTiles(); renderTiles(); });
+    $('tiles-selnone').addEventListener('click', function () { tiles.sel = tiles.sel.map(function () { return false; }); saveTiles(); renderTiles(); });
     $('tiles-zip').addEventListener('click', function () {
       $('tiles-status').textContent = 'Building the zip…'; $('tiles-status').className = 'status';
       tilesZip().then(function (zip) { return zip.generateAsync({ type: 'blob' }); }).then(function (blob) {
-        var who = String(tiles.values.teacher || tileValue(0, 'teacher') || 'teacher').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+        var who = String(tileData(0).teacher || 'teacher').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
         saveBlob(blob, 'Course_Tiles_' + (who || 'teacher') + '.zip');
         $('tiles-status').textContent = tiles.count + ' tile' + (tiles.count === 1 ? '' : 's') + ' zipped.'; $('tiles-status').className = 'status ok';
       });
@@ -1937,13 +1936,14 @@
   // loaded, every canvas carries ink in the text block, names differ per tile,
   // and the zip holds one PNG per tile.
   function tilesSelfTest() {
-    tiles = blankTiles();
-    tiles.count = 5;
-    tiles.values = { style: 'upper/english', title: 'English 1', teacher: 'Ms. Thalia Trussell', mode: 'Live', days: 'Mon & Wed', time: '10:00–10:50 AM ET', period: '' };
-    tiles.shared.period = false; tiles.shared.style = false; tiles.shared.mode = false;
-    // one art, one science, two history, one English; the last tile carries no pill
+    // Five tiles: select all and type the shared details, then select one at a time
+    // for period, style and pill, the way a teacher would.
+    tiles = blankTiles(); tiles.count = 5; fixTiles();
+    tiles.sel = [true, true, true, true, true];
+    tiles.per.forEach(function (d) { d.title = 'English 1'; d.teacher = 'Ms. Thalia Trussell'; d.days = 'Mon & Wed'; d.time = '10:00–10:50 AM ET'; d.mode = 'Live'; });
     var mix = ['upper/art', 'upper/science', 'upper/social-studies', 'upper/social-studies', 'upper/english'];
-    tiles.per = [1, 2, 3, 4, 5].map(function (n) { return { period: 'Period ' + n, style: mix[n - 1], mode: n === 5 ? 'None' : 'Live' }; });
+    tiles.per.forEach(function (d, i) { d.period = 'Period ' + (i + 1); d.style = mix[i]; });
+    tiles.per[4].mode = 'None';
     setTab('tiles');
     return renderTiles().then(function (names) {
       var grid = $('tilegrid'), inked = 0;
@@ -1954,19 +1954,23 @@
         if (dark / (img.length / 16) > 0.02) inked++;
       }
       var uniq = {}; names.forEach(function (n) { uniq[n] = true; });
-      // Backgrounds differ: sample the illustration area of tiles 1 and 2.
       var px = function (i, x, y) { var q = grid.children[i].querySelector('canvas').getContext('2d').getImageData(x, y, 1, 1).data; return [q[0], q[1], q[2]]; };
       var p1 = px(0, 1500, 600), p2 = px(1, 1500, 600);
       var stylesDiffer = Math.abs(p1[0] - p2[0]) + Math.abs(p1[1] - p2[1]) + Math.abs(p1[2] - p2[2]) > 30;
-      // Pill: its white ring crosses (37, 964) on tile 1 (Live); tile 5 (None) has no ring there.
       var lum = function (c) { return 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]; };
       var pillOn = lum(px(0, 37, 964)) > 200, pillOff = lum(px(4, 37, 964)) < 200;
+      // Selection edits: select tile 2 only and change its period through the form.
+      toggleTile(1, true);
+      var inp = $('tile-form').querySelector('input[data-k="period"]');
+      inp.value = 'Period 2B'; inp.dispatchEvent(new Event('input'));
+      var selEdit = tiles.per[1].period === 'Period 2B' && tiles.per[0].period === 'Period 1' && selectedIdx().length === 1;
+      tiles.sel = [true, true, true, true, true];
       return tilesZip().then(function (zip) {
         var entries = Object.keys(zip.files).length;
         var poppins = !!(document.fonts && document.fonts.check && document.fonts.check('600 118px Poppins'));
         var res = { count: grid.children.length, inked: inked, poppins: poppins, zipEntries: entries, names: names,
-          stylesDiffer: stylesDiffer, pillOn: pillOn, pillOff: pillOff,
-          ok: grid.children.length === 5 && inked === 5 && Object.keys(uniq).length === 5 && entries === 5 && poppins && stylesDiffer && pillOn && pillOff };
+          stylesDiffer: stylesDiffer, pillOn: pillOn, pillOff: pillOff, selEdit: selEdit,
+          ok: grid.children.length === 5 && inked === 5 && Object.keys(uniq).length === 5 && entries === 5 && poppins && stylesDiffer && pillOn && pillOff && selEdit };
         setTab('kit');
         return res;
       });
