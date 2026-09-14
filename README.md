@@ -100,17 +100,18 @@ styles only. Source of the design: the theme-and-motion review artifact (2026-09
 ## Course tiles tab
 
 The second tab makes Canvas dashboard tiles (1920 x 1080 PNG). A batch is one course:
-pick the grade band and a subject style, say how many tiles, then fill in course title,
-teacher, Live or On-Demand, days, time and period. Each detail is either shared by the
-whole batch or typed per tile, so five sections that differ only by period are one
-batch of five. Every tile previews on the page and downloads alone or as one zip.
+say how many tiles, then fill in tile style, course title, teacher, the Live / On-Demand
+pill (or none), days, time and period. Each detail is either shared by the whole batch or
+set per tile, so five sections that differ only by period are one batch of five, and one
+art, one science and two history sections are one batch of four with the style per tile.
+The form pane and the preview pane scroll independently. Every tile previews on the page and downloads alone or as one zip.
 
 Backgrounds live in `tiles/` (one per band and subject, `tiles/manifest.json` names
 the source tile each came from). They are the 2026-27 tile set with the course title
 and teacher name erased; `_build/tile_backgrounds.py` regenerates them from the
-Upper/Middle zips. The text is drawn in the browser in Poppins, larger than the
-originals because dashboard cards shrink the image, and the Live / On-Demand pill is
-redrawn over the original.
+Upper/Middle zips. The pill is erased too (`_build/tile_backgrounds.py` inpaints it by extending the
+wave boundary). The text is drawn in the browser in Poppins, larger than the originals
+because dashboard cards shrink the image, and the pill is drawn only when asked for.
 
 ## Verifying the widget end to end
 
