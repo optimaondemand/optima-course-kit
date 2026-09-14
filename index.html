@@ -145,12 +145,18 @@
   .pertable { overflow-x:auto; }
   .pertable table.fields input[type=text], .pertable table.fields select { min-width:120px; }
   .previewbar button.sm { background:transparent; color:#fff; border-color:var(--cyan); }
+  #preview.item { padding:0; background:#fff; position:relative; overflow:hidden; }
+  #preview iframe.itemframe { position:absolute; inset:0; width:100%; height:100%; border:0; background:#fff; }
+  table.sched a.prev-link { color:var(--navy); text-decoration:underline; text-decoration-style:dotted; text-underline-offset:3px; }
+  table.sched a.prev-link:hover { color:#0E6E7D; }
   #show-preview { position:fixed; right:18px; bottom:18px; z-index:5; box-shadow:0 2px 10px rgba(14,28,66,.3); }
-  .batchrow { display:grid; grid-template-columns:1fr 1fr 1fr auto auto; gap:8px; align-items:end; padding:10px 12px; margin-top:8px; background:#F9FAFD; border:1px dashed var(--line); border-radius:8px; }
-  .batchrow label { margin:0 0 3px; }
-  .batchrow input[type=datetime-local] { font-size:13px; padding:5px 7px; }
-  .batchrow .bl { grid-column:1 / -1; font-size:13px; color:var(--navy); font-weight:600; }
-  @media (max-width: 760px) { .batchrow { grid-template-columns:1fr 1fr; } }
+  .batchrow { padding:10px 12px; margin-top:8px; background:#F9FAFD; border:1px dashed var(--line); border-radius:8px; }
+  .batchrow .bl { font-size:13px; color:var(--navy); font-weight:600; }
+  .batchrow .bt-fields { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; }
+  .batchrow label { margin:6px 0 3px; }
+  .batchrow input[type=datetime-local] { font-size:13px; padding:5px 7px; min-width:0; width:100%; }
+  .batchrow .actions { margin-top:8px; }
+  @media (max-width: 560px) { .batchrow .bt-fields { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -246,7 +252,7 @@
   </section>
 
   <section class="preview">
-    <div class="previewbar"><div>Home page preview</div><div style="display:flex;gap:12px;align-items:center;"><span id="preview-note">Links work after import, not here.</span><button type="button" class="sm" id="hide-preview">Hide preview</button></div></div>
+    <div class="previewbar"><div>Home page preview</div><div style="display:flex;gap:12px;align-items:center;"><span id="preview-note">Links work after import, not here.</span><button type="button" class="sm" id="preview-home" hidden>Back to home page</button><button type="button" class="sm" id="hide-preview">Hide preview</button></div></div>
     <div id="preview" aria-label="Home page preview"></div>
   </section>
 </main>
@@ -749,6 +755,7 @@
         .catch(function (e) { status('Could not load this kit: ' + e.message, 'err'); throw e; });
     }
     kit = k;
+    if (previewItemId) { previewItemId = null; $('preview').className = ''; $('preview-home').hidden = true; $('preview-note').textContent = 'Links work after import, not here.'; }
     var saved = loadSaved(k.id);
     home = saved || blankHome();
     if (!home.modules || !home.modules.length || home.modules.length !== k.modules.filter(function (m) { return m.published; }).length) {
@@ -851,11 +858,13 @@
     var id = function (f) { return 'bt-' + f + '-' + scope; };
     return '<div class="batchrow" data-scope="' + escHtml(scope) + '">' +
       '<div class="bl">' + escHtml(label) + '</div>' +
+      '<div class="bt-fields">' +
       '<div><label for="' + id('unlock_at') + '">Opens</label><input type="datetime-local" id="' + id('unlock_at') + '"></div>' +
       '<div><label for="' + id('due_at') + '">Due</label><input type="datetime-local" id="' + id('due_at') + '"></div>' +
       '<div><label for="' + id('lock_at') + '">Closes</label><input type="datetime-local" id="' + id('lock_at') + '"></div>' +
-      '<button type="button" class="sm batch-apply" data-scope="' + escHtml(scope) + '">' + escHtml(applyLabel) + '</button>' +
-      '<button type="button" class="sm alt batch-clear" data-scope="' + escHtml(scope) + '">Clear these dates</button>' +
+      '</div>' +
+      '<div class="actions"><button type="button" class="sm batch-apply" data-scope="' + escHtml(scope) + '">' + escHtml(applyLabel) + '</button>' +
+      '<button type="button" class="sm alt batch-clear" data-scope="' + escHtml(scope) + '">Clear these dates</button></div>' +
       '</div>';
   }
   function wireBatchRows() {
@@ -974,6 +983,9 @@
     $('course-start').addEventListener('change', function () { home.courseStart = this.value; proposeDates(); save(); renderDates(); });
     $('dates-clear').addEventListener('click', function () { home.dates = {}; save(); renderDates(); });
     wireBatchRows();
+    el.querySelectorAll('.prev-link').forEach(function (a) {
+      a.addEventListener('click', function (e) { e.preventDefault(); previewItem(itemById(this.dataset.id)); });
+    });
     $('gb-pub-all').addEventListener('click', function () { setAllPublished(true); });
     $('gb-unpub-all').addEventListener('click', function () { setAllPublished(false); });
     el.querySelectorAll('.gb-pub').forEach(function (cb) {
@@ -999,7 +1011,7 @@
     var typeLabel = it.type === 'assignment' ? 'Assignment' : it.type === 'quiz' ? 'Quiz' : 'Discussion';
     var pts = (it.type === 'quiz' && it.quiz_type === 'survey') ? 'ungraded' : fmtPoints(effItem(it).points);
     return '<tr>' +
-      '<td>' + escHtml(it.title) + '</td>' +
+      '<td><a href="#" class="prev-link" data-id="' + escHtml(it.id) + '" title="Preview this item">' + escHtml(it.title) + '</a></td>' +
       '<td><span class="pill grey">' + typeLabel + '</span></td>' +
       '<td>' + pts + '</td>' +
       '<td><input type="datetime-local" id="dt-unlock_at-' + it.id + '" value="' + escHtml(effLocal(it, 'unlock_at')) + '"></td>' +
@@ -1141,7 +1153,107 @@
   function fillForm() { FIELDS.forEach(function (f) { $('f-' + f).value = home[f] || ($('f-' + f).tagName === 'SELECT' ? $('f-' + f).options[0].value : ''); }); }
   function readForm() { FIELDS.forEach(function (f) { home[f] = $('f-' + f).value; }); }
   function currentHtml() { return (course && kit) ? buildHome(course, kit, home) : ''; }
+  // ------------------------------------------------------------ item preview
+  // The cartridge holds every item's page. Fetched once per kit on the first click,
+  // then read straight out of the zip. Links carry Canvas tokens that only resolve on
+  // import, so they are disabled here; embedded lesson pages load from their live URLs.
+  var previewItemId = null, kitZipCache = {};
+  function loadKitZip() {
+    if (!kit) return Promise.reject(new Error('choose a kit first'));
+    if (kitZipCache[kit.id]) return kitZipCache[kit.id];
+    kitZipCache[kit.id] = fetch(BASE + kit.file).then(function (r) {
+      if (!r.ok) throw new Error('could not fetch ' + kit.file + ' (' + r.status + ')');
+      return r.arrayBuffer();
+    }).then(function (buf) { return JSZip.loadAsync(buf); }).catch(function (e) { delete kitZipCache[kit.id]; throw e; });
+    return kitZipCache[kit.id];
+  }
+  function unescapeXml(s) {
+    return String(s || '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&amp;/g, '&');
+  }
+  function bodyOf(doc) {
+    var i = doc.indexOf('<body'), j = doc.lastIndexOf('</body>');
+    if (i < 0) return doc;
+    i = doc.indexOf('>', i) + 1;
+    return j > i ? doc.slice(i, j) : doc.slice(i);
+  }
+  function neutralize(html) {
+    // Tokens resolve only on import; scripts never belong in a preview.
+    return String(html || '')
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/(href|src)=("|')(\$(?:CANVAS_OBJECT_REFERENCE|CANVAS_COURSE_REFERENCE|WIKI_REFERENCE|IMS-CC-FILEBASE|IMS_CC_FILEBASE)\$[^"']*)\2/g, '$1=$2#$2 data-token=$2$3$2');
+  }
+  function quizPreview(zip, item) {
+    return Promise.all([zip.file(item.xml).async('string'), zip.file(item.gid + '/assessment_qti.xml').async('string')]).then(function (r) {
+      var desc = /<description>([\s\S]*?)<\/description>/.exec(r[0]);
+      var out = [unescapeXml(desc ? desc[1] : '')];
+      var items = r[1].split(/<item\b/).slice(1), n = 0;
+      items.forEach(function (block) {
+        var stem = /<presentation>[\s\S]*?<mattext[^>]*>([\s\S]*?)<\/mattext>/.exec(block);
+        if (!stem) return;
+        n++;
+        out.push('<div style="border:1px solid #D0D9E8;border-radius:8px;padding:14px 18px;margin-top:14px;"><div style="font-size:12px;letter-spacing:1px;color:#6b7a99;">QUESTION ' + n + '</div>');
+        out.push('<div>' + unescapeXml(stem[1]) + '</div>');
+        var labels = [], re = /<response_label[^>]*>[\s\S]*?<mattext[^>]*>([\s\S]*?)<\/mattext>/g, m;
+        while ((m = re.exec(block))) labels.push(unescapeXml(m[1]));
+        if (labels.length) out.push('<ul style="margin:8px 0 0;">' + labels.map(function (l) { return '<li>' + l + '</li>'; }).join('') + '</ul>');
+        else out.push('<div style="color:#6b7a99;font-size:14px;margin-top:6px;">Written response</div>');
+        out.push('</div>');
+      });
+      return { html: out.join(''), note: n + ' question' + (n === 1 ? '' : 's') + ' (answers are not shown here)' };
+    });
+  }
+  function itemPreviewHtml(zip, item) {
+    if (item.type === 'quiz') return quizPreview(zip, item);
+    if (item.type === 'discussion') {
+      var f = zip.file(item.gid + '.xml');
+      if (!f) return Promise.reject(new Error('discussion file missing'));
+      return f.async('string').then(function (x) {
+        var m = /<text[^>]*>([\s\S]*?)<\/text>/.exec(x);
+        return { html: unescapeXml(m ? m[1] : ''), note: 'Discussion prompt' };
+      });
+    }
+    var htmlName = Object.keys(zip.files).filter(function (n) { return n.indexOf(item.gid + '/') === 0 && /\.html$/.test(n); })[0];
+    if (!htmlName) return Promise.reject(new Error('assignment page missing'));
+    return zip.file(htmlName).async('string').then(function (doc) { return { html: bodyOf(doc), note: 'Assignment instructions' }; });
+  }
+  function previewItem(item) {
+    if (!item) return Promise.resolve('');
+    previewItemId = item.id;
+    setPreviewShown(true);
+    $('preview-home').hidden = false;
+    $('preview-note').textContent = 'Loading ' + item.title + '…';
+    return loadKitZip().then(function (zip) {
+      if (previewItemId !== item.id) return '';
+      return itemPreviewHtml(zip, item).then(function (r) {
+        var mod = moduleById(item.module), eff = effItem(item);
+        var typeLabel = item.type === 'assignment' ? 'Assignment' : item.type === 'quiz' ? (item.quiz_type === 'survey' ? 'Survey' : 'Quiz') : 'Discussion';
+        var meta = [typeLabel, mod ? mod.title : '', (item.type === 'quiz' && item.quiz_type === 'survey') ? 'ungraded' : fmtPoints(eff.points) + ' pts'].filter(Boolean).join(' · ');
+        var doc = '<!doctype html><html><head><meta charset="utf-8"><base target="_blank"><style>' +
+          'body{margin:0;background:#fff;color:#0e1c42;font-family:"Segoe UI",Arial,sans-serif;font-size:16px;line-height:1.5}' +
+          '.wrap{max-width:960px;margin:0 auto;padding:22px 26px 40px}img{max-width:100%}iframe{max-width:100%}' +
+          '.eyebrow{font-size:12px;letter-spacing:1px;color:#6b7a99}h1.t{font-size:26px;margin:4px 0 6px;font-weight:600}.note{font-size:13px;color:#6b7a99;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid #D0D9E8}' +
+          'a[data-token]{color:#6b7a99;text-decoration:underline dotted;cursor:default}' +
+          '</style></head><body><div class="wrap"><div class="eyebrow">' + escHtml(meta) + '</div><h1 class="t">' + escHtml(item.title) + '</h1>' +
+          '<div class="note">' + escHtml(r.note) + '. Links resolve after import.</div>' + neutralize(r.html) + '</div></body></html>';
+        var pv = $('preview'); pv.className = 'item'; pv.innerHTML = '';
+        var fr = document.createElement('iframe'); fr.className = 'itemframe'; fr.setAttribute('sandbox', 'allow-scripts allow-popups'); fr.setAttribute('title', item.title);
+        fr.srcdoc = doc; pv.appendChild(fr);
+        $('preview-note').textContent = 'Previewing: ' + item.title;
+        return doc;
+      });
+    }).catch(function (e) {
+      $('preview-note').textContent = 'Could not preview: ' + e.message;
+      return '';
+    });
+  }
+  function leaveItemPreview() {
+    previewItemId = null;
+    $('preview').className = ''; $('preview-home').hidden = true;
+    $('preview-note').textContent = 'Links work after import, not here.';
+    renderPreview();
+  }
   function renderPreview() {
+    if (previewItemId) return; // an item is on show; the home page returns via the Back button
     var html = currentHtml();
     // Rendered inline (the emitted page is fully inline-styled, like Canvas shows it);
     // Canvas tokens become dead links here because they only resolve on import.
@@ -1790,6 +1902,7 @@
     wireTiles();
     if (location.hash === '#tiles') setTab('tiles'); else if (uiPref().tab === 'tiles') setTab('tiles');
     $('hide-preview').addEventListener('click', function () { setPreviewShown(false); });
+    $('preview-home').addEventListener('click', leaveItemPreview);
     $('show-preview').addEventListener('click', function () { setPreviewShown(true); });
     if (uiPref().previewHidden) setPreviewShown(false);
     catalog.courses.forEach(function (c) {
@@ -1950,6 +2063,9 @@
         if (hasSchedule) out.ok = out.ok && checks.datesApplied && checks.weightingOn && checks.pointsPatched && checks.unpublished
           && checks.batchDates && (!quizItem || checks.quizPoints);
         out.ok = out.ok && previewToggle;
+        return previewSelfTest();
+      }).then(function (pv) {
+        out.preview = pv; out.ok = out.ok && pv.ok;
         return tilesSelfTest();
       }).then(function (tr) {
         out.tiles = tr; out.ok = out.ok && tr.ok;
@@ -1969,6 +2085,24 @@
   // Tiles: five English 1 sections differing only by period. Asserts Poppins
   // loaded, every canvas carries ink in the text block, names differ per tile,
   // and the zip holds one PNG per tile.
+  // Preview one assignment, one discussion and one graded quiz out of the cartridge.
+  function previewSelfTest() {
+    var picks = ['assignment', 'discussion', 'quiz'].map(function (ty) {
+      return (kit.graded_items || []).filter(function (it) { return it.type === ty && it.quiz_type !== 'survey'; })[0];
+    });
+    var res = { ok: true };
+    return chain(picks.map(function (it, i) {
+      return function () {
+        var ty = ['assignment', 'discussion', 'quiz'][i];
+        if (!it) { res[ty] = null; return Promise.resolve(); }
+        return previewItem(it).then(function (doc) {
+          var good = doc.length > 400 && doc.indexOf(escHtml(it.title)) >= 0 && (ty !== 'quiz' || doc.indexOf('QUESTION 1') >= 0)
+            && $('preview').querySelector('iframe.itemframe') != null && !$('preview-home').hidden;
+          res[ty] = good; res.ok = res.ok && good;
+        });
+      };
+    })).then(function () { leaveItemPreview(); return res; });
+  }
   function tilesSelfTest() {
     // Five tiles: select all and type the shared details, then select one at a time
     // for period, style and pill, the way a teacher would.

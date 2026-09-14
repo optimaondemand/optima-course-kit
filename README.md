@@ -83,6 +83,15 @@ reports those items as "moved", not as differences.
    `python _build/make_catalog.py --root ../optima-course-cartridges`, commit and push that repo.
 6. Optional: `python _build/import_test.py ../optima-course-cartridges/cartridges/<kit>.imscc "ZZ Kit test (delete me)"`.
 
+## Item preview
+
+In step 4 every graded item's title is a link. Clicking it fetches the kit once, reads
+that item's page out of the cartridge, and shows it in the preview pane: assignment
+instructions, a discussion prompt, or a quiz's description and questions with their
+choices (never the answers). Canvas tokens in links are disabled because they resolve
+only on import; embedded lesson pages load from their live URLs. "Back to home page"
+returns to the home page preview.
+
 ## Home page themes
 
 Step 3 opens with a theme picker. A theme carries a banner (`themes/<name>.svg`), a
