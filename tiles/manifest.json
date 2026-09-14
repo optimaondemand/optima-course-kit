@@ -1,0 +1,210 @@
+[
+ {
+  "band": "Middle",
+  "subject": "Art",
+  "key": "art",
+  "file": "middle-art.jpg",
+  "source": "MJ_Visual_Art_1_Valencia_Murray_Live_Tile.png",
+  "erased_to_x": 786
+ },
+ {
+  "band": "Middle",
+  "subject": "Computer Science",
+  "key": "computer-science",
+  "file": "middle-computer-science.jpg",
+  "source": "MJ_Grade_6_Digital_Discoveries_Jorge_Acevedo_OD_Tile.png",
+  "erased_to_x": 1015
+ },
+ {
+  "band": "Middle",
+  "subject": "ELA",
+  "key": "ela",
+  "file": "middle-ela.jpg",
+  "source": "MJ_Language_Arts_1_Andrea_Beye_OD_Tile.png",
+  "erased_to_x": 902
+ },
+ {
+  "band": "Middle",
+  "subject": "Latin",
+  "key": "latin",
+  "file": "middle-latin.jpg",
+  "source": "MJ_Latin_Advanced_Farah_Helgerson_OD_Tile.png",
+  "erased_to_x": 1015
+ },
+ {
+  "band": "Middle",
+  "subject": "Math",
+  "key": "math",
+  "file": "middle-math.jpg",
+  "source": "MJ_Grade_6_Math_Lyle_Fitzsimmons_OD_Tile.png",
+  "erased_to_x": 909
+ },
+ {
+  "band": "Middle",
+  "subject": "Music",
+  "key": "music",
+  "file": "middle-music.jpg",
+  "source": "MJ_Music_Theory_1_Carlos_Fernandez_Live_Tile.png",
+  "erased_to_x": 1015
+ },
+ {
+  "band": "Middle",
+  "subject": "PE",
+  "key": "pe",
+  "file": "middle-pe.jpg",
+  "source": "MJ_PE_Gr_67_Lyle_Fitzsimmons_OD_Tile.png",
+  "erased_to_x": 775
+ },
+ {
+  "band": "Middle",
+  "subject": "Science",
+  "key": "science",
+  "file": "middle-science.jpg",
+  "source": "MJ_Science_1_Jacob_Goodwin_OD_Tile.png",
+  "erased_to_x": 707
+ },
+ {
+  "band": "Middle",
+  "subject": "Social Studies",
+  "key": "social-studies",
+  "file": "middle-social-studies.jpg",
+  "source": "MJ_Civics_Laurie_Coburn_OD_Tile.png",
+  "erased_to_x": 566
+ },
+ {
+  "band": "Middle",
+  "subject": "Spanish",
+  "key": "spanish",
+  "file": "middle-spanish.jpg",
+  "source": "MJ_Spanish_Beginning_Dendi_Moreno_Live_Tile.png",
+  "erased_to_x": 1015
+ },
+ {
+  "band": "Upper",
+  "subject": "Art",
+  "key": "art",
+  "file": "upper-art.jpg",
+  "source": "2-d_Studio_Art_1_Lyle_Fitzsimmons_OD_Tile.png",
+  "erased_to_x": 786
+ },
+ {
+  "band": "Upper",
+  "subject": "College & Career",
+  "key": "college-career",
+  "file": "upper-college-career.jpg",
+  "source": "Destination_College_Karen_Lichtenberg__Jesse_Thompson_OD_Tile.png",
+  "erased_to_x": 1015
+ },
+ {
+  "band": "Upper",
+  "subject": "Computer Science",
+  "key": "computer-science",
+  "file": "upper-computer-science.jpg",
+  "source": "Computer_Science_Lyle_Fitzsimmons_OD_Tile.png",
+  "erased_to_x": 1015
+ },
+ {
+  "band": "Upper",
+  "subject": "Driver Ed",
+  "key": "driver-ed",
+  "file": "upper-driver-ed.jpg",
+  "source": "Driver_Education_Jorge_Acevedo_OD_Tile.png",
+  "erased_to_x": 1015
+ },
+ {
+  "band": "Upper",
+  "subject": "Economics",
+  "key": "economics",
+  "file": "upper-economics.jpg",
+  "source": "Economics_Honors_Stacie_Hutton_OD_Tile.png",
+  "erased_to_x": 1015
+ },
+ {
+  "band": "Upper",
+  "subject": "English",
+  "key": "english",
+  "file": "upper-english.jpg",
+  "source": "English_1_Andrea_Fertitta-Marquez_OD_Tile.png",
+  "erased_to_x": 641
+ },
+ {
+  "band": "Upper",
+  "subject": "French",
+  "key": "french",
+  "file": "upper-french.jpg",
+  "source": "French_1_David_Waters_OD_Tile.png",
+  "erased_to_x": 447
+ },
+ {
+  "band": "Upper",
+  "subject": "Health & PE",
+  "key": "health-pe",
+  "file": "upper-health-pe.jpg",
+  "source": "Health__PE_Lyle_Fitzsimmons_OD_Tile.png",
+  "erased_to_x": 654
+ },
+ {
+  "band": "Upper",
+  "subject": "Homeroom",
+  "key": "homeroom",
+  "file": "upper-homeroom.jpg",
+  "source": "Homeroom_Andrea_Beye_OD_Tile.png",
+  "erased_to_x": 608
+ },
+ {
+  "band": "Upper",
+  "subject": "Humanities",
+  "key": "humanities",
+  "file": "upper-humanities.jpg",
+  "source": "Sociology_Jessica_Drexel_OD_Tile.png",
+  "erased_to_x": 537
+ },
+ {
+  "band": "Upper",
+  "subject": "Journalism",
+  "key": "journalism",
+  "file": "upper-journalism.jpg",
+  "source": "Journalism_1_Kathryn_Ruholt_Live_Tile.png",
+  "erased_to_x": 659
+ },
+ {
+  "band": "Upper",
+  "subject": "Latin",
+  "key": "latin",
+  "file": "upper-latin.jpg",
+  "source": "Latin_1_Farah_Helgerson_OD_Tile.png",
+  "erased_to_x": 451
+ },
+ {
+  "band": "Upper",
+  "subject": "Math",
+  "key": "math",
+  "file": "upper-math.jpg",
+  "source": "Geometry_Tracy_Seaford_OD_Tile.png",
+  "erased_to_x": 548
+ },
+ {
+  "band": "Upper",
+  "subject": "Science",
+  "key": "science",
+  "file": "upper-science.jpg",
+  "source": "Biology_1_Jerrod_Payne_OD_Tile.png",
+  "erased_to_x": 474
+ },
+ {
+  "band": "Upper",
+  "subject": "Social Studies",
+  "key": "social-studies",
+  "file": "upper-social-studies.jpg",
+  "source": "US_History_Andrea_Paez_OD_Tile.png",
+  "erased_to_x": 549
+ },
+ {
+  "band": "Upper",
+  "subject": "Spanish",
+  "key": "spanish",
+  "file": "upper-spanish.jpg",
+  "source": "Spanish_1_David_Waters_OD_Tile.png",
+  "erased_to_x": 508
+ }
+]

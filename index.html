@@ -19,6 +19,8 @@
   its own thing so the two can change independently.
 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root { --navy:#0E1C42; --cyan:#55C8E8; --gold:#E0A82E; --ink:#0e1c42; --mute:#4a5878; --line:#D0D9E8; --bg:#F4F6FB; }
   * { box-sizing: border-box; }
@@ -98,6 +100,31 @@
   .seg { display:inline-flex; border:1px solid var(--line); border-radius:20px; overflow:hidden; background:#fff; }
   .seg button { border:0; border-radius:0; background:#fff; color:var(--navy); font-size:13px; padding:7px 14px; }
   .seg button[aria-pressed="true"] { background:var(--navy); color:#fff; }
+  .tabs { background:var(--navy); padding:0 28px; display:flex; gap:6px; }
+  .tab { border:0; border-radius:8px 8px 0 0; background:rgba(255,255,255,0.08); color:#fff; font-size:15px; padding:10px 22px; }
+  .tab[aria-pressed="true"] { background:var(--bg); color:var(--navy); font-weight:600; }
+  .wrap[hidden] { display:none; }   /* the grid display would otherwise beat [hidden] */
+  .tileswrap { grid-template-columns: minmax(340px, 540px) 1fr; }
+  .tileswrap .tilepane { background:#fff; border:1px solid var(--line); border-radius:8px; padding:16px; align-self:start; }
+  .tilegrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:14px; }
+  .tilecard canvas { display:block; width:100%; height:auto; border:1px solid var(--line); border-radius:8px; background:#fff; }
+  .tilecard .cap { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:13px; color:var(--mute); margin-top:6px; }
+  .tilecard .cap b { color:var(--ink); font-weight:600; }
+  .styles { display:grid; grid-template-columns:repeat(auto-fill, minmax(118px, 1fr)); gap:8px; margin-top:4px; }
+  .stylebtn { border:2px solid var(--line); border-radius:8px; padding:0; background:#fff; color:var(--ink); text-align:left; overflow:hidden; cursor:pointer; }
+  .stylebtn:hover { border-color:var(--cyan); }
+  .stylebtn[aria-pressed="true"] { border-color:var(--navy); box-shadow:0 0 0 2px var(--cyan); }
+  .stylebtn img { display:block; width:100%; aspect-ratio:16 / 9; object-fit:cover; }
+  .stylebtn span { display:block; font-size:12px; font-weight:600; padding:5px 7px 6px; line-height:1.2; }
+  table.fields { width:100%; border-collapse:collapse; font-size:14px; margin-top:6px; }
+  table.fields th { text-align:left; font-size:12px; color:var(--mute); font-weight:600; padding:4px 6px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  table.fields td { padding:5px 6px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  table.fields td:first-child { white-space:nowrap; color:var(--ink); font-weight:600; font-size:13px; }
+  table.fields input[type=text], table.fields select { font-size:14px; padding:7px 9px; }
+  table.fields input[type=text]:disabled { background:#F4F6FB; color:var(--mute); }
+  table.fields td.same { text-align:center; }
+  .pertable { overflow-x:auto; }
+  .pertable table.fields input[type=text], .pertable table.fields select { min-width:120px; }
   .previewbar button.sm { background:transparent; color:#fff; border-color:var(--cyan); }
   #show-preview { position:fixed; right:18px; bottom:18px; z-index:5; box-shadow:0 2px 10px rgba(14,28,66,.3); }
   .batchrow { display:grid; grid-template-columns:1fr 1fr 1fr auto auto; gap:8px; align-items:end; padding:10px 12px; margin-top:8px; background:#F9FAFD; border:1px dashed var(--line); border-radius:8px; }
@@ -114,7 +141,12 @@
   <div class="tool"><div class="name">Course Kit</div><div class="tag">PROTOTYPE</div></div>
 </header>
 
-<main class="wrap">
+<nav class="tabs" aria-label="Tools">
+  <button type="button" class="tab" data-tab="kit" aria-pressed="true">Course kit</button>
+  <button type="button" class="tab" data-tab="tiles" aria-pressed="false">Course tiles</button>
+</nav>
+
+<main class="wrap" id="kit-view">
   <section class="col">
     <div class="step" id="step1">
       <h2><span class="n">1</span> Find your course</h2>
@@ -197,6 +229,42 @@
   <section class="preview">
     <div class="previewbar"><div>Home page preview</div><div style="display:flex;gap:12px;align-items:center;"><span id="preview-note">Links work after import, not here.</span><button type="button" class="sm" id="hide-preview">Hide preview</button></div></div>
     <div id="preview" aria-label="Home page preview"></div>
+  </section>
+</main>
+
+<main class="wrap tileswrap" id="tiles-view" hidden>
+  <section class="col">
+    <div class="step">
+      <h2><span class="n">1</span> Set up your batch</h2>
+      <div class="hint">One batch makes every tile for one course. Five sections of the same course are one batch of five tiles that differ only where you say they differ.</div>
+      <label>Grade band</label>
+      <div class="seg" id="tile-band"><button type="button" data-v="Middle" aria-pressed="false">Middle (6–8)</button><button type="button" data-v="Upper" aria-pressed="true">Upper (9–12)</button></div>
+      <label>Tile style</label>
+      <div class="styles" id="tile-styles"></div>
+      <label for="tile-count">How many tiles</label>
+      <input type="number" id="tile-count" min="1" max="24" step="1" value="1" style="max-width:120px;">
+    </div>
+    <div class="step">
+      <h2><span class="n">2</span> Fill in the details</h2>
+      <div class="hint">Tick <b>Same for all</b> when a detail is identical on every tile. Untick it (usually Period) to type it per tile below.</div>
+      <div id="tile-fields"></div>
+      <div id="tile-per"></div>
+    </div>
+    <div class="step">
+      <h2><span class="n">3</span> Download</h2>
+      <div class="actions">
+        <button type="button" id="tiles-zip">Download all tiles (.zip)</button>
+      </div>
+      <div class="status" id="tiles-status"></div>
+      <ol class="check">
+        <li>In your Canvas course: <b>Settings</b> &rarr; <b>Course Details</b> &rarr; <b>Image</b> &rarr; upload the tile for that section.</li>
+        <li>Dashboard cards are small, so the text on these tiles is set large on purpose. Check one card on your own dashboard before doing the rest.</li>
+      </ol>
+    </div>
+  </section>
+  <section class="tilepane">
+    <div class="hint" id="tiles-hint">Every tile in the batch, as students will see it. Each one downloads on its own or all together as a zip.</div>
+    <div class="tilegrid" id="tilegrid"></div>
   </section>
 </main>
 <button type="button" id="show-preview" hidden>Show home page preview</button>
@@ -1341,8 +1409,332 @@
     setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
   }
 
+  // ------------------------------------------------------------ course tiles
+  // One background per grade band and subject, derived from the 2026-27 tile set
+  // (title and teacher name erased). The text is drawn here in Poppins, larger
+  // than the originals, because Canvas dashboard cards shrink the image.
+  var TILE_STYLES = [
+    { band: "Middle", subject: "Art", key: "art", file: "tiles/middle-art.jpg" },
+    { band: "Middle", subject: "Computer Science", key: "computer-science", file: "tiles/middle-computer-science.jpg" },
+    { band: "Middle", subject: "ELA", key: "ela", file: "tiles/middle-ela.jpg" },
+    { band: "Middle", subject: "Latin", key: "latin", file: "tiles/middle-latin.jpg" },
+    { band: "Middle", subject: "Math", key: "math", file: "tiles/middle-math.jpg" },
+    { band: "Middle", subject: "Music", key: "music", file: "tiles/middle-music.jpg" },
+    { band: "Middle", subject: "PE", key: "pe", file: "tiles/middle-pe.jpg" },
+    { band: "Middle", subject: "Science", key: "science", file: "tiles/middle-science.jpg" },
+    { band: "Middle", subject: "Social Studies", key: "social-studies", file: "tiles/middle-social-studies.jpg" },
+    { band: "Middle", subject: "Spanish", key: "spanish", file: "tiles/middle-spanish.jpg" },
+    { band: "Upper", subject: "Art", key: "art", file: "tiles/upper-art.jpg" },
+    { band: "Upper", subject: "College & Career", key: "college-career", file: "tiles/upper-college-career.jpg" },
+    { band: "Upper", subject: "Computer Science", key: "computer-science", file: "tiles/upper-computer-science.jpg" },
+    { band: "Upper", subject: "Driver Ed", key: "driver-ed", file: "tiles/upper-driver-ed.jpg" },
+    { band: "Upper", subject: "Economics", key: "economics", file: "tiles/upper-economics.jpg" },
+    { band: "Upper", subject: "English", key: "english", file: "tiles/upper-english.jpg" },
+    { band: "Upper", subject: "French", key: "french", file: "tiles/upper-french.jpg" },
+    { band: "Upper", subject: "Health & PE", key: "health-pe", file: "tiles/upper-health-pe.jpg" },
+    { band: "Upper", subject: "Homeroom", key: "homeroom", file: "tiles/upper-homeroom.jpg" },
+    { band: "Upper", subject: "Humanities", key: "humanities", file: "tiles/upper-humanities.jpg" },
+    { band: "Upper", subject: "Journalism", key: "journalism", file: "tiles/upper-journalism.jpg" },
+    { band: "Upper", subject: "Latin", key: "latin", file: "tiles/upper-latin.jpg" },
+    { band: "Upper", subject: "Math", key: "math", file: "tiles/upper-math.jpg" },
+    { band: "Upper", subject: "Science", key: "science", file: "tiles/upper-science.jpg" },
+    { band: "Upper", subject: "Social Studies", key: "social-studies", file: "tiles/upper-social-studies.jpg" },
+    { band: "Upper", subject: "Spanish", key: "spanish", file: "tiles/upper-spanish.jpg" }
+  ];
+  var TILE_W = 1920, TILE_H = 1080;
+  var TILE_INK = "#133255", TILE_NAME = "#506e91", TILE_PILL = "#052558";
+  var TILE_FIELDS = [
+    { k: 'title',   label: 'Course title',        ph: 'English 1' },
+    { k: 'teacher', label: 'Teacher name',        ph: 'Ms. Thalia Trussell' },
+    { k: 'mode',    label: 'Live or On-Demand',   select: ['Live', 'On-Demand'] },
+    { k: 'days',    label: 'Days',                ph: 'Mon & Wed' },
+    { k: 'time',    label: 'Time',                ph: '10:00–10:50 AM ET' },
+    { k: 'period',  label: 'Period or section',   ph: 'Period 3' }
+  ];
+  var TILES_STORE = 'optima-course-kit-tiles';
+  function blankTiles() {
+    return { band: 'Upper', style: 'english', count: 1,
+      shared: { title: true, teacher: true, mode: true, days: true, time: true, period: false },
+      values: { title: '', teacher: '', mode: 'Live', days: '', time: '', period: '' },
+      per: [{}] };
+  }
+  var tiles = blankTiles();
+  function loadTiles() {
+    try {
+      var t = JSON.parse(localStorage.getItem(TILES_STORE) || 'null');
+      if (t && t.values && t.shared) tiles = t;
+    } catch (e) { /* ignore */ }
+    fixTiles();
+  }
+  function saveTiles() { try { localStorage.setItem(TILES_STORE, JSON.stringify(tiles)); } catch (e) { /* ignore */ } }
+  function fixTiles() {
+    tiles.count = Math.max(1, Math.min(24, parseInt(tiles.count, 10) || 1));
+    if (!tiles.per) tiles.per = [];
+    while (tiles.per.length < tiles.count) tiles.per.push({});
+    tiles.per.length = tiles.count;
+    if (!styleFor(tiles.band, tiles.style)) {
+      var first = TILE_STYLES.filter(function (s) { return s.band === tiles.band; })[0];
+      tiles.style = first ? first.key : tiles.style;
+    }
+  }
+  function styleFor(band, key) {
+    return TILE_STYLES.filter(function (s) { return s.band === band && s.key === key; })[0] || null;
+  }
+  function tileValue(i, k) {
+    if (tiles.shared[k]) return String(tiles.values[k] || '');
+    return String((tiles.per[i] || {})[k] || '');
+  }
+  function tileData(i) {
+    var d = {};
+    TILE_FIELDS.forEach(function (f) { d[f.k] = tileValue(i, f.k); });
+    if (d.mode !== 'On-Demand') d.mode = 'Live';
+    return d;
+  }
+  function tileFilename(d) {
+    var parts = [d.title, d.teacher, d.period].map(function (s) {
+      return String(s || '').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    }).filter(Boolean);
+    parts.push(d.mode === 'On-Demand' ? 'OD' : 'Live', 'Tile');
+    return parts.join('_') + '.png';
+  }
+
+  var bgCache = {};
+  function tileBg(style) {
+    if (bgCache[style.file]) return bgCache[style.file];
+    bgCache[style.file] = new Promise(function (res, rej) {
+      var im = new Image();
+      im.onload = function () { res(im); };
+      im.onerror = function () { rej(new Error('background missing: ' + style.file)); };
+      im.src = style.file;
+    });
+    return bgCache[style.file];
+  }
+  function tileFonts() {
+    if (!document.fonts || !document.fonts.load) return Promise.resolve(false);
+    return Promise.all([document.fonts.load('600 118px Poppins'), document.fonts.load('400 60px Poppins'), document.fonts.load('500 52px Poppins')])
+      .then(function () { return document.fonts.check('600 118px Poppins'); }, function () { return false; });
+  }
+  function fitLines(ctx, txt, weight, maxW, startPx, minPx, maxLines) {
+    // Shrink first; only wrap when the smallest size still overflows.
+    var px = startPx;
+    for (; px >= minPx; px -= 4) {
+      ctx.font = weight + ' ' + px + 'px Poppins, "Segoe UI", Arial, sans-serif';
+      if (ctx.measureText(txt).width <= maxW) return { px: px, lines: [txt] };
+    }
+    px = minPx;
+    ctx.font = weight + ' ' + px + 'px Poppins, "Segoe UI", Arial, sans-serif';
+    var words = txt.split(/\s+/), lines = [], cur = '';
+    words.forEach(function (w) {
+      var t = cur ? cur + ' ' + w : w;
+      if (ctx.measureText(t).width <= maxW || !cur) cur = t;
+      else { lines.push(cur); cur = w; }
+    });
+    if (cur) lines.push(cur);
+    if (lines.length > maxLines) {
+      lines = lines.slice(0, maxLines);
+      var last = lines[maxLines - 1];
+      while (ctx.measureText(last + '…').width > maxW && last.length > 1) last = last.slice(0, -1);
+      lines[maxLines - 1] = last + '…';
+    }
+    return { px: px, lines: lines };
+  }
+  function drawTile(canvas, d, bg) {
+    canvas.width = TILE_W; canvas.height = TILE_H;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(bg, 0, 0, TILE_W, TILE_H);
+    var x = 64, maxW = 900, y = 300;
+    ctx.textBaseline = 'alphabetic';
+    // Title
+    var title = String(d.title || '').trim() || 'Course title';
+    var fit = fitLines(ctx, title, '600', maxW, 124, 84, 2);
+    ctx.fillStyle = TILE_INK;
+    fit.lines.forEach(function (ln) {
+      y += fit.px; ctx.font = '600 ' + fit.px + 'px Poppins, "Segoe UI", Arial, sans-serif'; ctx.fillText(ln, x, y);
+      y += Math.round(fit.px * 0.12);
+    });
+    // Teacher
+    var who = String(d.teacher || '').trim();
+    if (who) {
+      var f2 = fitLines(ctx, who, '400', maxW, 64, 44, 1);
+      y += f2.px + 10; ctx.fillStyle = TILE_NAME; ctx.fillText(f2.lines[0], x, y);
+    }
+    // Schedule: period on one line, days and time on the next
+    var sched = [];
+    if (String(d.period || '').trim()) sched.push(String(d.period).trim());
+    var dt = [String(d.days || '').trim(), String(d.time || '').trim()].filter(Boolean).join(' · ');
+    if (dt) sched.push(dt);
+    if (sched.length) {
+      y += 26;
+      sched.forEach(function (ln) {
+        var f3 = fitLines(ctx, ln, '500', maxW, 56, 40, 1);
+        y += f3.px + 6; ctx.fillStyle = TILE_INK; ctx.fillText(f3.lines[0], x, y);
+      });
+    }
+    // Mode pill, redrawn over the original one
+    var px0 = 36, py0 = 896, pw = 492, ph = 136, r = ph / 2;
+    ctx.beginPath();
+    ctx.moveTo(px0 + r, py0); ctx.lineTo(px0 + pw - r, py0); ctx.arc(px0 + pw - r, py0 + r, r, -Math.PI / 2, Math.PI / 2);
+    ctx.lineTo(px0 + r, py0 + ph); ctx.arc(px0 + r, py0 + r, r, Math.PI / 2, Math.PI * 1.5); ctx.closePath();
+    ctx.fillStyle = TILE_PILL; ctx.fill();
+    ctx.lineWidth = 5; ctx.strokeStyle = '#ffffff'; ctx.stroke();
+    ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    var label = d.mode === 'On-Demand' ? 'ON-DEMAND' : 'LIVE';
+    var f4 = fitLines(ctx, label, '600', pw - 60, 64, 40, 1);
+    ctx.font = '600 ' + f4.px + 'px Poppins, "Segoe UI", Arial, sans-serif';
+    ctx.fillText(label, px0 + pw / 2, py0 + ph / 2 + 4);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  }
+  function renderTiles() {
+    fixTiles();
+    // band + styles
+    $('tile-band').querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.v === tiles.band ? 'true' : 'false'); });
+    $('tile-styles').innerHTML = TILE_STYLES.filter(function (s) { return s.band === tiles.band; }).map(function (s) {
+      return '<button type="button" class="stylebtn" data-key="' + escHtml(s.key) + '" aria-pressed="' + (s.key === tiles.style ? 'true' : 'false') + '"><img src="' + escHtml(s.file) + '" alt="" loading="lazy"><span>' + escHtml(s.subject) + '</span></button>';
+    }).join('');
+    $('tile-styles').querySelectorAll('.stylebtn').forEach(function (b) {
+      b.addEventListener('click', function () { tiles.style = this.dataset.key; saveTiles(); renderTiles(); });
+    });
+    $('tile-count').value = tiles.count;
+    // shared fields
+    var out = ['<table class="fields"><thead><tr><th>Detail</th><th>Same for all</th><th>Value</th></tr></thead><tbody>'];
+    TILE_FIELDS.forEach(function (f) {
+      var sh = !!tiles.shared[f.k];
+      out.push('<tr><td>' + escHtml(f.label) + '</td>');
+      out.push('<td class="same"><input type="checkbox" class="tf-same" data-k="' + f.k + '"' + (sh ? ' checked' : '') + '></td>');
+      out.push('<td>' + fieldInput(f, tiles.values[f.k], 'tf-shared', '', !sh) + '</td></tr>');
+    });
+    out.push('</tbody></table>');
+    $('tile-fields').innerHTML = out.join('');
+    // per-tile fields
+    var perFields = TILE_FIELDS.filter(function (f) { return !tiles.shared[f.k]; });
+    if (!perFields.length) {
+      $('tile-per').innerHTML = '<div class="hint" style="margin-top:10px;">Every detail is shared, so all ' + tiles.count + ' tiles are identical. Untick <b>Same for all</b> on the detail that changes from section to section.</div>';
+    } else {
+      var p = ['<label>Per tile</label><div class="pertable"><table class="fields"><thead><tr><th>Tile</th>'];
+      perFields.forEach(function (f) { p.push('<th>' + escHtml(f.label) + '</th>'); });
+      p.push('</tr></thead><tbody>');
+      for (var i = 0; i < tiles.count; i++) {
+        p.push('<tr><td>' + (i + 1) + '</td>');
+        perFields.forEach(function (f) { p.push('<td>' + fieldInput(f, (tiles.per[i] || {})[f.k], 'tf-per', String(i), false) + '</td>'); });
+        p.push('</tr>');
+      }
+      p.push('</tbody></table></div>');
+      $('tile-per').innerHTML = p.join('');
+    }
+    wireTileFields();
+    return drawAllTiles();
+  }
+  function fieldInput(f, val, cls, idx, disabled) {
+    var data = ' class="' + cls + '" data-k="' + f.k + '"' + (idx ? ' data-i="' + idx + '"' : '');
+    if (f.select) {
+      return '<select' + data + (disabled ? ' disabled' : '') + '>' + f.select.map(function (o) {
+        return '<option value="' + o + '"' + (String(val || f.select[0]) === o ? ' selected' : '') + '>' + o + '</option>';
+      }).join('') + '</select>';
+    }
+    return '<input type="text"' + data + ' value="' + escHtml(val || '') + '" placeholder="' + escHtml(f.ph || '') + '"' + (disabled ? ' disabled' : '') + ' autocomplete="off">';
+  }
+  var drawTimer = null;
+  function scheduleDraw() { clearTimeout(drawTimer); drawTimer = setTimeout(drawAllTiles, 120); }
+  function wireTileFields() {
+    document.querySelectorAll('.tf-same').forEach(function (cb) {
+      cb.addEventListener('change', function () {
+        var k = this.dataset.k; tiles.shared[k] = this.checked;
+        if (!this.checked) {
+          // Start every tile from the shared value so nothing goes blank.
+          for (var i = 0; i < tiles.count; i++) { tiles.per[i] = tiles.per[i] || {}; if (tiles.per[i][k] == null) tiles.per[i][k] = tiles.values[k]; }
+        }
+        saveTiles(); renderTiles();
+      });
+    });
+    document.querySelectorAll('.tf-shared').forEach(function (inp) {
+      inp.addEventListener('input', function () { tiles.values[this.dataset.k] = this.value; saveTiles(); scheduleDraw(); });
+      inp.addEventListener('change', function () { tiles.values[this.dataset.k] = this.value; saveTiles(); scheduleDraw(); });
+    });
+    document.querySelectorAll('.tf-per').forEach(function (inp) {
+      var h = function () { var i = +this.dataset.i; tiles.per[i] = tiles.per[i] || {}; tiles.per[i][this.dataset.k] = this.value; saveTiles(); scheduleDraw(); };
+      inp.addEventListener('input', h); inp.addEventListener('change', h);
+    });
+  }
+  function drawAllTiles() {
+    var style = styleFor(tiles.band, tiles.style);
+    var grid = $('tilegrid');
+    if (!style) { grid.innerHTML = '<div class="hint">Pick a style.</div>'; return Promise.resolve([]); }
+    // Keep existing cards when the count is unchanged so typing does not flicker.
+    if (grid.children.length !== tiles.count) {
+      grid.innerHTML = '';
+      for (var i = 0; i < tiles.count; i++) {
+        var card = document.createElement('div'); card.className = 'tilecard'; card.dataset.i = i;
+        card.innerHTML = '<canvas width="' + TILE_W + '" height="' + TILE_H + '" aria-label="Tile ' + (i + 1) + '"></canvas><div class="cap"><b></b><button type="button" class="sm alt tile-dl" data-i="' + i + '">Download PNG</button></div>';
+        grid.appendChild(card);
+      }
+      grid.querySelectorAll('.tile-dl').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var i = +this.dataset.i, d = tileData(i), cv = grid.children[i].querySelector('canvas');
+          cv.toBlob(function (blob) { saveBlob(blob, tileFilename(d)); }, 'image/png');
+        });
+      });
+    }
+    return Promise.all([tileBg(style), tileFonts()]).then(function (r) {
+      var bg = r[0], names = [];
+      for (var i = 0; i < tiles.count; i++) {
+        var d = tileData(i), card = grid.children[i];
+        drawTile(card.querySelector('canvas'), d, bg);
+        card.querySelector('.cap b').textContent = tileFilename(d);
+        names.push(tileFilename(d));
+      }
+      return names;
+    }).catch(function (e) {
+      $('tiles-status').textContent = e.message; $('tiles-status').className = 'status err';
+      return [];
+    });
+  }
+  function tilesZip() {
+    var grid = $('tilegrid'), zip = new JSZip(), seen = {};
+    var jobs = [];
+    for (var i = 0; i < tiles.count; i++) {
+      (function (i) {
+        var d = tileData(i), name = tileFilename(d);
+        if (seen[name]) { name = name.replace(/_Tile\.png$/, '_' + (i + 1) + '_Tile.png'); }
+        seen[name] = true;
+        jobs.push(new Promise(function (res) {
+          grid.children[i].querySelector('canvas').toBlob(function (blob) { zip.file(name, blob); res(); }, 'image/png');
+        }));
+      })(i);
+    }
+    return Promise.all(jobs).then(function () { return zip; });
+  }
+  function wireTiles() {
+    loadTiles();
+    $('tile-band').addEventListener('click', function (e) {
+      var v = e.target.dataset && e.target.dataset.v; if (!v) return;
+      tiles.band = v; tiles.style = ''; saveTiles(); renderTiles();
+    });
+    $('tile-count').addEventListener('change', function () { tiles.count = this.value; saveTiles(); renderTiles(); });
+    $('tiles-zip').addEventListener('click', function () {
+      $('tiles-status').textContent = 'Building the zip…'; $('tiles-status').className = 'status';
+      tilesZip().then(function (zip) { return zip.generateAsync({ type: 'blob' }); }).then(function (blob) {
+        var who = String(tiles.values.teacher || tileValue(0, 'teacher') || 'teacher').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+        saveBlob(blob, 'Course_Tiles_' + (who || 'teacher') + '.zip');
+        $('tiles-status').textContent = tiles.count + ' tile' + (tiles.count === 1 ? '' : 's') + ' zipped.'; $('tiles-status').className = 'status ok';
+      });
+    });
+    renderTiles();
+  }
+  function setTab(name) {
+    document.querySelectorAll('.tab').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.tab === name ? 'true' : 'false'); });
+    $('kit-view').hidden = name !== 'kit';
+    $('tiles-view').hidden = name !== 'tiles';
+    if (name !== 'kit') $('show-preview').hidden = true;
+    else $('show-preview').hidden = !uiPref().previewHidden;
+    try { var u = uiPref(); u.tab = name; localStorage.setItem(UI_STORE, JSON.stringify(u)); } catch (e) { /* ignore */ }
+    if (name === 'tiles') drawAllTiles();
+  }
+
   // ------------------------------------------------------------ wiring
   function wire() {
+    document.querySelectorAll('.tab').forEach(function (b) { b.addEventListener('click', function () { setTab(this.dataset.tab); }); });
+    wireTiles();
+    if (location.hash === '#tiles') setTab('tiles'); else if (uiPref().tab === 'tiles') setTab('tiles');
     $('hide-preview').addEventListener('click', function () { setPreviewShown(false); });
     $('show-preview').addEventListener('click', function () { setPreviewShown(true); });
     if (uiPref().previewHidden) setPreviewShown(false);
@@ -1504,6 +1896,9 @@
         if (hasSchedule) out.ok = out.ok && checks.datesApplied && checks.weightingOn && checks.pointsPatched && checks.unpublished
           && checks.batchDates && (!quizItem || checks.quizPoints);
         out.ok = out.ok && previewToggle;
+        return tilesSelfTest();
+      }).then(function (tr) {
+        out.tiles = tr; out.ok = out.ok && tr.ok;
         $('selftest-out').textContent = JSON.stringify(out);
         document.title = 'Optima Course Kit [selftest done]';
       });
@@ -1515,6 +1910,36 @@
       $('selftest-out').textContent = JSON.stringify({ ok: false, error: 'kit detail: ' + String(e && e.message || e) });
       document.title = 'Optima Course Kit [selftest failed]';
     });
+  }
+
+  // Tiles: five English 1 sections differing only by period. Asserts Poppins
+  // loaded, every canvas carries ink in the text block, names differ per tile,
+  // and the zip holds one PNG per tile.
+  function tilesSelfTest() {
+    tiles = blankTiles();
+    tiles.band = 'Upper'; tiles.style = 'english'; tiles.count = 5;
+    tiles.values = { title: 'English 1', teacher: 'Ms. Thalia Trussell', mode: 'Live', days: 'Mon & Wed', time: '10:00–10:50 AM ET', period: '' };
+    tiles.shared.period = false;
+    tiles.per = [1, 2, 3, 4, 5].map(function (n) { return { period: 'Period ' + n }; });
+    setTab('tiles');
+    return renderTiles().then(function (names) {
+      var grid = $('tilegrid'), inked = 0;
+      for (var i = 0; i < grid.children.length; i++) {
+        var cv = grid.children[i].querySelector('canvas'), ctx = cv.getContext('2d');
+        var img = ctx.getImageData(64, 300, 900, 460).data, dark = 0;
+        for (var p = 0; p < img.length; p += 16) { if (img[p] + img[p + 1] + img[p + 2] < 360) dark++; }
+        if (dark / (img.length / 16) > 0.02) inked++;
+      }
+      var uniq = {}; names.forEach(function (n) { uniq[n] = true; });
+      return tilesZip().then(function (zip) {
+        var entries = Object.keys(zip.files).length;
+        var poppins = !!(document.fonts && document.fonts.check && document.fonts.check('600 118px Poppins'));
+        var res = { count: grid.children.length, inked: inked, poppins: poppins, zipEntries: entries, names: names,
+          ok: grid.children.length === 5 && inked === 5 && Object.keys(uniq).length === 5 && entries === 5 && poppins };
+        setTab('kit');
+        return res;
+      });
+    }).catch(function (e) { setTab('kit'); return { ok: false, error: String(e && e.message || e) }; });
   }
 
   loadCatalog().then(function (c) {
