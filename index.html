@@ -41,6 +41,12 @@
   .step h2 { margin:0 0 10px; font-size:19px; font-weight:600; display:flex; align-items:center; gap:10px; }
   .step h2 .n { width:28px; height:28px; border-radius:50%; background:var(--navy); color:#fff; font-size:14px; display:inline-flex; align-items:center; justify-content:center; }
   .step.locked { opacity:.55; }
+  /* Steps 3 onward fold up on their heading so a long page stays manageable. */
+  .step.collapsible > h2 { cursor:pointer; user-select:none; }
+  .step.collapsible > h2::after { content:"▾"; margin-left:auto; color:var(--mute); font-size:14px; }
+  .step.collapsible.collapsed > h2::after { content:"▸"; }
+  .step.collapsible.collapsed > h2 { margin-bottom:0; }
+  .step.collapsible.collapsed > :not(h2) { display:none; }
   label { display:block; font-size:13px; color:var(--mute); margin:10px 0 4px; }
   input[type=text], input[type=email], input[type=url], input[type=date], input[type=datetime-local], input[type=number], select, textarea { width:100%; font:inherit; font-size:15px; padding:9px 11px; border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--ink); }
   textarea { min-height:70px; resize:vertical; }
@@ -175,7 +181,7 @@
       <div id="kits"><div class="hint">Find a course first.</div></div>
     </div>
 
-    <div class="step locked" id="step3">
+    <div class="step locked collapsible" id="step3">
       <h2><span class="n">3</span> Customize your home page</h2>
       <div id="style-panel"><div class="hint">Choose a kit first.</div></div>
       <div class="row">
@@ -208,17 +214,17 @@
       </details>
     </div>
 
-    <div class="step locked" id="step4">
-      <h2><span class="n">4</span> Set your dates</h2>
+    <div class="step locked collapsible" id="step4">
+      <h2><span class="n">4</span> Dates and publishing</h2>
       <div id="dates-panel"><div class="hint">Choose a kit first.</div></div>
     </div>
 
-    <div class="step locked" id="step5">
-      <h2><span class="n">5</span> Gradebook and publishing</h2>
+    <div class="step locked collapsible" id="step5">
+      <h2><span class="n">5</span> Set up your gradebook</h2>
       <div id="gradebook-panel"><div class="hint">Choose a kit first.</div></div>
     </div>
 
-    <div class="step locked" id="step6">
+    <div class="step locked collapsible" id="step6">
       <h2><span class="n">6</span> Download and import</h2>
       <div class="hint">One file. Your home page is already inside it, set as the course front page, with the module cards linked to the real modules.</div>
       <div class="actions">
@@ -796,7 +802,7 @@
         ensureOverride(it).published = false;
       });
     }
-    save(); renderGradebook();
+    save(); renderDates(); renderGradebook();
   }
   function effItem(item) {
     var o = home.itemOverrides[item.id];
@@ -940,16 +946,17 @@
     out.push('<div class="hint">Proposed: 11:59 PM on the last day of each item’s week. Edit any date, or leave a row blank.</div>');
     out.push('<div class="hint">To set many at once, fill in a batch row and apply it. Blank batch fields leave existing dates alone. Times are your local time.</div>');
     out.push(batchRow('all', 'Every graded item in this kit', 'Apply to all items'));
-    out.push('<div class="actions"><button type="button" class="alt" id="dates-clear">Clear all dates</button></div>');
+    out.push('<div class="actions"><button type="button" class="alt" id="dates-clear">Clear all dates</button><button type="button" class="sm alt" id="gb-pub-all">Publish everything</button><button type="button" class="sm alt" id="gb-unpub-all">Unpublish everything</button></div>');
+    out.push('<div class="hint">Untick a module to import it unpublished with everything inside it, pages included. Untick one item to import just that item unpublished.</div>');
     (kit.modules || []).forEach(function (m) {
       var items = kit.graded_items.filter(function (it) { return it.module === m.id; });
       if (!items.length) return;
       var mp = modulePublished(m);
       out.push('<details class="modblock"' + (mp ? ' open' : '') + '>');
-      out.push('<summary>' + escHtml(m.title) + (mp ? '' : ' <span class="pill grey">UNPUBLISHED</span>') + '</summary>');
+      out.push('<summary><label style="display:inline-flex;align-items:center;gap:8px;"><input type="checkbox" class="gb-modpub" data-m="' + m.id + '"' + (mp ? ' checked' : '') + '> ' + escHtml(m.title) + '</label>' + (mp ? '' : ' <span class="pill grey">UNPUBLISHED</span>') + '</summary>');
       if (!mp) out.push('<div class="hint">This module will import unpublished. Its dates still apply once you publish it.</div>');
       out.push(batchRow(m.id, 'Every graded item in this module', 'Apply to this module'));
-      out.push('<div class="dtable"><table class="sched"><thead><tr><th>Item</th><th>Type</th><th>Points</th><th>Opens</th><th>Due</th><th>Closes</th></tr></thead><tbody>');
+      out.push('<div class="dtable"><table class="sched"><thead><tr><th>Item</th><th>Type</th><th>Points</th><th>Opens</th><th>Due</th><th>Closes</th><th>Published</th></tr></thead><tbody>');
       var byWeek = {}, weeks = [];
       items.forEach(function (it) {
         var wk = it.week == null ? 'none' : it.week;
@@ -958,7 +965,7 @@
       });
       weeks.sort(function (a, b) { if (a === 'none') return 1; if (b === 'none') return -1; return a - b; });
       weeks.forEach(function (wk) {
-        out.push('<tr class="wkrow"><td colspan="6">' + (wk === 'none' ? 'No fixed week' : 'Week ' + wk) + '</td></tr>');
+        out.push('<tr class="wkrow"><td colspan="7">' + (wk === 'none' ? 'No fixed week' : 'Week ' + wk) + '</td></tr>');
         byWeek[wk].forEach(function (it) { out.push(dateRow(it)); });
       });
       out.push('</tbody></table></div></details>');
@@ -967,6 +974,15 @@
     $('course-start').addEventListener('change', function () { home.courseStart = this.value; proposeDates(); save(); renderDates(); });
     $('dates-clear').addEventListener('click', function () { home.dates = {}; save(); renderDates(); });
     wireBatchRows();
+    $('gb-pub-all').addEventListener('click', function () { setAllPublished(true); });
+    $('gb-unpub-all').addEventListener('click', function () { setAllPublished(false); });
+    el.querySelectorAll('.gb-pub').forEach(function (cb) {
+      cb.addEventListener('change', function () { ensureOverride(itemById(this.dataset.id)).published = this.checked; save(); renderGbSummary(); });
+    });
+    el.querySelectorAll('.gb-modpub').forEach(function (cb) {
+      cb.addEventListener('click', function (e) { e.stopPropagation(); });
+      cb.addEventListener('change', function () { setModulePublished(moduleById(this.dataset.m), this.checked); });
+    });
     kit.graded_items.forEach(function (it) {
       ['unlock_at', 'due_at', 'lock_at'].forEach(function (f) {
         var input = document.getElementById('dt-' + f + '-' + it.id);
@@ -989,6 +1005,7 @@
       '<td><input type="datetime-local" id="dt-unlock_at-' + it.id + '" value="' + escHtml(effLocal(it, 'unlock_at')) + '"></td>' +
       '<td><input type="datetime-local" id="dt-due_at-' + it.id + '" value="' + escHtml(effLocal(it, 'due_at')) + '"></td>' +
       '<td><input type="datetime-local" id="dt-lock_at-' + it.id + '" value="' + escHtml(effLocal(it, 'lock_at')) + '"></td>' +
+      '<td style="text-align:center;"><input type="checkbox" class="gb-pub" data-id="' + escHtml(it.id) + '"' + (effItem(it).published ? ' checked' : '') + '></td>' +
       '</tr>';
   }
 
@@ -1010,14 +1027,13 @@
     out.push('</tbody></table></div>');
     out.push('<div class="actions"><button type="button" class="alt" id="gb-addgroup">Add group</button></div>');
     out.push('<div class="status" id="gb-summary"></div>');
-    out.push('<div class="hint" style="margin-top:14px;">Untick a module to import it unpublished with everything inside it, pages included. Untick one item to import just that item unpublished. A graded quiz total is split evenly across its questions when you change it.</div>');
-    out.push('<div class="actions"><button type="button" class="sm alt" id="gb-pub-all">Publish everything</button><button type="button" class="sm alt" id="gb-unpub-all">Unpublish everything</button></div>');
+    out.push('<div class="hint" style="margin-top:14px;">A graded quiz total is split evenly across its questions when you change it. Publishing is set in step 4.</div>');
     (kit.modules || []).forEach(function (m) {
       var items = kit.graded_items.filter(function (it) { return it.module === m.id && !(it.type === 'quiz' && it.quiz_type === 'survey'); });
       if (!items.length) return;
       out.push('<details class="modblock" open>');
-      out.push('<summary><label style="display:inline-flex;align-items:center;gap:8px;"><input type="checkbox" class="gb-modpub" data-m="' + m.id + '"' + (modulePublished(m) ? ' checked' : '') + '> ' + escHtml(m.title) + '</label></summary>');
-      out.push('<div class="dtable"><table class="sched"><thead><tr><th>Item</th><th>Group</th><th>Points</th><th>Published</th></tr></thead><tbody>');
+      out.push('<summary>' + escHtml(m.title) + (modulePublished(m) ? '' : ' <span class="pill grey">UNPUBLISHED</span>') + '</summary>');
+      out.push('<div class="dtable"><table class="sched"><thead><tr><th>Item</th><th>Group</th><th>Points</th></tr></thead><tbody>');
       items.forEach(function (it) {
         var eff = effItem(it);
         out.push('<tr><td>' + escHtml(it.title) + '</td>');
@@ -1025,7 +1041,6 @@
           return '<option value="' + escHtml(g.id) + '"' + (g.id === eff.group ? ' selected' : '') + '>' + escHtml(g.title) + '</option>';
         }).join('') + '</select></td>');
         out.push('<td><input type="number" step="0.5" min="0" class="gb-points" data-id="' + escHtml(it.id) + '" value="' + escHtml(fmtPoints(eff.points)) + '"' + (canEditPoints(it) ? (it.type === 'quiz' ? ' title="Quiz total. Its questions share it evenly."' : '') : ' disabled title="Set by its questions"') + '></td>');
-        out.push('<td><input type="checkbox" class="gb-pub" data-id="' + escHtml(it.id) + '"' + (eff.published ? ' checked' : '') + '></td>');
         out.push('</tr>');
       });
       out.push('</tbody></table></div></details>');
@@ -1042,8 +1057,6 @@
     document.querySelectorAll('.gb-gweight').forEach(function (inp) {
       inp.addEventListener('change', function () { home.groups[+this.dataset.gi].weight = parseFloat(this.value) || 0; save(); renderGradebook(); });
     });
-    $('gb-pub-all').addEventListener('click', function () { setAllPublished(true); });
-    $('gb-unpub-all').addEventListener('click', function () { setAllPublished(false); });
     $('gb-addgroup').addEventListener('click', function () {
       home.groups.push({ id: 'g' + randHex(32), title: 'New group', weight: 0, position: home.groups.length + 1 });
       save(); renderGradebook();
@@ -1053,12 +1066,6 @@
     });
     document.querySelectorAll('.gb-points').forEach(function (inp) {
       inp.addEventListener('input', function () { ensureOverride(itemById(this.dataset.id)).points = parseFloat(this.value) || 0; save(); renderGbSummary(); });
-    });
-    document.querySelectorAll('.gb-pub').forEach(function (cb) {
-      cb.addEventListener('change', function () { ensureOverride(itemById(this.dataset.id)).published = this.checked; save(); renderGbSummary(); });
-    });
-    document.querySelectorAll('.gb-modpub').forEach(function (cb) {
-      cb.addEventListener('change', function () { setModulePublished(moduleById(this.dataset.m), this.checked); });
     });
   }
   function renderGbSummary() {
@@ -1771,6 +1778,15 @@
   // ------------------------------------------------------------ wiring
   function wire() {
     document.querySelectorAll('.tab').forEach(function (b) { b.addEventListener('click', function () { setTab(this.dataset.tab); }); });
+    // Collapsible steps: click the heading; the choice is remembered per browser.
+    var folded = uiPref().collapsed || {};
+    document.querySelectorAll('.step.collapsible').forEach(function (step) {
+      if (folded[step.id]) step.classList.add('collapsed');
+      step.querySelector('h2').addEventListener('click', function () {
+        step.classList.toggle('collapsed');
+        try { var u = uiPref(); u.collapsed = u.collapsed || {}; u.collapsed[step.id] = step.classList.contains('collapsed'); localStorage.setItem(UI_STORE, JSON.stringify(u)); } catch (e) { /* ignore */ }
+      });
+    });
     wireTiles();
     if (location.hash === '#tiles') setTab('tiles'); else if (uiPref().tab === 'tiles') setTab('tiles');
     $('hide-preview').addEventListener('click', function () { setPreviewShown(false); });
