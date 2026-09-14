@@ -1568,20 +1568,23 @@
     canvas.width = TILE_W; canvas.height = TILE_H;
     var ctx = canvas.getContext('2d');
     ctx.drawImage(bg, 0, 0, TILE_W, TILE_H);
-    var x = 64, maxW = 900, y = 300;
+    var x = 64, maxW = 940, y = 270;
     ctx.textBaseline = 'alphabetic';
     // Title
     var title = String(d.title || '').trim() || 'Course title';
-    var fit = fitLines(ctx, title, '600', maxW, 124, 84, 2);
+    var fit = fitLines(ctx, title, '600', maxW, 150, 100, 2);
     ctx.fillStyle = TILE_INK;
     fit.lines.forEach(function (ln) {
       y += fit.px; ctx.font = '600 ' + fit.px + 'px Poppins, "Segoe UI", Arial, sans-serif'; ctx.fillText(ln, x, y);
       y += Math.round(fit.px * 0.12);
     });
+    // A two-line title pushes the lower lines down to where the illustration
+    // begins on several backgrounds, so those lines get less width to fit into.
+    var lowW = fit.lines.length > 1 ? 700 : maxW;
     // Teacher
     var who = String(d.teacher || '').trim();
     if (who) {
-      var f2 = fitLines(ctx, who, '400', maxW, 64, 44, 1);
+      var f2 = fitLines(ctx, who, '400', lowW, 78, 54, 1);
       y += f2.px + 10; ctx.fillStyle = TILE_NAME; ctx.fillText(f2.lines[0], x, y);
     }
     // Schedule: period on one line, days and time on the next
@@ -1592,7 +1595,7 @@
     if (sched.length) {
       y += 26;
       sched.forEach(function (ln) {
-        var f3 = fitLines(ctx, ln, '500', maxW, 56, 40, 1);
+        var f3 = fitLines(ctx, ln, '500', lowW, 66, 44, 1);
         y += f3.px + 6; ctx.fillStyle = TILE_INK; ctx.fillText(f3.lines[0], x, y);
       });
     }
@@ -1606,7 +1609,7 @@
     ctx.lineWidth = 5; ctx.strokeStyle = '#ffffff'; ctx.stroke();
     ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     var label = d.mode === 'On-Demand' ? 'ON-DEMAND' : 'LIVE';
-    var f4 = fitLines(ctx, label, '600', pw - 60, 64, 40, 1);
+    var f4 = fitLines(ctx, label, '600', pw - 60, 72, 44, 1);
     ctx.font = '600 ' + f4.px + 'px Poppins, "Segoe UI", Arial, sans-serif';
     ctx.fillText(label, px0 + pw / 2, py0 + ph / 2 + 4);
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
