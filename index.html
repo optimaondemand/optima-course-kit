@@ -71,6 +71,9 @@
   button:disabled { opacity:.5; cursor:not-allowed; }
   .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
   .status { margin-top:10px; font-size:14px; min-height:20px; }
+  .printrow { margin-top:18px; padding-top:14px; border-top:1px solid var(--line); }
+  .printrow .actions { align-items:center; }
+  .printrow select { width:auto; min-width:220px; max-width:100%; }
   .status.err { color:#8C1A0E; }
   .status.ok { color:#1E4620; }
   .check { margin:10px 0 0; padding-left:0; list-style:none; counter-reset: c; }
@@ -248,6 +251,15 @@
         <li>Check <b>Modules</b> (count matches the kit) and <b>Assignments</b> (group weights present), then <b>Publish</b> the course.</li>
       </ol>
       <div class="hint">Importing the same kit again later updates the course in place instead of duplicating it.</div>
+      <div class="printrow">
+        <div><b>Printable course.</b> One document with the whole course in module order, as students will see it in Canvas: your home page, every lesson page, assignment, discussion and quiz (questions without answers), with the dates and publishing choices above.</div>
+        <div class="actions">
+          <select id="print-scope" aria-label="What to print" disabled><option value="all">Whole course</option></select>
+          <button id="print-open" class="alt" disabled>Open printable course</button>
+        </div>
+        <div class="hint">It opens in a new tab. Press <b>Save as PDF</b> there (or Ctrl+P) and choose <i>Save as PDF</i> as the destination. A whole semester runs to several hundred pages and can take a minute to prepare; one module is quicker.</div>
+        <div class="status" id="print-status"></div>
+      </div>
     </div>
   </section>
 
@@ -288,6 +300,7 @@
 <div class="foot">Optima Course Kit &middot; kits are built from Optima course files &middot; this page never writes to Canvas</div>
 <pre id="selftest-out" hidden></pre>
 <pre id="selftest-b64" hidden></pre>
+<pre id="print-html" hidden></pre>
 
 <script>
 (function () {
@@ -768,7 +781,8 @@
     if (!home.spotlight) home.spotlight = 'on';
     if (!home.modStyle) home.modStyle = 'journey';
     lock(3, false); lock(4, false); lock(5, false); lock(6, false);
-    ['dl', 'copy', 'dl-plain'].forEach(function (id) { $(id).disabled = false; });
+    ['dl', 'copy', 'dl-plain', 'print-open', 'print-scope'].forEach(function (id) { $(id).disabled = false; });
+    fillPrintScope();
     renderKits(); fillForm(); renderStyle(); renderMods(); renderDates(); renderGradebook(); renderPreview();
     return Promise.resolve(k);
   }
@@ -1264,6 +1278,261 @@
   function lock(n, on) { $('step' + n).classList.toggle('locked', on); }
   function escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function status(msg, cls) { var el = $('status'); el.textContent = msg; el.className = 'status ' + (cls || ''); }
+
+  // ------------------------------------------------------------ printable course
+  // One HTML document with the whole kit (or one module) in module order, the way
+  // a student meets it in Canvas: the teacher's home page, then every module's
+  // items read straight out of the cartridge. Lesson pages are fetched from their
+  // live URLs and placed in declarative shadow roots so each keeps its own styles.
+  // The teacher prints it to PDF from the browser; nothing leaves the browser.
+  var lessonCache = {};
+  function fillPrintScope() {
+    var sel = $('print-scope'); if (!sel) return;
+    sel.innerHTML = '<option value="all">Whole course</option>' + (kit.modules || []).map(function (m) {
+      return '<option value="' + escHtml(m.gid) + '">' + escHtml(m.title) + '</option>';
+    }).join('');
+  }
+  function attr(block, name) {
+    var m = new RegExp('<' + name + '>([\\s\\S]*?)<\\/' + name + '>').exec(block);
+    return m ? unescapeXml(m[1]).trim() : '';
+  }
+  function readModuleMeta(text) {
+    var mods = [];
+    text.split(/<module\b/).slice(1).forEach(function (mb) {
+      var id = /identifier="([^"]+)"/.exec(mb);
+      var itemsPart = mb.indexOf('<items>') >= 0 ? mb.slice(mb.indexOf('<items>')) : '';
+      var items = itemsPart.split(/<item\b/).slice(1).map(function (ib) {
+        var iid = /identifier="([^"]+)"/.exec(ib);
+        return { id: iid ? iid[1] : '', type: attr(ib, 'content_type'), title: attr(ib, 'title'), ref: attr(ib, 'identifierref'),
+          state: attr(ib, 'workflow_state') || 'active', position: parseInt(attr(ib, 'position') || '0', 10), indent: parseInt(attr(ib, 'indent') || '0', 10), url: attr(ib, 'url') };
+      });
+      items.sort(function (a, b) { return a.position - b.position; });
+      var head = mb.slice(0, mb.indexOf('<items>') >= 0 ? mb.indexOf('<items>') : mb.length);
+      mods.push({ gid: id ? id[1] : '', title: attr(head, 'title'), state: attr(head, 'workflow_state') || 'active', position: parseInt(attr(head, 'position') || '0', 10), items: items });
+    });
+    mods.sort(function (a, b) { return a.position - b.position; });
+    return mods;
+  }
+  function readManifestHrefs(text) {
+    var map = {}, re = /<resource\b([^>]*)>([\s\S]*?)<\/resource>/g, m;
+    while ((m = re.exec(text))) {
+      var id = /\bidentifier="([^"]+)"/.exec(m[1]), h = /\bhref="([^"]+)"/.exec(m[1]), f = /<file href="([^"]+)"/.exec(m[2]);
+      if (id) map[id[1]] = unescapeXml(h ? h[1] : (f ? f[1] : ''));
+    }
+    return map;
+  }
+  function absolutize(html, baseUrl) {
+    return html.replace(/(src|href)=("|')(?!https?:|data:|mailto:|#|\$)([^"']+)\2/gi, function (m0, a, q, v) {
+      try { return a + '=' + q + new URL(v, baseUrl).href + q; } catch (e) { return m0; }
+    });
+  }
+  function lessonFragment(html, url) {
+    var styles = [], re = /<style[^>]*>([\s\S]*?)<\/style>/gi, m;
+    while ((m = re.exec(html))) styles.push(m[1]);
+    var b = /<body[^>]*>([\s\S]*?)<\/body>/i.exec(html);
+    var body = b ? b[1] : html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+    body = body.replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<details(?![^>]*\bopen\b)/gi, '<details open')
+      .replace(/\sloading=("|')lazy\1/gi, '');
+    body = absolutize(body, url);
+    var css = styles.join('\n').replace(/(^|[\s,}])(html|body)(?=[\s,{.#:\[])/g, '$1.lesson-root');
+    css += '\n.lesson-root{background:#fff !important}.canvas-frame{max-width:100% !important;box-shadow:none !important}'
+      + '#optima-read-aloud{display:none !important}.ow-flip-back{display:block !important}'
+      + '*{animation:none !important;transition:none !important}'
+      + '.widget-row,details,tr,.ow-flip,img,.optima-widget{break-inside:avoid}';
+    return '<section class="lesson"><template shadowrootmode="open"><style>' + css + '</style><div class="lesson-root">' + body + '</div></template></section>';
+  }
+  function linkBox(label, url) {
+    return '<div class="linkbox"><div class="lb-label">' + escHtml(label) + '</div>' + (url ? '<a href="' + escHtml(url) + '">' + escHtml(url) + '</a>' : '') + '</div>';
+  }
+  var NO_FETCH = /youtube\.com|youtu\.be|vimeo\.com|forms\.office\.com|sharepoint\.com|onedrive\.live|docs\.google|loom\.com/i;
+  function fetchLesson(url) {
+    if (lessonCache[url]) return lessonCache[url];
+    lessonCache[url] = fetch(url).then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
+      .catch(function (e) { delete lessonCache[url]; return null; });
+    return lessonCache[url];
+  }
+  function pageWithLessons(html, stats) {
+    // Replace every embedded frame: lesson pages become inline fragments,
+    // anything else (video, forms) becomes a printed link.
+    var frames = [];
+    var out = html.replace(/<iframe\b[^>]*>[\s\S]*?<\/iframe>|<iframe\b[^>]*\/>/gi, function (tag) {
+      var s = /\bsrc=("|')([^"']+)\1/i.exec(tag), url = s ? s[2] : '';
+      var t = /\btitle=("|')([^"']*)\1/i.exec(tag);
+      var n = frames.length;
+      frames.push({ url: url, title: t ? t[2] : 'Embedded content' });
+      return '@@FRAME' + n + '@@';
+    });
+    if (!frames.length) return Promise.resolve(out);
+    return Promise.all(frames.map(function (f) {
+      if (!/^https?:/i.test(f.url) || NO_FETCH.test(f.url)) return Promise.resolve(null);
+      return fetchLesson(f.url);
+    })).then(function (docs) {
+      frames.forEach(function (f, n) {
+        var rep;
+        if (docs[n]) { rep = lessonFragment(docs[n], f.url); stats.lessons++; }
+        else { rep = linkBox(f.title + (NO_FETCH.test(f.url) ? '' : ' (could not be loaded for printing)'), f.url); stats.links++; }
+        out = out.split('@@FRAME' + n + '@@').join(rep);
+      });
+      return out;
+    });
+  }
+  function fmtWhen(utc) {
+    if (!utc) return '';
+    var loc = utcToLocalInput(utc); // YYYY-MM-DDTHH:MM local
+    var d = new Date(loc);
+    if (isNaN(d.getTime())) return loc.replace('T', ' ');
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  }
+  function printableCourse(scope) {
+    if (!kit || !course) return Promise.reject(new Error('choose a kit first'));
+    var stats = { modules: 0, items: 0, lessons: 0, links: 0, skipped: 0 };
+    return loadKitZip().then(function (zip) {
+      var metaName = (kit.settings && kit.settings.module_meta) || 'course_settings/module_meta.xml';
+      var metaFile = zip.file(metaName), manFile = zip.file('imsmanifest.xml');
+      if (!metaFile || !manFile) throw new Error('the cartridge has no module list');
+      return Promise.all([metaFile.async('string'), manFile.async('string')]).then(function (r) {
+        var mods = readModuleMeta(r[0]), hrefs = readManifestHrefs(r[1]);
+        var byGid = {}; (kit.graded_items || []).forEach(function (it) { byGid[it.gid] = it; });
+        var modByGid = {}; (kit.modules || []).forEach(function (m) { modByGid[m.gid] = m; });
+        if (scope && scope !== 'all') mods = mods.filter(function (m) { return m.gid === scope; });
+        var sections = [], toc = [];
+        var tasks = [];
+        mods.forEach(function (m) {
+          var side = modByGid[m.gid];
+          var pub = side ? modulePublished(side) : m.state !== 'unpublished';
+          if (!pub) { stats.skipped += m.items.length; return; }
+          stats.modules++;
+          var modIdx = sections.length;
+          sections.push(''); // module head placeholder, filled after items resolve
+          var tocItems = [];
+          m.items.forEach(function (it) {
+            var g = byGid[it.ref], eff = g ? effItem(g) : null;
+            if (it.state === 'unpublished' || (eff && !eff.published)) { stats.skipped++; return; }
+            stats.items++;
+            var idx = sections.length; sections.push('');
+            tocItems.push({ title: it.title, type: it.type, idx: idx });
+            tasks.push(function () {
+              return itemSection(zip, hrefs, m, it, g, eff, stats).then(function (html) { sections[idx] = html; });
+            });
+          });
+          toc.push({ title: m.title, items: tocItems });
+          sections[modIdx] = '<section class="module-head" id="mod-' + escHtml(m.gid) + '"><div class="eyebrow">MODULE</div><h1>' + escHtml(m.title) + '</h1>'
+            + '<div class="mh-count">' + tocItems.length + ' item' + (tocItems.length === 1 ? '' : 's') + '</div></section>';
+        });
+        // Fetch lessons a few at a time; the browser caps connections per host anyway.
+        var lanes = [], LANES = 6, cursor = 0;
+        function lane() { if (cursor >= tasks.length) return Promise.resolve(); var t = tasks[cursor++]; return t().then(lane); }
+        for (var i = 0; i < LANES; i++) lanes.push(lane());
+        return Promise.all(lanes).then(function () {
+          return composeDoc(sections.join('\n'), toc, stats, scope);
+        });
+      });
+    }).then(function (html) { return { html: html, stats: stats }; });
+  }
+  function itemSection(zip, hrefs, m, it, g, eff, stats) {
+    var typeLabel = { WikiPage: 'Page', Assignment: 'Assignment', 'Quizzes::Quiz': g && g.quiz_type === 'survey' ? 'Survey' : 'Quiz', DiscussionTopic: 'Discussion', Attachment: 'File', ExternalUrl: 'Link', ContextExternalTool: 'External tool', ContextModuleSubHeader: 'Section' }[it.type] || it.type;
+    var meta = [typeLabel, m.title];
+    if (g && eff) {
+      if (it.type === 'Quizzes::Quiz' && g.quiz_type === 'survey') meta.push('ungraded');
+      else if (eff.points != null) meta.push(fmtPoints(eff.points) + ' pts');
+      if (eff.due_at) meta.push('Due ' + fmtWhen(eff.due_at));
+    }
+    var head = '<div class="eyebrow">' + escHtml(meta.filter(Boolean).join(' \u00b7 ')) + '</div><h2>' + escHtml(it.title) + '</h2>';
+    var body;
+    if (it.type === 'WikiPage') {
+      var href = hrefs[it.ref], f = href && zip.file(href);
+      if (!f) body = Promise.resolve(linkBox('This page is missing from the cartridge.', ''));
+      else body = f.async('string').then(function (doc) { return pageWithLessons(neutralize(bodyOf(doc)), stats); });
+    } else if (it.type === 'Assignment' || it.type === 'DiscussionTopic' || it.type === 'Quizzes::Quiz') {
+      var pseudo = { type: it.type === 'Assignment' ? 'assignment' : it.type === 'DiscussionTopic' ? 'discussion' : 'quiz', gid: it.ref, xml: it.ref + '/assessment_meta.xml', title: it.title };
+      body = itemPreviewHtml(zip, pseudo).then(function (r) {
+        var html = neutralize(r.html);
+        if (pseudo.type === 'quiz') html += '<div class="quiz-note">' + escHtml(r.note) + '</div>';
+        return pageWithLessons(html, stats);
+      }).catch(function (e) { return linkBox('This item could not be read from the cartridge (' + e.message + ').', ''); });
+    } else if (it.type === 'Attachment') {
+      var fh = hrefs[it.ref] || '';
+      body = Promise.resolve(linkBox('File: ' + decodeURIComponent(fh.split('/').pop() || it.title), ''));
+    } else if (it.type === 'ContextModuleSubHeader') {
+      return Promise.resolve('<section class="item subhead"><h2>' + escHtml(it.title) + '</h2></section>');
+    } else {
+      body = Promise.resolve(linkBox(typeLabel, it.url));
+    }
+    return body.then(function (html) { return '<section class="item">' + head + '<div class="item-body">' + html + '</div></section>'; });
+  }
+  function composeDoc(sectionsHtml, toc, stats, scope) {
+    var homeHtml = currentHtml().replace(/\$CANVAS_(?:OBJECT|COURSE)_REFERENCE\$[^"]*/g, '#');
+    var scopeTitle = scope && scope !== 'all' ? (toc[0] ? toc[0].title : '') : kit.label;
+    var who = [home.teacherName, home.section].filter(function (v) { return String(v || '').trim(); }).join(' \u00b7 ');
+    var today = new Date().toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+    var tocHtml = toc.map(function (mo) {
+      return '<div class="toc-mod"><div class="toc-mt">' + escHtml(mo.title) + '</div><ol>' + mo.items.map(function (i) {
+        return '<li><span class="toc-ty">' + escHtml(i.type === 'Quizzes::Quiz' ? 'Quiz' : i.type === 'WikiPage' ? 'Page' : i.type === 'DiscussionTopic' ? 'Discussion' : i.type) + '</span> ' + escHtml(i.title) + '</li>';
+      }).join('') + '</ol></div>';
+    }).join('');
+    var css = '@page{size:Letter;margin:0.5in}'
+      + 'html,body{margin:0;background:#fff}body{font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#0e1c42;font-size:16px;line-height:1.5}'
+      + '.toolbar{position:sticky;top:0;z-index:9;background:#0e1c42;color:#fff;padding:12px 22px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;font-size:14px}'
+      + '.toolbar button{font:inherit;font-size:15px;border-radius:24px;padding:9px 20px;cursor:pointer;border:2px solid #f2c14e;background:#f2c14e;color:#0e1c42;font-weight:600}'
+      + '.toolbar .tb-stats{color:#c9d3e6}'
+      + '.sheet{max-width:1000px;margin:0 auto;padding:0 20px 60px}'
+      + '.cover{min-height:70vh;display:flex;flex-direction:column;justify-content:center;border-bottom:5px solid #55c8e8;padding:60px 0 40px;break-after:page}'
+      + '.cover .eyebrow{font-size:13px;letter-spacing:2px;color:#6b7a99}.cover h1{font-size:44px;margin:8px 0 6px;font-weight:600;line-height:1.15}.cover .sub{font-size:22px;color:#1b6a94}.cover .who{font-size:18px;margin-top:22px}.cover .note{font-size:14px;color:#6b7a99;margin-top:34px;max-width:620px;line-height:1.5}'
+      + '.home{break-after:page;padding:20px 0}.home .eyebrow{margin-bottom:10px}'
+      + '.toc{break-after:page;padding:20px 0}.toc h1{font-size:28px;margin:0 0 14px;font-weight:600}.toc-mod{margin:0 0 16px;break-inside:avoid}.toc-mt{font-weight:600;font-size:17px;margin-bottom:4px}.toc ol{margin:0;padding-left:26px;font-size:14px}.toc li{padding:2px 0}.toc-ty{display:inline-block;min-width:82px;color:#6b7a99;font-size:12px;letter-spacing:.5px;text-transform:uppercase}'
+      + '.eyebrow{font-size:12px;letter-spacing:1px;color:#6b7a99;text-transform:uppercase}'
+      + '.module-head{break-before:page;padding:120px 0 40px;border-bottom:5px solid #55c8e8;margin-bottom:30px}.module-head h1{font-size:38px;margin:6px 0;font-weight:600}.mh-count{color:#6b7a99}'
+      + '.item{break-before:page;padding-top:10px}.item h2{font-size:26px;margin:4px 0 14px;font-weight:600}.item.subhead{break-before:auto;padding:30px 0 0}.item.subhead h2{font-size:22px;color:#1b6a94}'
+      + '.item-body img{max-width:100%}.item-body iframe{max-width:100%}'
+      + '.linkbox{border:1.5px dashed #6b7a99;border-radius:8px;padding:12px 16px;margin:12px 0;font-size:14px;break-inside:avoid}.lb-label{font-weight:600;margin-bottom:4px}.linkbox a{color:#1b6a94;word-break:break-all}'
+      + '.quiz-note{font-size:13px;color:#6b7a99;margin-top:14px}'
+      + 'a[data-token]{color:#6b7a99;text-decoration:underline dotted}'
+      + '@media print{.toolbar{display:none}.sheet{max-width:none;padding:0}.cover{min-height:auto;padding-top:180px}a{color:inherit}}'
+      + '@media screen{.item,.module-head,.cover,.home,.toc{border-bottom:1px solid #d0d9e8}}';
+    var title = course.title + ' \u00b7 ' + scopeTitle;
+    return '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>' + escHtml(title) + '</title><style>' + css + '</style></head><body>'
+      + '<div class="toolbar"><button type="button" onclick="window.print()">Save as PDF</button>'
+      + '<span>Choose <b>Save as PDF</b> as the destination. Turn on <b>Background graphics</b> in More settings.</span>'
+      + '<span class="tb-stats">' + stats.modules + ' module' + (stats.modules === 1 ? '' : 's') + ' \u00b7 ' + stats.items + ' items \u00b7 ' + stats.lessons + ' lesson page' + (stats.lessons === 1 ? '' : 's') + '</span></div>'
+      + '<div class="sheet">'
+      + '<section class="cover"><div class="eyebrow">Optima Academy Online \u00b7 Course as students see it</div><h1>' + escHtml(course.title) + '</h1><div class="sub">' + escHtml(scopeTitle) + '</div>'
+      + (who ? '<div class="who">' + escHtml(who) + '</div>' : '')
+      + '<div class="note">Every module in order, with each page, assignment, discussion and quiz as it appears in Canvas. Quiz questions are shown without answers. Videos, forms and files are listed with their names or links. Prepared from the Optima Course Kit on ' + escHtml(today) + '.</div></section>'
+      + '<section class="home"><div class="eyebrow">Course home page</div>' + homeHtml + '</section>'
+      + '<section class="toc"><h1>Contents</h1>' + tocHtml + '</section>'
+      + sectionsHtml
+      + '</div></body></html>';
+  }
+  function printFilename(scope) {
+    var mod = scope && scope !== 'all' ? (kit.modules || []).filter(function (m) { return m.gid === scope; })[0] : null;
+    return [slug(course.title), mod ? slug(mod.title) : slug(kit.label), 'printable'].filter(Boolean).join('-') + '.html';
+  }
+  function pstatus(msg, cls) { var el = $('print-status'); el.textContent = msg; el.className = 'status ' + (cls || ''); }
+  function openPrintable() {
+    var scope = $('print-scope').value || 'all';
+    // Open the tab now, inside the click, so pop-up blockers let it through; fill it when ready.
+    var w = null;
+    try { w = window.open('', '_blank'); } catch (e) { w = null; }
+    if (w) { try { w.document.write('<!doctype html><title>Preparing\u2026</title><body style="font-family:Segoe UI,Arial,sans-serif;padding:40px;color:#0e1c42"><h2>Preparing your printable course\u2026</h2><p>Fetching every lesson page. A whole semester takes a little while.</p></body>'); } catch (e) { /* ignore */ }
+    }
+    pstatus('Preparing the printable course\u2026');
+    $('print-open').disabled = true;
+    return printableCourse(scope).then(function (r) {
+      var blob = new Blob([r.html], { type: 'text/html;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var s = r.stats, summary = s.modules + ' module' + (s.modules === 1 ? '' : 's') + ', ' + s.items + ' items, ' + s.lessons + ' lesson pages' + (s.links ? ', ' + s.links + ' linked videos or forms' : '') + (s.skipped ? '; ' + s.skipped + ' unpublished items left out' : '') + '.';
+      if (w && !w.closed) { w.location.href = url; pstatus('Opened in a new tab: ' + summary + ' Press Save as PDF there.', 'ok'); }
+      else { saveBlob(blob, printFilename(scope)); pstatus('Your browser blocked the new tab, so the printable course was downloaded as a file instead: ' + summary + ' Open it and press Ctrl+P.', 'ok'); }
+      $('print-open').disabled = false;
+      return r;
+    }).catch(function (e) {
+      if (w && !w.closed) { try { w.close(); } catch (e2) { /* ignore */ } }
+      pstatus('Could not prepare the printable course: ' + e.message, 'err');
+      $('print-open').disabled = false;
+      throw e;
+    });
+  }
 
   // ------------------------------------------------------------ storage
   function save() {
@@ -1925,6 +2194,7 @@
         .then(function (b) { saveBlob(b, kit.file.split('/').pop()); status('Downloaded the original kit. Its home page is the generic one.', 'ok'); })
         .catch(function (e) { status('Could not fetch the kit: ' + e.message, 'err'); });
     });
+    $('print-open').addEventListener('click', function () { openPrintable().catch(function () { /* shown in status */ }); });
     $('copy').addEventListener('click', function () {
       var html = currentHtml();
       var done = function () { status('Home page HTML copied. Paste it into a Canvas page in HTML view. Module links only work inside an import; in a pasted page, edit them to your Modules URLs.', 'ok'); };
@@ -2069,6 +2339,9 @@
         return tilesSelfTest();
       }).then(function (tr) {
         out.tiles = tr; out.ok = out.ok && tr.ok;
+        return printSelfTest();
+      }).then(function (pr) {
+        out.print = pr; out.ok = out.ok && pr.ok;
         $('selftest-out').textContent = JSON.stringify(out);
         document.title = 'Optima Course Kit [selftest done]';
       });
@@ -2102,6 +2375,55 @@
         });
       };
     })).then(function () { leaveItemPreview(); return res; });
+  }
+
+  // Printable course: one content module composed for real (lesson pages fetched
+  // from their live URLs). Asserts the module's published items all appear, every
+  // embedded lesson became a shadow-root fragment, quiz questions are present and
+  // answers are not, and no script survived. Writes the document into #print-html
+  // so a headless run can print it to PDF and gate the PDF itself.
+  function printSelfTest(scopeArg) {
+    var firstContent = (kit.modules || []).filter(function (m) {
+      return (kit.graded_items || []).some(function (it) { return it.module === m.id; });
+    })[0];
+    var scope = scopeArg || (firstContent ? firstContent.gid : 'all');
+    return printableCourse(scope).then(function (r) {
+      var html = r.html, s = r.stats;
+      var res = { ok: true, scope: scope, bytes: html.length, modules: s.modules, items: s.items, lessons: s.lessons, links: s.links, skipped: s.skipped };
+      res.shadowRoots = (html.match(/<template shadowrootmode="open">/g) || []).length;
+      res.itemSections = (html.match(/<section class="item">/g) || []).length;
+      res.hasQuestions = html.indexOf('QUESTION 1') >= 0;
+      res.noScripts = !/<script\b/i.test(html.replace(/<!--[\s\S]*?-->/g, ''));
+      res.noAnswers = !/respcondition|<varequal/i.test(html);
+      res.teacher = html.indexOf(escHtml(home.teacherName)) >= 0;
+      res.frameLeft = /<iframe\b/i.test(html.replace(/<template shadowrootmode="open">[\s\S]*?<\/template>/g, ''));
+      var modItems = (kit.graded_items || []).filter(function (it) { return firstContent && it.module === firstContent.id && effItem(it).published; }).length;
+      res.gradedInModule = modItems;
+      res.ok = s.modules >= 1 && res.itemSections === s.items && s.items >= modItems && res.shadowRoots === s.lessons
+        && res.noScripts && res.noAnswers && res.teacher && !res.frameLeft && (!(kit.graded_items || []).some(function (it) { return it.type === 'quiz' && firstContent && it.module === firstContent.id; }) || res.hasQuestions);
+      $('print-html').textContent = html;
+      return res;
+    }).catch(function (e) { return { ok: false, error: String(e && e.message || e) }; });
+  }
+  // #printtest=CODE:KIT-ID[:all|:<module gid>] composes the printable course alone.
+  function printtest(spec) {
+    var parts = (spec || '').split(':'), code = parts[0], kitId = parts[1] || null, scope = parts[2] || null;
+    var c = code ? findCourse(code) : null;
+    if (!c) { $('selftest-out').textContent = JSON.stringify({ ok: false, error: 'no course ' + code }); return; }
+    $('code').value = c.code; course = c; renderCourse();
+    var k = c.kits.filter(function (x) { return x.status === 'ready' && (!kitId || x.id === kitId); })[0];
+    if (!k) { $('selftest-out').textContent = JSON.stringify({ ok: false, error: 'no ready kit ' + (kitId || '') }); return; }
+    selectKit(k).then(function () {
+      home = exampleHome(); home.modules = k.modules.filter(function (m) { return m.published; }).map(function (m) { return { gid: m.gid, title: m.title, show: true }; });
+      ensureKitDefaults(); home.courseStart = '2026-08-17'; proposeDates(); fillForm(); renderPreview();
+      return printSelfTest(scope);
+    }).then(function (pr) {
+      $('selftest-out').textContent = JSON.stringify(pr);
+      document.title = 'Optima Course Kit [printtest ' + (pr.ok ? 'done' : 'failed') + ']';
+    }).catch(function (e) {
+      $('selftest-out').textContent = JSON.stringify({ ok: false, error: String(e && e.message || e) });
+      document.title = 'Optima Course Kit [printtest failed]';
+    });
   }
   function tilesSelfTest() {
     // Five tiles: select all and type the shared details, then select one at a time
@@ -2152,6 +2474,8 @@
     catalog = c; wire();
     var m = /^#selftest(?:=(.+))?$/.exec(location.hash || '');
     if (m) selftest(m[1] ? decodeURIComponent(m[1]) : null);
+    var pm = /^#printtest=(.+)$/.exec(location.hash || '');
+    if (pm) printtest(decodeURIComponent(pm[1]));
   }).catch(function (e) {
     $('course-card').innerHTML = '<div class="card"><div class="t">Could not load the kit catalog</div><div class="m">' + escHtml(e.message) + '. Open this page over http (GitHub Pages or a local server), not as a file.</div></div>';
   });

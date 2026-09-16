@@ -92,6 +92,46 @@ choices (never the answers). Canvas tokens in links are disabled because they re
 only on import; embedded lesson pages load from their live URLs. "Back to home page"
 returns to the home page preview.
 
+## Printable course (save as PDF)
+
+At the bottom of step 6 a teacher picks **Whole course** or one module and clicks
+**Open printable course**. The widget reads the module list out of the cartridge
+(`course_settings/module_meta.xml` + `imsmanifest.xml`), walks every module and item in
+Canvas order, and composes one HTML document in a new tab: a cover, the teacher's
+customized home page, a contents list, then a module divider and every item. The tab
+has a **Save as PDF** button (the browser's print dialog; choose *Save as PDF* as the
+destination and turn on *Background graphics*). Nothing is uploaded anywhere.
+
+What each item type becomes:
+
+| Item | Printed as |
+|---|---|
+| Page (`wiki_content/*.html`) | The page body. Each embedded lesson `<iframe>` is fetched from its live GitHub Pages URL and placed inline inside a declarative shadow root (`<template shadowrootmode="open">`) so the lesson keeps its own CSS without leaking into the document. Lesson scripts are dropped (they only wire interactivity), every `<details>` is opened, flip cards show their back face, the read-aloud bar is hidden, the 1100px frame is widened to the page. Frames that cannot be fetched (video, forms, SharePoint) print as a labelled link. |
+| Assignment | Its instructions, with points and the due date the teacher set in step 4. |
+| Discussion | The prompt. |
+| Quiz / survey | Description and every question with its choices, never the answers (same reader as the item preview). |
+| File | Its file name. |
+
+Unpublished modules and items (from the kit, or unpublished by the teacher in step 4) are
+left out, so the document is what a student will actually meet. A whole semester of 7th
+ELA S2 is 4 published modules, 208 items, 101 lesson pages, about 1,400 Letter pages;
+composing it takes a few seconds plus the lesson fetches, and Chrome's print dialog needs
+a moment to paginate it. One module is a few hundred pages.
+
+The gate for this is a PDF, not the HTML: `#printtest=CODE:KIT-ID[:all|:<module gid>]`
+composes the document alone and writes it into `<pre id="print-html">`; the scratch
+`gate.py` (in the session that built this) dumps the DOM, saves the document, prints it
+with headless Chrome, and asserts on the PDF text: cover, contents, every item title,
+module dividers = modules composed, quiz questions present, no answer XML, and any
+phrase you pass as a needle. The regular `#selftest` also composes the first content
+module and asserts items = sections, lessons = shadow roots, no scripts, no answers.
+
+Limits: the printable copy is a document, so interactive widgets show their options
+without feedback; pop-up blockers that refuse the new tab get the same document as a
+downloaded `.html` file instead (open it and press Ctrl+P); browsers older than 2024
+without declarative shadow DOM will print the lessons with their styles bleeding
+together.
+
 ## Home page themes
 
 Step 3 opens with a theme picker. A theme carries a banner (`themes/<name>.svg`), a
