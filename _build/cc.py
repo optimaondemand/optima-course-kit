@@ -27,10 +27,12 @@ Spec (a dict, usually loaded from JSON):
 }
 
 QUESTION = {"type": "multiple_choice|true_false|multiple_answers|short_answer|
-                      essay|file_upload|text_only",
+                      essay|file_upload|text_only|matching",
             "text": html, "points": float,
             "answers": [{"text", "correct": bool, "feedback": html}],
             "feedback_correct", "feedback_incorrect", "feedback_general"}
+  matching: "answers": [{"left": str, "right": str}], "distractors": [str]
+            (extra right-hand choices with no left); each pair scores an equal share.
 
 ITEM = {"type": "page|assignment|quiz|discussion|url|header|file",
         "ref": id-or-path, "title", "url", "new_tab", "indent", "published"}
@@ -72,6 +74,7 @@ QUESTION_TYPES = {
     'essay': 'essay_question',
     'file_upload': 'file_upload_question',
     'text_only': 'text_only_question',
+    'matching': 'matching_question',
 }
 
 TOKEN = re.compile(r'\{\{(page|assignment|quiz|discussion|module|file|modules|'
@@ -332,6 +335,8 @@ class Cartridge:
         if not qtype:
             self.errors.append('quiz %s question %d has unsupported type %r' % (quiz['id'], n, q.get('type')))
             qtype = 'essay_question'
+        if qtype == 'matching_question':
+            return self.matching_xml(quiz, q, n, qid)
         answers = q.get('answers', []) or []
         if qtype == 'true_false_question' and not answers:
             answers = [{'text': 'True', 'correct': True}, {'text': 'False', 'correct': False}]
@@ -389,6 +394,70 @@ class Cartridge:
         else:
             rp.append('          <respcondition continue="No">\n            <conditionvar>\n              <other/>\n            </conditionvar>\n          </respcondition>')
         if q.get('feedback_correct'):
+            fb.append(('correct_fb', q['feedback_correct']))
+        if q.get('feedback_incorrect'):
+            rp.append('          <respcondition continue="Yes">\n            <conditionvar>\n              <other/>\n            </conditionvar>\n            <displayfeedback feedbacktype="Response" linkrefid="general_incorrect_fb"/>\n          </respcondition>')
+            fb.append(('general_incorrect_fb', q['feedback_incorrect']))
+        rp.append('        </resprocessing>')
+        out += rp
+        for ident, text in fb:
+            out.append('        <itemfeedback ident="%s">\n          <flow_mat>\n            <material>\n              <mattext texttype="text/html">%s</mattext>\n            </material>\n          </flow_mat>\n        </itemfeedback>' % (ident, x(text)))
+        out.append('      </item>')
+        return '\n'.join(out)
+
+    def matching_xml(self, quiz, q, n, qid):
+        """Canvas matching_question: one response_lid per left prompt, every right choice
+        listed under each, equal 'Add' share per correct pair (shape from a real export)."""
+        where = 'quiz %s question %d (matching)' % (quiz['id'], n)
+        answers = q.get('answers', []) or []
+        pairs = [a for a in answers if (a.get('left') or a.get('text')) and a.get('right')]
+        if not pairs or len(pairs) != len(answers):
+            self.errors.append('%s needs answers with both left and right text' % where)
+        used = set()
+
+        def uid(i):
+            v = self._answer_id(qid, i)
+            while v in used:
+                v = str(int(v) % 90000 + 1000)
+            used.add(v)
+            return v
+
+        left_ids = [uid(i) for i in range(len(pairs))]
+        rights = []
+        for a in pairs:
+            if a['right'] not in rights:
+                rights.append(a['right'])
+        for d in q.get('distractors', []) or []:
+            if d and d not in rights:
+                rights.append(d)
+        right_ids = dict((t, uid(100 + j)) for j, t in enumerate(rights))
+
+        meta = [('question_type', 'matching_question'), ('points_possible', pts(q.get('points', len(pairs) or 1))),
+                ('original_answer_ids', ','.join(left_ids)), ('assessment_question_identifierref', self.G('aq', qid))]
+        out = ['      <item ident="%s" title="Question %d">' % (qid, n), '        <itemmetadata>', '          <qtimetadata>']
+        for k, v in meta:
+            out.append('            <qtimetadatafield>\n              <fieldlabel>%s</fieldlabel>\n              <fieldentry>%s</fieldentry>\n            </qtimetadatafield>' % (k, x(v)))
+        out += ['          </qtimetadata>', '        </itemmetadata>', '        <presentation>',
+                '          <material>\n            <mattext texttype="text/html">%s</mattext>\n          </material>'
+                % x(self.links(q.get('text', ''), where))]
+        choices = ''.join('\n              <response_label ident="%s">\n                <material>\n                  <mattext>%s</mattext>\n                </material>\n              </response_label>'
+                          % (right_ids[t], x(t)) for t in rights)
+        for i, a in enumerate(pairs):
+            out.append('          <response_lid ident="response_%s">\n            <material>\n              <mattext texttype="text/plain">%s</mattext>\n            </material>\n            <render_choice>%s\n            </render_choice>\n          </response_lid>'
+                       % (left_ids[i], x(a.get('left') or a.get('text') or ''), choices))
+        out.append('        </presentation>')
+
+        fb = []
+        rp = ['        <resprocessing>', '          <outcomes>\n            <decvar maxvalue="100" minvalue="0" varname="SCORE" vartype="Decimal"/>\n          </outcomes>']
+        if q.get('feedback_general'):
+            rp.append('          <respcondition continue="Yes">\n            <conditionvar>\n              <other/>\n            </conditionvar>\n            <displayfeedback feedbacktype="Response" linkrefid="general_fb"/>\n          </respcondition>')
+            fb.append(('general_fb', q['feedback_general']))
+        share = '%.2f' % (100.0 / len(pairs)) if pairs else '0.00'
+        for i, a in enumerate(pairs):
+            rp.append('          <respcondition>\n            <conditionvar>\n              <varequal respident="response_%s">%s</varequal>\n            </conditionvar>\n            <setvar varname="SCORE" action="Add">%s</setvar>\n          </respcondition>'
+                      % (left_ids[i], right_ids[a['right']], share))
+        if q.get('feedback_correct'):
+            rp.append('          <respcondition continue="Yes">\n            <conditionvar>\n              <other/>\n            </conditionvar>\n            <displayfeedback feedbacktype="Response" linkrefid="correct_fb"/>\n          </respcondition>')
             fb.append(('correct_fb', q['feedback_correct']))
         if q.get('feedback_incorrect'):
             rp.append('          <respcondition continue="Yes">\n            <conditionvar>\n              <other/>\n            </conditionvar>\n            <displayfeedback feedbacktype="Response" linkrefid="general_incorrect_fb"/>\n          </respcondition>')

@@ -20,6 +20,7 @@ QTYPE = {
     'multiple_choice_question': 'multiple_choice', 'true_false_question': 'true_false',
     'multiple_answers_question': 'multiple_answers', 'short_answer_question': 'short_answer',
     'essay_question': 'essay', 'file_upload_question': 'file_upload', 'text_only_question': 'text_only',
+    'matching_question': 'matching',
 }
 
 
@@ -154,11 +155,18 @@ def main():
                 unsupported.append((q['title'], qq['question_type']))
                 continue
             answers = []
-            for an in qq.get('answers') or []:
-                answers.append({'text': an.get('html') or an.get('text') or '', 'correct': (an.get('weight') or 0) > 0,
-                                'feedback': an.get('comments_html') or an.get('comments') or ''})
+            distractors = []
+            if t == 'matching':
+                for an in qq.get('answers') or []:
+                    answers.append({'left': an.get('left') or an.get('text') or '', 'right': an.get('right') or '',
+                                    'feedback': an.get('comments_html') or an.get('comments') or ''})
+                distractors = [s.strip() for s in (qq.get('matching_answer_incorrect_matches') or '').splitlines() if s.strip()]
+            else:
+                for an in qq.get('answers') or []:
+                    answers.append({'text': an.get('html') or an.get('text') or '', 'correct': (an.get('weight') or 0) > 0,
+                                    'feedback': an.get('comments_html') or an.get('comments') or ''})
             questions.append({'type': t, 'text': qq.get('question_text') or '', 'points': qq.get('points_possible') or 0,
-                              'answers': answers,
+                              'answers': answers, 'distractors': distractors,
                               'feedback_correct': qq.get('correct_comments_html') or qq.get('correct_comments') or '',
                               'feedback_incorrect': qq.get('incorrect_comments_html') or qq.get('incorrect_comments') or '',
                               'feedback_general': qq.get('neutral_comments_html') or qq.get('neutral_comments') or ''})
