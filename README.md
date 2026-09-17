@@ -135,11 +135,27 @@ together.
 ## Home page themes
 
 Step 3 opens with a theme picker. A theme carries a banner (`themes/<name>.svg`), a
-palette, a Today's Spark card (`spotlights/<name>.svg`), a motif and starter wording
-for the tagline and Commonplace Corner. The catalog's subject pre-picks one; the
-teacher can choose any of the sixteen. Two more switches: module list as a journey
-trail or the classic grid, and the spark card on or off. Optima Classic + Classic
-grid + spark off is the pre-theme page.
+palette, a motif and a starter tagline. The catalog's subject pre-picks one; the
+teacher can choose any of the sixteen. One more switch: module list as a journey
+trail or the classic grid. Optima Classic + Classic grid is the pre-theme page.
+
+Retired 2026-09-17 on the curriculum lead's ruling: the first-announcement fields,
+the Commonplace Corner (quote, author, prompt) and the Today's Spark card. The
+`spotlights/*.svg` files stay hosted because home pages imported before that date
+still point at them.
+
+## Step 4: dates, publishing and contents
+
+Every module in the kit gets a block: a Publish all / Unpublish all pair (the module
+and everything inside it, both ways), the batch date row, the graded-item table with
+a Published column, and a **Module contents** list read from the cartridge's own
+`module_meta.xml` (the sidecar knows graded items only). Each entry has a Remove
+button (Restore once removed). Removal lives only in the teacher's browser state and
+the cartridge she downloads: a removed assignment, quiz or discussion loses its module
+entry, organization entry, manifest resource (plus the resources it depends on) and
+files, so it never reaches the gradebook; a removed page leaves the module but keeps
+its resource and file, so it stays in the course's Pages. Nothing in the store changes.
+The gradebook (step 5), the printable course and the self-test all skip removed items.
 
 The SVGs are hosted here on Pages and reach Canvas as plain `<img>` tags (Canvas
 strips `data:` images). Their CSS animation runs inside `<img>` and every file
@@ -175,9 +191,14 @@ chrome --headless=new --dump-dom --virtual-time-budget=40000 "http://127.0.0.1:8
 
 The self-test fills the example teacher, applies sample dates, weights, points and
 a publish change, batch-dates one whole module, sets a graded quiz total (split evenly
-across its questions in the QTI file), toggles the preview off and on, builds the
-patched cartridge in the page, asserts the patched XML, and writes the zip (base64)
-into the DOM so the dump can be decoded and run through `verify_cartridge.py`.
+across its questions in the QTI file), removes one graded item and one page from the
+first content module, unpublishes then republishes a second module, toggles the
+preview off and on, builds the patched cartridge in the page, asserts the patched XML
+(including the removal: entries, resource and files gone for the graded item; page
+resource kept), and writes the zip (base64) into the DOM so the dump can be decoded
+and run through `verify_cartridge.py`. From Git Bash, pass the `?base=/...` URL as one
+quoted string (or set `MSYS_NO_PATHCONV=1`), or the shell rewrites the leading slash
+into a Windows path and the widget fetches nothing.
 
 ## Verifying a kit in Canvas itself
 

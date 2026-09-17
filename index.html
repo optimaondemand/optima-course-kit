@@ -160,6 +160,16 @@
   .batchrow input[type=datetime-local] { font-size:13px; padding:5px 7px; min-width:0; width:100%; }
   .batchrow .actions { margin-top:8px; }
   @media (max-width: 560px) { .batchrow .bt-fields { grid-template-columns:1fr; } }
+  details.contents { margin-top:10px; border:1px dashed var(--line); border-radius:8px; padding:8px 12px; }
+  details.contents summary { font-size:13.5px; color:var(--navy); margin-top:0; }
+  ol.contents { margin:8px 0 0; padding:0; list-style:none; font-size:13.5px; }
+  ol.contents li { display:flex; align-items:center; gap:8px; padding:4px 0; border-bottom:1px solid var(--line); }
+  ol.contents li:last-child { border-bottom:0; }
+  ol.contents .ct-n { width:24px; text-align:right; color:var(--mute); font-size:12px; flex-shrink:0; }
+  ol.contents .pill { margin-left:0; flex-shrink:0; }
+  ol.contents .ct-title { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  ol.contents li.removed .ct-title { text-decoration:line-through; color:var(--mute); }
+  ol.contents button.sm { padding:3px 10px; font-size:12px; flex-shrink:0; }
 </style>
 </head>
 <body>
@@ -213,18 +223,11 @@
           <select id="f-house"><option value="">None</option><option value="galahad">Galahad (Perseverance)</option><option value="cincinnatus">Cincinnatus (Courage)</option><option value="nightingale">Nightingale (Service)</option><option value="odysseus">Odysseus (Self-Governance)</option></select></div>
         <div><label for="f-tagline">Tagline under the course name</label><input type="text" id="f-tagline" placeholder="Course Home · Start here every week."></div>
       </div>
-      <label for="f-annWhen">First announcement (date line)</label><input type="text" id="f-annWhen" placeholder="Week 1">
-      <label for="f-annText">First announcement (text)</label><textarea id="f-annText" placeholder="Welcome. Read the Module 1 map before opening Lesson 1.01."></textarea>
       <details><summary>Module cards (edit titles, untick to hide)</summary><div class="mods" id="mods"></div></details>
-      <details><summary>Commonplace Corner, optional</summary>
-        <label for="f-quote">Quote</label><input type="text" id="f-quote">
-        <label for="f-author">Author</label><input type="text" id="f-author">
-        <label for="f-prompt">Prompt</label><textarea id="f-prompt"></textarea>
-      </details>
     </div>
 
     <div class="step locked collapsible" id="step4">
-      <h2><span class="n">4</span> Dates and publishing</h2>
+      <h2><span class="n">4</span> Dates, publishing and contents</h2>
       <div id="dates-panel"><div class="hint">Choose a kit first.</div></div>
     </div>
 
@@ -321,104 +324,74 @@
 
   // ------------------------------------------------------------ themes
   // One pick carries the banner (themes/), the palette (dark clears 4.5:1 on
-  // white and on the wash; bright clears 4.5:1 on navy), the spark card
-  // (spotlights/), the motif, and the starter wording.
+  // white and on the wash; bright clears 4.5:1 on navy), the motif, and the
+  // starter tagline. Spark cards and the Commonplace Corner were retired on
+  // 2026-09-17; spotlights/ stays hosted for home pages already imported.
   var THEMES = {
     classic: { label: 'Optima Classic', subject: 'Any course',
       accent: '#55C8E8', dark: '#33788B', bright: '#55c8e8', wash: '#F4F6FB',
-      chipBorder: 'rgba(85,200,232,0.45)', rule: '#D0D9E8', banner: '', spot: 'classic.svg', motif: '\u2728',
-      tagline: 'Course Home \u00b7 Start here every week.',
-      quote: { q: '', a: '', p: '' } },
+      chipBorder: 'rgba(85,200,232,0.45)', rule: '#D0D9E8', banner: '', motif: '\u2728',
+      tagline: 'Course Home \u00b7 Start here every week.' },
     math: { label: 'Blueprint', subject: 'Math',
       accent: '#3D7DD8', dark: '#2E5FA3', bright: '#8FBAF0', wash: '#F2F6FC',
-      chipBorder: 'rgba(143,186,240,0.5)', rule: '#3D7DD8', banner: 'math.svg', spot: 'math.svg', motif: '\ud83d\udca1',
-      tagline: 'Everything adds up from here.',
-      quote: { q: 'Pure mathematics is, in its way, the poetry of logical ideas.', a: 'Albert Einstein',
-               p: 'Copy this week\u2019s line into your commonplace book. Then find one pattern from class \u2014 or from your own life \u2014 that felt like poetry to you.' } },
+      chipBorder: 'rgba(143,186,240,0.5)', rule: '#3D7DD8', banner: 'math.svg', motif: '\ud83d\udca1',
+      tagline: 'Everything adds up from here.' },
     ela: { label: 'Storybook', subject: 'Language Arts & English',
       accent: '#B05263', dark: '#8E3B4A', bright: '#E8A2AE', wash: '#FBF4F2',
-      chipBorder: 'rgba(232,162,174,0.5)', rule: '#B05263', banner: 'language-arts.svg', spot: 'ela.svg', motif: '\u2712\ufe0f',
-      tagline: 'Every great story starts on this page.',
-      quote: { q: 'There is no frigate like a book to take us lands away.', a: 'Emily Dickinson',
-               p: 'Copy this week\u2019s line into your commonplace book. Where did a book take you this week \u2014 and what did it show you there?' } },
+      chipBorder: 'rgba(232,162,174,0.5)', rule: '#B05263', banner: 'language-arts.svg', motif: '\u2712\ufe0f',
+      tagline: 'Every great story starts on this page.' },
     science: { label: 'Field Lab', subject: 'Science',
       accent: '#76C043', dark: '#4C7C2B', bright: '#76C043', wash: '#F3F9F0',
-      chipBorder: 'rgba(118,192,67,0.5)', rule: '#76C043', banner: 'science.svg', spot: 'science.svg', motif: '\ud83d\udd2d',
-      tagline: 'Observe closely. Question everything. Start here.',
-      quote: { q: 'Nothing in life is to be feared, it is only to be understood.', a: 'Marie Curie',
-               p: 'Copy this week\u2019s line into your commonplace book. What did you understand this week that used to seem mysterious?' } },
+      chipBorder: 'rgba(118,192,67,0.5)', rule: '#76C043', banner: 'science.svg', motif: '\ud83d\udd2d',
+      tagline: 'Observe closely. Question everything. Start here.' },
     history: { label: 'Chronicle', subject: 'History & Civics',
       accent: '#C77A3B', dark: '#9A5522', bright: '#E5C9A8', wash: '#FAF5EC',
-      chipBorder: 'rgba(229,201,168,0.5)', rule: '#C77A3B', banner: 'history.svg', spot: 'history.svg', motif: '\ud83d\udd70\ufe0f',
-      tagline: 'Your story picks up where the past left off.',
-      quote: { q: 'To be ignorant of what occurred before you were born is to remain always a child.', a: 'Cicero',
-               p: 'Copy this week\u2019s line into your commonplace book. What did you learn this week that made the present make more sense?' } },
+      chipBorder: 'rgba(229,201,168,0.5)', rule: '#C77A3B', banner: 'history.svg', motif: '\ud83d\udd70\ufe0f',
+      tagline: 'Your story picks up where the past left off.' },
     social: { label: 'Crossroads', subject: 'Social Studies',
       accent: '#1794B4', dark: '#0E5568', bright: '#5FC6DC', wash: '#EFF7F9',
-      chipBorder: 'rgba(95,198,220,0.5)', rule: '#1794B4', banner: 'social-studies.svg', spot: 'social.svg', motif: '\ud83c\udf0d',
-      tagline: 'Your community starts here.',
-      quote: { q: 'Injustice anywhere is a threat to justice everywhere.', a: 'Martin Luther King Jr.',
-               p: 'Copy this week\u2019s line into your commonplace book. Where did you see fairness matter this week \u2014 close to home or far away?' } },
+      chipBorder: 'rgba(95,198,220,0.5)', rule: '#1794B4', banner: 'social-studies.svg', motif: '\ud83c\udf0d',
+      tagline: 'Your community starts here.' },
     art: { label: 'Open Studio', subject: 'Art',
       accent: '#C4519F', dark: '#A53E97', bright: '#E289CB', wash: '#FCF3FA',
-      chipBorder: 'rgba(226,137,203,0.5)', rule: '#C4519F', banner: 'art.svg', spot: 'art.svg', motif: '\ud83c\udfa8',
-      tagline: 'Your studio door is open.',
-      quote: { q: 'Painting is poetry that is seen rather than felt.', a: 'Leonardo da Vinci',
-               p: 'Copy this week\u2019s line into your commonplace book. What did you make or notice this week that said something words couldn\u2019t?' } },
+      chipBorder: 'rgba(226,137,203,0.5)', rule: '#C4519F', banner: 'art.svg', motif: '\ud83c\udfa8',
+      tagline: 'Your studio door is open.' },
     music: { label: 'Crescendo', subject: 'Music',
       accent: '#8B5CB8', dark: '#67308F', bright: '#B99CD6', wash: '#F7F3FB',
-      chipBorder: 'rgba(185,156,214,0.5)', rule: '#8B5CB8', banner: 'music.svg', spot: 'music.svg', motif: '\ud83c\udfb6',
-      tagline: 'Take it from the top \u2014 everything you need is here.',
-      quote: { q: 'Music is enough for a lifetime, but a lifetime is not enough for music.', a: 'Sergei Rachmaninoff',
-               p: 'Copy this week\u2019s line into your commonplace book. What piece of music stayed with you this week, and why?' } },
+      chipBorder: 'rgba(185,156,214,0.5)', rule: '#8B5CB8', banner: 'music.svg', motif: '\ud83c\udfb6',
+      tagline: 'Take it from the top \u2014 everything you need is here.' },
     health: { label: 'Momentum', subject: 'Health & Fitness',
       accent: '#F78F1E', dark: '#A05C13', bright: '#FFB25E', wash: '#FFF6EC',
-      chipBorder: 'rgba(255,178,94,0.5)', rule: '#F78F1E', banner: 'health-fitness.svg', spot: 'health.svg', motif: '\ud83d\udc9b',
-      tagline: 'Warm up here \u2014 everything you need is on this page.',
-      quote: { q: 'Take care of your body. It\u2019s the only place you have to live.', a: 'Jim Rohn',
-               p: 'Copy this week\u2019s line into your commonplace book. What is one way you took care of yourself this week?' } },
+      chipBorder: 'rgba(255,178,94,0.5)', rule: '#F78F1E', banner: 'health-fitness.svg', motif: '\ud83d\udc9b',
+      tagline: 'Warm up here \u2014 everything you need is on this page.' },
     world: { label: 'Passport', subject: 'World Languages',
       accent: '#D95D4E', dark: '#A83A2D', bright: '#F5A093', wash: '#FCF4F2',
-      chipBorder: 'rgba(245,160,147,0.5)', rule: '#D95D4E', banner: 'world-languages.svg', spot: 'world.svg', motif: '\ud83d\udcac',
-      tagline: 'Every language starts with hello. Start here.',
-      quote: { q: 'To have another language is to possess a second soul.', a: 'Attributed to Charlemagne',
-               p: 'Copy this week\u2019s line into your commonplace book. What did you manage to say this week that you couldn\u2019t say last month?' } },
+      chipBorder: 'rgba(245,160,147,0.5)', rule: '#D95D4E', banner: 'world-languages.svg', motif: '\ud83d\udcac',
+      tagline: 'Every language starts with hello. Start here.' },
     latin: { label: 'Forum', subject: 'Latin & Classical Studies',
       accent: '#C7922C', dark: '#8B661E', bright: '#C7922C', wash: '#FAF7EE',
-      chipBorder: 'rgba(199,146,44,0.5)', rule: '#C7922C', banner: 'latin-classical.svg', spot: 'latin.svg', motif: '\ud83c\udfdb\ufe0f',
-      tagline: 'Salvete, discipuli! Your course begins here.',
-      quote: { q: 'We learn not for school but for life.', a: 'Adapted from Seneca',
-               p: 'Copy this week\u2019s line into your commonplace book \u2014 in English or in Latin. Where did something from this course show up in real life?' } },
+      chipBorder: 'rgba(199,146,44,0.5)', rule: '#C7922C', banner: 'latin-classical.svg', motif: '\ud83c\udfdb\ufe0f',
+      tagline: 'Salvete, discipuli! Your course begins here.' },
     cs: { label: 'Circuit', subject: 'Computer Science & Digital',
       accent: '#6C5CE7', dark: '#4A3EC8', bright: '#A9A2F5', wash: '#F5F4FE',
-      chipBorder: 'rgba(169,162,245,0.5)', rule: '#6C5CE7', banner: 'computer-science.svg', spot: 'cs.svg', motif: '\u26a1',
-      tagline: 'Hello, world! Your course runs from this page.',
-      quote: { q: 'The most dangerous phrase in the language is: we\u2019ve always done it this way.', a: 'Grace Hopper',
-               p: 'Copy this week\u2019s line into your commonplace book. What is one thing you tried a new way this week?' } },
+      chipBorder: 'rgba(169,162,245,0.5)', rule: '#6C5CE7', banner: 'computer-science.svg', motif: '\u26a1',
+      tagline: 'Hello, world! Your course runs from this page.' },
     chalk: { label: 'Chalkboard', subject: 'Any course',
       accent: '#5B7089', dark: '#44566E', bright: '#AFC3D9', wash: '#F2F5F8',
-      chipBorder: 'rgba(175,195,217,0.5)', rule: '#5B7089', banner: 'chalkboard.svg', spot: 'chalk.svg', motif: '\u2b50',
-      tagline: 'Eyes up front \u2014 everything you need is on the board.',
-      quote: { q: 'The mind is not a vessel to be filled but a fire to be kindled.', a: 'Adapted from Plutarch',
-               p: 'Copy this week\u2019s line into your commonplace book. What lit a spark for you this week \u2014 in any class, or outside school?' } },
+      chipBorder: 'rgba(175,195,217,0.5)', rule: '#5B7089', banner: 'chalkboard.svg', motif: '\u2b50',
+      tagline: 'Eyes up front \u2014 everything you need is on the board.' },
     notes: { label: 'Margin Notes', subject: 'Any course',
       accent: '#C23A2E', dark: '#9B2F24', bright: '#A9C7E8', wash: '#FBF9F3',
-      chipBorder: 'rgba(169,199,232,0.5)', rule: '#C23A2E', banner: 'margin-notes.svg', spot: 'notes.svg', motif: '\ud83d\udccc',
-      tagline: 'Fresh page, sharp pencil \u2014 let\u2019s begin.',
-      quote: { q: 'You can\u2019t use up creativity. The more you use, the more you have.', a: 'Maya Angelou',
-               p: 'Copy this week\u2019s line into your commonplace book. What did you make this week that didn\u2019t exist the week before?' } },
+      chipBorder: 'rgba(169,199,232,0.5)', rule: '#C23A2E', banner: 'margin-notes.svg', motif: '\ud83d\udccc',
+      tagline: 'Fresh page, sharp pencil \u2014 let\u2019s begin.' },
     reading: { label: 'Reading Room', subject: 'Any course',
       accent: '#3B7D5D', dark: '#2C5E45', bright: '#8FC9AC', wash: '#F0F7F2',
-      chipBorder: 'rgba(143,201,172,0.5)', rule: '#3B7D5D', banner: 'reading-room.svg', spot: 'reading.svg', motif: '\ud83d\udcda',
-      tagline: 'Settle in \u2014 your seat in the reading room is saved.',
-      quote: { q: 'Reading is to the mind what exercise is to the body.', a: 'Joseph Addison',
-               p: 'Copy this week\u2019s line into your commonplace book. What did you read this week that stretched you a little?' } },
+      chipBorder: 'rgba(143,201,172,0.5)', rule: '#3B7D5D', banner: 'reading-room.svg', motif: '\ud83d\udcda',
+      tagline: 'Settle in \u2014 your seat in the reading room is saved.' },
     general: { label: 'Compass', subject: 'Electives & everything else',
       accent: '#2E7E8F', dark: '#0E5568', bright: '#6FB9C9', wash: '#F1F7F8',
-      chipBorder: 'rgba(111,185,201,0.5)', rule: '#2E7E8F', banner: 'general.svg', spot: 'general.svg', motif: '\u2728',
-      tagline: 'Your course, all in one place. Start here.',
-      quote: { q: 'The beginning is the most important part of the work.', a: 'Plato',
-               p: 'Copy this week\u2019s line into your commonplace book. What did you begin this week \u2014 and what would a strong next step be?' } }
+      chipBorder: 'rgba(111,185,201,0.5)', rule: '#2E7E8F', banner: 'general.svg', motif: '\u2728',
+      tagline: 'Your course, all in one place. Start here.' }
   };
   var THEME_ORDER = ['classic', 'math', 'ela', 'science', 'history', 'social', 'art', 'music',
                      'health', 'world', 'latin', 'cs', 'chalk', 'notes', 'reading', 'general'];
@@ -449,9 +422,6 @@
   function applyTheme(key) {
     if (!THEMES[key]) return;
     if (followsTheme(home.tagline, function (t) { return t.tagline; })) home.tagline = THEMES[key].tagline;
-    if (followsTheme(home.quote, function (t) { return t.quote.q; })) {
-      home.quote = THEMES[key].quote.q; home.author = THEMES[key].quote.a; home.prompt = THEMES[key].quote.p;
-    }
     home.theme = key;
   }
 
@@ -470,18 +440,16 @@
 
   function blankHome() {
     return { teacherName: '', teacherTitle: '', teacherEmail: '', mode: 'On-Demand', term: '', section: '', meeting: '',
-             studyHall: '', blurb: '', house: '', tagline: '', annWhen: '', annText: '', quote: '', author: '', prompt: '',
-             theme: '', spotlight: 'on', modStyle: 'journey',
-             modules: [], courseStart: '', dates: {}, itemOverrides: {}, moduleOverrides: {}, groups: null, weighted: null };
+             studyHall: '', blurb: '', house: '', tagline: '',
+             theme: '', modStyle: 'journey',
+             modules: [], courseStart: '', dates: {}, itemOverrides: {}, moduleOverrides: {}, removed: {}, groups: null, weighted: null };
   }
   function exampleHome() {
     var h = blankHome();
     h.teacherName = 'Ms. Rivera'; h.teacherTitle = 'Course Instructor'; h.teacherEmail = 'arivera@optimaed.com';
     h.term = 'Fall 2026'; h.section = 'Section 2'; h.meeting = 'Study Hall: Thursdays, 1:00 PM ET';
     h.blurb = 'I have taught literature for eleven years and I still read the Odyssey every summer. Ask me about the best opening line you have ever read.';
-    h.house = 'odysseus'; h.annWhen = 'Week 1'; h.annText = 'Welcome. Read the Module 1 map before opening Lesson 1.01, then work down the list in order.';
-    h.quote = 'Justice is giving what is owed.'; h.author = 'a working definition, Lesson 1.02';
-    h.prompt = 'Copy this line into your commonplace book. Bring one moment from this week’s reading where someone gave, or refused, what was owed.';
+    h.house = 'odysseus';
     return h;
   }
 
@@ -582,19 +550,6 @@
     }
     out.push('<div style="' + BODYS + '">');
 
-    if (String(h.annText || '').trim()) {
-      out.push('<div style="background: #FFFFFF; border: 1px solid #D0D9E8; border-top: 4px solid #E0A82E; border-radius: 8px; padding: 20px 24px; margin-bottom: 22px;">');
-      out.push('<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;"><span style="font-size: 20px;">&#128226;</span><div><div style="font-size: 12px; letter-spacing: 1px; color: #E0A82E; font-weight: 600;">ANNOUNCEMENTS</div><div style="font-size: 21px; color: #0e1c42;">Latest Updates</div></div></div>');
-      out.push('<div style="background: #FDF6E7; border-left: 4px solid #E0A82E; border-radius: 4px; padding: 12px 16px;">');
-      if (String(h.annWhen || '').trim()) out.push('<div style="font-size: 13.5px; color: #b07d1a; margin-bottom: 5px;">' + esc(h.annWhen) + '</div>');
-      out.push('<div style="font-size: 17px; color: #333; line-height: 1.5;">' + escML(h.annText) + '</div>');
-      out.push('</div></div>');
-    }
-
-    if ((h.spotlight || 'on') !== 'off' && TH.spot) {
-      out.push('<img src="' + ASSET_BASE + 'spotlights/' + TH.spot + '" alt="Today\'s spark: a rotating prompt from this course" style="width: 100%; display: block; margin-bottom: 22px;" />');
-    }
-
     var tiles = [
       { icon: '\ud83d\udcdc', label: 'Syllabus', desc: 'Grading, pacing & policies', url: T.syllabus },
       { icon: '\ud83d\udcda', label: 'Modules', desc: 'Every week, in order', url: T.modules },
@@ -676,16 +631,6 @@
     }
     out.push('<div style="margin-top: 20px;"><a href=\"' + href(T.modules) + '\" style=\"display: inline-block; text-decoration: none; background: #0E1C42; color: #ffffff; border: 2px solid ' + TH.accent + '; border-radius: 28px; padding: 14px 30px; font-size: 17px;">See all modules &rarr;</a></div>');
 
-    if (String(h.quote || '').trim() || String(h.prompt || '').trim()) {
-      out.push('<div style="background: #0E1C42; border-radius: 10px; padding: 24px 28px; margin-top: 26px;">');
-      out.push('<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;"><span style="font-size: 20px;">' + esc(TH.motif) + '</span><div><div style="font-size: 11px; letter-spacing: 1px; color: ' + TH.bright + '; font-weight: 600;">COMMONPLACE CORNER</div><div style="font-size: 21px; color: #ffffff;">This Week\'s Idea Worth Keeping</div></div></div>');
-      if (String(h.quote || '').trim()) {
-        out.push('<div style="border-left: 4px solid ' + TH.bright + '; padding: 4px 18px; margin-bottom: 14px;"><div style="font-size: 20px; color: #ffffff; font-style: italic; line-height: 1.4;">&#8220;' + esc(h.quote) + '&#8221;</div>' +
-          (String(h.author || '').trim() ? '<div style="font-size: 15px; color: rgba(255,255,255,0.6); margin-top: 8px;">&mdash; ' + esc(h.author) + '</div>' : '') + '</div>');
-      }
-      if (String(h.prompt || '').trim()) out.push('<div style="font-size: 16px; color: rgba(255,255,255,0.85); line-height: 1.55;">' + escML(h.prompt) + '</div>');
-      out.push('</div>');
-    }
     out.push('</div>');
     var foot = '<span style="color: ' + TH.bright + ';">Optima Academy Online</span> &middot; ' + esc(title);
     if (String(h.section || '').trim()) foot += ' &middot; ' + esc(h.section);
@@ -778,11 +723,11 @@
     // A first visit (or a home saved before themes existed) gets the theme the
     // catalog's subject suggests; a theme the teacher already picked stays.
     if (!home.theme || !THEMES[home.theme]) applyTheme(themeForSubject(course.subject));
-    if (!home.spotlight) home.spotlight = 'on';
     if (!home.modStyle) home.modStyle = 'journey';
     lock(3, false); lock(4, false); lock(5, false); lock(6, false);
     ['dl', 'copy', 'dl-plain', 'print-open', 'print-scope'].forEach(function (id) { $(id).disabled = false; });
     fillPrintScope();
+    loadContents();
     renderKits(); fillForm(); renderStyle(); renderMods(); renderDates(); renderGradebook(); renderPreview();
     return Promise.resolve(k);
   }
@@ -792,6 +737,7 @@
     if (!home.dates) home.dates = {};
     if (!home.itemOverrides) home.itemOverrides = {};
     if (!home.moduleOverrides) home.moduleOverrides = {};
+    if (!home.removed) home.removed = {};
     if (!home.courseStart) home.courseStart = '';
   }
   function ensureKitDefaults() {
@@ -816,14 +762,76 @@
     var o = home.moduleOverrides[m.id];
     return o ? o.published : m.published;
   }
+  // The module switch carries everything inside it, both ways: unpublishing a module
+  // unpublishes its graded items too, and publishing it again publishes them all.
   function setModulePublished(m, val) {
     home.moduleOverrides[m.id] = { published: val };
-    if (!val) {
-      (kit.graded_items || []).filter(function (it) { return it.module === m.id && it.graded; }).forEach(function (it) {
-        ensureOverride(it).published = false;
-      });
-    }
+    (kit.graded_items || []).filter(function (it) { return it.module === m.id; }).forEach(function (it) {
+      ensureOverride(it).published = val;
+    });
     save(); renderDates(); renderGradebook();
+  }
+  // ------------------------------------------------------------ module contents + removal
+  // The sidecar lists graded items only; the full item list of every module comes
+  // from the cartridge's own module_meta.xml, read once per kit. Step 4 re-renders
+  // when it lands. A teacher's removals live in home.removed keyed by the module
+  // item's identifier; nothing in the shared store changes.
+  var TYPE_LABEL = { WikiPage: 'Page', Assignment: 'Assignment', 'Quizzes::Quiz': 'Quiz', DiscussionTopic: 'Discussion', Attachment: 'File', ExternalUrl: 'Link', ContextExternalTool: 'External tool', ContextModuleSubHeader: 'Section' };
+  var openContents = {};
+  function loadContents() {
+    if (!kit) return Promise.resolve(null);
+    if (kit.contents) return Promise.resolve(kit.contents);
+    var k = kit;
+    return loadKitZip().then(function (zip) {
+      var metaName = (k.settings && k.settings.module_meta) || 'course_settings/module_meta.xml';
+      var f = zip.file(metaName);
+      if (!f) throw new Error('no ' + metaName + ' in the cartridge');
+      return f.async('string').then(function (t) {
+        k.contents = readModuleMeta(t);
+        if (kit === k) { renderDates(); renderGradebook(); }
+        return k.contents;
+      });
+    }).catch(function (e) { k.contentsError = String(e && e.message || e); if (kit === k) renderDates(); return null; });
+  }
+  function contentsOf(m) {
+    return (kit.contents || []).filter(function (c) { return c.gid === m.gid; })[0] || null;
+  }
+  function isRemoved(ci) { return !!(home.removed && home.removed[ci.id]); }
+  // A graded item leaves the cartridge when every module entry pointing at it is removed.
+  function removedGids() {
+    var remaining = {}, touched = {}, out = {};
+    (kit.contents || []).forEach(function (c) {
+      c.items.forEach(function (ci) {
+        if (!ci.ref) return;
+        if (isRemoved(ci)) touched[ci.ref] = true; else remaining[ci.ref] = true;
+      });
+    });
+    Object.keys(touched).forEach(function (g) { if (!remaining[g]) out[g] = true; });
+    return out;
+  }
+  function activeGraded() {
+    var gone = removedGids();
+    return (kit.graded_items || []).filter(function (it) { return !gone[it.gid]; });
+  }
+  function toggleRemoved(id) {
+    if (home.removed[id]) delete home.removed[id]; else home.removed[id] = true;
+    save(); renderDates(); renderGradebook();
+  }
+  function contentsList(m, cont) {
+    var removed = cont.items.filter(isRemoved).length;
+    var byGid = {}; (kit.graded_items || []).forEach(function (it) { byGid[it.gid] = it; });
+    var out = ['<details class="contents" data-m="' + escHtml(m.id) + '"' + (openContents[m.id] ? ' open' : '') + '><summary>Module contents \u00b7 ' + cont.items.length + ' item' + (cont.items.length === 1 ? '' : 's') + (removed ? ' \u00b7 ' + removed + ' removed' : '') + '</summary>'];
+    out.push('<div class="hint">Remove takes an item out of this import only; the course in the shared store is unchanged. A removed assignment, quiz or discussion is left out of the cartridge, so it never reaches the gradebook. A removed page leaves the module but stays in Pages. Pages that linked to a removed item keep a link Canvas will flag on import.</div>');
+    out.push('<ol class="contents">');
+    cont.items.forEach(function (ci, i) {
+      var g = byGid[ci.ref], gone = isRemoved(ci);
+      var label = TYPE_LABEL[ci.type] || ci.type;
+      if (g && g.type === 'quiz' && g.quiz_type === 'survey') label = 'Survey';
+      var title = g && !gone ? '<a href="#" class="prev-link" data-id="' + escHtml(g.id) + '" title="Preview this item">' + escHtml(ci.title) + '</a>' : escHtml(ci.title);
+      out.push('<li' + (gone ? ' class="removed"' : '') + '><span class="ct-n">' + (i + 1) + '</span><span class="pill grey">' + escHtml(label) + '</span><span class="ct-title"' + (ci.indent ? ' style="padding-left:' + (ci.indent * 18) + 'px"' : '') + '>' + title + '</span><button type="button" class="sm alt ct-remove" data-i="' + escHtml(ci.id) + '">' + (gone ? 'Restore' : 'Remove') + '</button></li>');
+    });
+    out.push('</ol></details>');
+    return out.join('');
   }
   function effItem(item) {
     var o = home.itemOverrides[item.id];
@@ -850,7 +858,7 @@
     return !!it.points_editable || (it.type === 'quiz' && it.quiz_type !== 'survey');
   }
   function itemsInScope(scope) {
-    var all = kit.graded_items || [];
+    var all = activeGraded();
     return scope === 'all' ? all.slice() : all.filter(function (it) { return it.module === scope; });
   }
   // Batch dates: vals = { unlock_at, due_at, lock_at } as datetime-local strings;
@@ -960,42 +968,51 @@
   function renderDates() {
     var el = $('dates-panel'); if (!el) return;
     if (!kit) { el.innerHTML = '<div class="hint">Choose a kit first.</div>'; return; }
-    if (!kit.graded_items || !kit.graded_items.length) {
-      el.innerHTML = '<div class="hint">This kit has no schedule data yet.</div>'; return;
-    }
+    var graded = activeGraded(), hasDates = !!(kit.graded_items && kit.graded_items.length);
     var out = [];
-    out.push('<label for="course-start">Course start date</label>');
-    out.push('<input type="date" id="course-start" value="' + escHtml(home.courseStart || '') + '">');
-    out.push('<div class="hint">Proposed: 11:59 PM on the last day of each item’s week. Edit any date, or leave a row blank.</div>');
-    out.push('<div class="hint">To set many at once, fill in a batch row and apply it. Blank batch fields leave existing dates alone. Times are your local time.</div>');
-    out.push(batchRow('all', 'Every graded item in this kit', 'Apply to all items'));
-    out.push('<div class="actions"><button type="button" class="alt" id="dates-clear">Clear all dates</button><button type="button" class="sm alt" id="gb-pub-all">Publish everything</button><button type="button" class="sm alt" id="gb-unpub-all">Unpublish everything</button></div>');
-    out.push('<div class="hint">Untick a module to import it unpublished with everything inside it, pages included. Untick one item to import just that item unpublished.</div>');
+    if (hasDates) {
+      out.push('<label for="course-start">Course start date</label>');
+      out.push('<input type="date" id="course-start" value="' + escHtml(home.courseStart || '') + '">');
+      out.push('<div class="hint">Proposed: 11:59 PM on the last day of each item\u2019s week. Edit any date, or leave a row blank.</div>');
+      out.push('<div class="hint">To set many at once, fill in a batch row and apply it. Blank batch fields leave existing dates alone. Times are your local time.</div>');
+      out.push(batchRow('all', 'Every graded item in this kit', 'Apply to all items'));
+    } else {
+      out.push('<div class="hint">This kit has no schedule data yet.</div>');
+    }
+    out.push('<div class="actions">' + (hasDates ? '<button type="button" class="alt" id="dates-clear">Clear all dates</button>' : '') + '<button type="button" class="sm alt" id="gb-pub-all">Publish everything</button><button type="button" class="sm alt" id="gb-unpub-all">Unpublish everything</button></div>');
+    out.push('<div class="hint">Each module has its own Publish all and Unpublish all, which carry the module and everything inside it. Untick one item in the Published column to import just that item unpublished. Open Module contents to remove an item from this import.</div>');
+    if (!kit.contents) out.push('<div class="hint">' + (kit.contentsError ? 'The module contents could not be read (' + escHtml(kit.contentsError) + '); removal is unavailable for this kit.' : 'Reading the module contents\u2026') + '</div>');
     (kit.modules || []).forEach(function (m) {
-      var items = kit.graded_items.filter(function (it) { return it.module === m.id; });
-      if (!items.length) return;
+      var items = graded.filter(function (it) { return it.module === m.id; });
+      var cont = contentsOf(m);
+      if (!items.length && !cont) return;
       var mp = modulePublished(m);
       out.push('<details class="modblock"' + (mp ? ' open' : '') + '>');
       out.push('<summary><label style="display:inline-flex;align-items:center;gap:8px;"><input type="checkbox" class="gb-modpub" data-m="' + m.id + '"' + (mp ? ' checked' : '') + '> ' + escHtml(m.title) + '</label>' + (mp ? '' : ' <span class="pill grey">UNPUBLISHED</span>') + '</summary>');
+      out.push('<div class="actions"><button type="button" class="sm alt gb-modall" data-m="' + m.id + '" data-v="1">Publish all in this module</button><button type="button" class="sm alt gb-modall" data-m="' + m.id + '" data-v="0">Unpublish all in this module</button></div>');
       if (!mp) out.push('<div class="hint">This module will import unpublished. Its dates still apply once you publish it.</div>');
-      out.push(batchRow(m.id, 'Every graded item in this module', 'Apply to this module'));
-      out.push('<div class="dtable"><table class="sched"><thead><tr><th>Item</th><th>Type</th><th>Points</th><th>Opens</th><th>Due</th><th>Closes</th><th>Published</th></tr></thead><tbody>');
-      var byWeek = {}, weeks = [];
-      items.forEach(function (it) {
-        var wk = it.week == null ? 'none' : it.week;
-        if (!byWeek[wk]) { byWeek[wk] = []; weeks.push(wk); }
-        byWeek[wk].push(it);
-      });
-      weeks.sort(function (a, b) { if (a === 'none') return 1; if (b === 'none') return -1; return a - b; });
-      weeks.forEach(function (wk) {
-        out.push('<tr class="wkrow"><td colspan="7">' + (wk === 'none' ? 'No fixed week' : 'Week ' + wk) + '</td></tr>');
-        byWeek[wk].forEach(function (it) { out.push(dateRow(it)); });
-      });
-      out.push('</tbody></table></div></details>');
+      if (cont) out.push(contentsList(m, cont));
+      if (items.length) {
+        out.push(batchRow(m.id, 'Every graded item in this module', 'Apply to this module'));
+        out.push('<div class="dtable"><table class="sched"><thead><tr><th>Item</th><th>Type</th><th>Points</th><th>Opens</th><th>Due</th><th>Closes</th><th>Published</th></tr></thead><tbody>');
+        var byWeek = {}, weeks = [];
+        items.forEach(function (it) {
+          var wk = it.week == null ? 'none' : it.week;
+          if (!byWeek[wk]) { byWeek[wk] = []; weeks.push(wk); }
+          byWeek[wk].push(it);
+        });
+        weeks.sort(function (a, b) { if (a === 'none') return 1; if (b === 'none') return -1; return a - b; });
+        weeks.forEach(function (wk) {
+          out.push('<tr class="wkrow"><td colspan="7">' + (wk === 'none' ? 'No fixed week' : 'Week ' + wk) + '</td></tr>');
+          byWeek[wk].forEach(function (it) { out.push(dateRow(it)); });
+        });
+        out.push('</tbody></table></div>');
+      }
+      out.push('</details>');
     });
     el.innerHTML = out.join('');
-    $('course-start').addEventListener('change', function () { home.courseStart = this.value; proposeDates(); save(); renderDates(); });
-    $('dates-clear').addEventListener('click', function () { home.dates = {}; save(); renderDates(); });
+    if ($('course-start')) $('course-start').addEventListener('change', function () { home.courseStart = this.value; proposeDates(); save(); renderDates(); });
+    if ($('dates-clear')) $('dates-clear').addEventListener('click', function () { home.dates = {}; save(); renderDates(); });
     wireBatchRows();
     el.querySelectorAll('.prev-link').forEach(function (a) {
       a.addEventListener('click', function (e) { e.preventDefault(); previewItem(itemById(this.dataset.id)); });
@@ -1009,7 +1026,16 @@
       cb.addEventListener('click', function (e) { e.stopPropagation(); });
       cb.addEventListener('change', function () { setModulePublished(moduleById(this.dataset.m), this.checked); });
     });
-    kit.graded_items.forEach(function (it) {
+    el.querySelectorAll('.gb-modall').forEach(function (b) {
+      b.addEventListener('click', function () { setModulePublished(moduleById(this.dataset.m), this.dataset.v === '1'); });
+    });
+    el.querySelectorAll('details.contents').forEach(function (d) {
+      d.addEventListener('toggle', function () { openContents[this.dataset.m] = this.open; });
+    });
+    el.querySelectorAll('.ct-remove').forEach(function (b) {
+      b.addEventListener('click', function () { toggleRemoved(this.dataset.i); });
+    });
+    graded.forEach(function (it) {
       ['unlock_at', 'due_at', 'lock_at'].forEach(function (f) {
         var input = document.getElementById('dt-' + f + '-' + it.id);
         if (!input) return;
@@ -1054,8 +1080,9 @@
     out.push('<div class="actions"><button type="button" class="alt" id="gb-addgroup">Add group</button></div>');
     out.push('<div class="status" id="gb-summary"></div>');
     out.push('<div class="hint" style="margin-top:14px;">A graded quiz total is split evenly across its questions when you change it. Publishing is set in step 4.</div>');
+    var graded = activeGraded();
     (kit.modules || []).forEach(function (m) {
-      var items = kit.graded_items.filter(function (it) { return it.module === m.id && !(it.type === 'quiz' && it.quiz_type === 'survey'); });
+      var items = graded.filter(function (it) { return it.module === m.id && !(it.type === 'quiz' && it.quiz_type === 'survey'); });
       if (!items.length) return;
       out.push('<details class="modblock" open>');
       out.push('<summary>' + escHtml(m.title) + (modulePublished(m) ? '' : ' <span class="pill grey">UNPUBLISHED</span>') + '</summary>');
@@ -1098,7 +1125,7 @@
     var el = $('gb-summary'); if (!el) return;
     var totals = {};
     home.groups.forEach(function (g) { totals[g.id] = 0; });
-    kit.graded_items.forEach(function (it) {
+    activeGraded().forEach(function (it) {
       if (it.type === 'quiz' && it.quiz_type === 'survey') return;
       var eff = effItem(it);
       if (!eff.published) return;
@@ -1132,10 +1159,9 @@
     out.push('<div class="hint" id="style-hint">' + (cur === suggested
       ? escHtml(suggested.label) + ' is the theme suggested for ' + escHtml(course.subject) + '.'
       : 'Showing ' + escHtml(cur.label) + '. Suggested for ' + escHtml(course.subject) + ': ' + escHtml(suggested.label) + '.') +
-      ' The banner and spark card are hosted images; their motion runs in Canvas and stops for students who have reduced motion turned on.</div>');
+      ' The banner is a hosted image; its motion runs in Canvas and stops for students who have reduced motion turned on.</div>');
     out.push('<div class="row" style="margin-top:10px;">');
     out.push('<div><label>Module list</label><div class="seg" id="mod-seg"><button type="button" data-v="journey" aria-pressed="' + (home.modStyle !== 'grid') + '">Journey trail</button><button type="button" data-v="grid" aria-pressed="' + (home.modStyle === 'grid') + '">Classic grid</button></div></div>');
-    out.push('<div><label>Today\'s Spark card</label><div class="seg" id="spark-seg"><button type="button" data-v="on" aria-pressed="' + (home.spotlight !== 'off') + '">On</button><button type="button" data-v="off" aria-pressed="' + (home.spotlight === 'off') + '">Off</button></div></div>');
     out.push('</div>');
     el.innerHTML = out.join('');
     el.querySelectorAll('.swatch').forEach(function (b) {
@@ -1148,10 +1174,6 @@
       var v = e.target.dataset && e.target.dataset.v; if (!v) return;
       home.modStyle = v; save(); renderStyle(); renderPreview();
     });
-    $('spark-seg').addEventListener('click', function (e) {
-      var v = e.target.dataset && e.target.dataset.v; if (!v) return;
-      home.spotlight = v; save(); renderStyle(); renderPreview();
-    });
   }
   function renderMods() {
     var el = $('mods'); el.innerHTML = '';
@@ -1163,7 +1185,7 @@
       el.appendChild(row);
     });
   }
-  var FIELDS = ['teacherName', 'teacherTitle', 'teacherEmail', 'mode', 'term', 'section', 'meeting', 'studyHall', 'blurb', 'house', 'tagline', 'annWhen', 'annText', 'quote', 'author', 'prompt'];
+  var FIELDS = ['teacherName', 'teacherTitle', 'teacherEmail', 'mode', 'term', 'section', 'meeting', 'studyHall', 'blurb', 'house', 'tagline'];
   function fillForm() { FIELDS.forEach(function (f) { $('f-' + f).value = home[f] || ($('f-' + f).tagName === 'SELECT' ? $('f-' + f).options[0].value : ''); }); }
   function readForm() { FIELDS.forEach(function (f) { home[f] = $('f-' + f).value; }); }
   function currentHtml() { return (course && kit) ? buildHome(course, kit, home) : ''; }
@@ -1386,7 +1408,7 @@
   }
   function printableCourse(scope) {
     if (!kit || !course) return Promise.reject(new Error('choose a kit first'));
-    var stats = { modules: 0, items: 0, lessons: 0, links: 0, skipped: 0 };
+    var stats = { modules: 0, items: 0, lessons: 0, links: 0, skipped: 0, removed: 0 };
     return loadKitZip().then(function (zip) {
       var metaName = (kit.settings && kit.settings.module_meta) || 'course_settings/module_meta.xml';
       var metaFile = zip.file(metaName), manFile = zip.file('imsmanifest.xml');
@@ -1407,6 +1429,7 @@
           sections.push(''); // module head placeholder, filled after items resolve
           var tocItems = [];
           m.items.forEach(function (it) {
+            if (isRemoved(it)) { stats.removed++; return; }
             var g = byGid[it.ref], eff = g ? effItem(g) : null;
             if (it.state === 'unpublished' || (eff && !eff.published)) { stats.skipped++; return; }
             stats.items++;
@@ -1680,22 +1703,71 @@
       || (canEditPoints(item) && Number(eff.points) !== Number(item.points))
       || eff.group !== (item.group || null);
   }
-  function patchModuleXml(text, m, wantPublished) {
-    var openTag = '<module identifier="' + m.gid + '">';
-    var openIdx = text.indexOf(openTag);
-    if (openIdx < 0) return text;
-    var closeIdx = text.indexOf('</module>', openIdx);
-    if (closeIdx < 0) return text;
-    var end = closeIdx + '</module>'.length;
-    var block = text.slice(openIdx, end);
-    var state = wantPublished ? 'active' : 'unpublished';
-    block = block.replace(/<workflow_state>[\s\S]*?<\/workflow_state>/, '<workflow_state>' + state + '</workflow_state>');
-    if (!wantPublished) {
-      block = block.replace(/<item identifier="[^"]*">[\s\S]*?<\/item>/g, function (itemBlock) {
-        return itemBlock.replace(/<workflow_state>[\s\S]*?<\/workflow_state>/, '<workflow_state>unpublished</workflow_state>');
+  // module_meta.xml: every module's state, every graded item's entry in step with
+  // its own file, an unpublished module's entries all unpublished, removed entries
+  // gone. Unchanged values rewrite to the same bytes.
+  function patchModuleMeta(text) {
+    var stateByGid = {};
+    (kit.graded_items || []).forEach(function (it) { stateByGid[it.gid] = effItem(it).published ? 'active' : 'unpublished'; });
+    (kit.modules || []).forEach(function (m) {
+      var openTag = '<module identifier="' + m.gid + '">';
+      var openIdx = text.indexOf(openTag);
+      if (openIdx < 0) return;
+      var closeIdx = text.indexOf('</module>', openIdx);
+      if (closeIdx < 0) return;
+      var end = closeIdx + '</module>'.length;
+      var block = text.slice(openIdx, end);
+      var pub = modulePublished(m);
+      block = block.replace(/<workflow_state>[\s\S]*?<\/workflow_state>/, '<workflow_state>' + (pub ? 'active' : 'unpublished') + '</workflow_state>');
+      block = block.replace(/\s*<item identifier="([^"]*)">[\s\S]*?<\/item>/g, function (itemBlock, iid) {
+        if (home.removed && home.removed[iid]) return '';
+        var ref = /<identifierref>([^<]*)<\/identifierref>/.exec(itemBlock);
+        var st = !pub ? 'unpublished' : ((ref && stateByGid[ref[1]]) || null);
+        return st ? itemBlock.replace(/<workflow_state>[\s\S]*?<\/workflow_state>/, '<workflow_state>' + st + '</workflow_state>') : itemBlock;
       });
-    }
-    return text.slice(0, openIdx) + block + text.slice(end);
+      text = text.slice(0, openIdx) + block + text.slice(end);
+    });
+    return text;
+  }
+  // imsmanifest.xml: removed module items leave the organization; a graded item no
+  // module points at any more loses its resource, the resources that one depends on,
+  // and (back in the zip) their files. Returns the files those resources listed.
+  function patchManifest(text, gone) {
+    Object.keys(home.removed || {}).forEach(function (iid) {
+      text = text.replace(new RegExp('\\s*<item identifier="' + iid + '"[^>]*>[\\s\\S]*?<\\/item>'), '');
+    });
+    var files = [];
+    Object.keys(gone).forEach(function (gid) {
+      var ids = [gid], i = 0;
+      while (i < ids.length) {
+        var m = new RegExp('\\s*<resource identifier="' + ids[i] + '"[^>]*>([\\s\\S]*?)<\\/resource>').exec(text);
+        if (m) {
+          var dm, dre = /<dependency identifierref="([^"]+)"/g;
+          while ((dm = dre.exec(m[1]))) { if (ids.indexOf(dm[1]) < 0) ids.push(dm[1]); }
+          var fm, fre = /<file href="([^"]+)"/g;
+          while ((fm = fre.exec(m[1]))) files.push(unescapeXml(fm[1]));
+          text = text.slice(0, m.index) + text.slice(m.index + m[0].length);
+        }
+        i++;
+      }
+    });
+    return { text: text, files: files };
+  }
+  function removeFromZip(zip, gone) {
+    var f = zip.file('imsmanifest.xml');
+    if (!f) return Promise.resolve();
+    return f.async('string').then(function (text) {
+      var r = patchManifest(text, gone);
+      zip.file('imsmanifest.xml', r.text);
+      r.files.forEach(function (p) {
+        // Only a file no remaining resource still lists leaves the zip.
+        if (r.text.indexOf('href="' + xmlEsc(p) + '"') < 0 && zip.file(p)) zip.remove(p);
+      });
+      Object.keys(gone).forEach(function (gid) {
+        var left = Object.keys(zip.files).some(function (n) { return n.indexOf(gid + '/') === 0 && !zip.files[n].dir; });
+        if (!left && zip.files[gid + '/']) zip.remove(gid);
+      });
+    });
   }
   function groupsChanged() {
     if (!home.groups || !kit.groups) return false;
@@ -1740,7 +1812,12 @@
   function chain(tasks) { return tasks.reduce(function (p, fn) { return p.then(fn); }, Promise.resolve()); }
   function applyScheduleAndGradebook(zip) {
     var tasks = [];
-    (kit.graded_items || []).forEach(function (item) {
+    // Only a graded item's resource leaves the cartridge; a removed page keeps its
+    // resource and file, it just leaves the module.
+    var gradedGid = {}; (kit.graded_items || []).forEach(function (it) { gradedGid[it.gid] = true; });
+    var gone = {}; Object.keys(removedGids()).forEach(function (g) { if (gradedGid[g]) gone[g] = true; });
+    var anyRemoved = Object.keys(home.removed || {}).length > 0;
+    activeGraded().forEach(function (item) {
       tasks.push(function () {
         var eff = effItem(item);
         if (!itemChanged(item, eff)) return Promise.resolve();
@@ -1764,18 +1841,17 @@
         });
       });
     });
-    var modChanges = (kit.modules || []).filter(function (m) { return modulePublished(m) !== m.published; });
-    if (modChanges.length) {
+    var modChanged = (kit.modules || []).some(function (m) { return modulePublished(m) !== m.published; });
+    var pubChanged = (kit.graded_items || []).some(function (it) { return effItem(it).published !== it.published; });
+    if (modChanged || pubChanged || anyRemoved) {
       tasks.push(function () {
-        var path = (kit.settings && kit.settings.module_meta) || modChanges[0].xml || 'course_settings/module_meta.xml';
+        var path = (kit.settings && kit.settings.module_meta) || ((kit.modules || [])[0] || {}).xml || 'course_settings/module_meta.xml';
         var f = zip.file(path);
         if (!f) return Promise.resolve();
-        return f.async('string').then(function (text) {
-          modChanges.forEach(function (m) { text = patchModuleXml(text, m, modulePublished(m)); });
-          zip.file(path, text);
-        });
+        return f.async('string').then(function (text) { zip.file(path, patchModuleMeta(text)); });
       });
     }
+    if (anyRemoved) tasks.push(function () { return removeFromZip(zip, gone); });
     if (kit.settings && kit.settings.assignment_groups && groupsChanged()) {
       tasks.push(function () {
         var f = zip.file(kit.settings.assignment_groups);
@@ -2226,13 +2302,16 @@
     $('code').value = c.code; course = c; renderCourse();
     var k = c.kits.filter(function (x) { return x.status === 'ready' && (!kitId || x.id === kitId); })[0];
     if (!k) { $('selftest-out').textContent = JSON.stringify({ ok: false, error: 'no ready kit ' + (kitId || '') }); return; }
-    selectKit(k).then(function () {
+    selectKit(k).then(loadContents).then(function () {
     home = exampleHome(); home.modules = k.modules.filter(function (m) { return m.published; }).map(function (m) { return { gid: m.gid, title: m.title, show: true }; });
     ensureKitDefaults();
 
     // Exercise the dates + gradebook panels the way a teacher would, then verify
     // the assertions below by reading the patched cartridge back after building it.
     var dueItem = null, pointsItem = null, unpubItem = null, quizItem = null, batchItems = [];
+    var removedGraded = null, removedPage = null, secondModule = null, modulePublishAll = false;
+    var byGidAll = {}; (kit.graded_items || []).forEach(function (it) { byGidAll[it.gid] = it; });
+    var metaName = (kit.settings && kit.settings.module_meta) || 'course_settings/module_meta.xml';
     var BATCH_DUE = '2026-10-09T23:59';
     var hasSchedule = kit.graded_items && kit.graded_items.length;
     if (hasSchedule) {
@@ -2248,32 +2327,57 @@
         unpubItem = kit.graded_items.filter(function (it) { return it.module === firstContentModule.id; })[0];
         if (unpubItem) ensureOverride(unpubItem).published = false;
       }
-      if (home.groups && home.groups.length) home.groups[0].weight = 100;
-      home.weighted = true;
-      // Batch: every graded item in the first content module due on one date.
-      if (firstContentModule) batchItems = applyBatch(firstContentModule.id, { due_at: BATCH_DUE });
       // Quiz points: a graded quiz total of 20, split across its questions.
       quizItem = kit.graded_items.filter(function (it) { return it.type === 'quiz' && it.quiz_type === 'assignment'; })[0];
       if (quizItem) ensureOverride(quizItem).points = 20;
+      // Removal: one graded item (not one of the others under test) and one page out
+      // of the first content module, before the batch so the batch never touches them.
+      var cont = firstContentModule ? contentsOf(firstContentModule) : null;
+      if (cont) {
+        var keep = {};
+        [dueItem, pointsItem, unpubItem, quizItem].forEach(function (it) { if (it) keep[it.gid] = true; });
+        removedGraded = cont.items.filter(function (ci) { return byGidAll[ci.ref] && !keep[ci.ref]; })[0] || null;
+        removedPage = cont.items.filter(function (ci) { return ci.type === 'WikiPage'; })[0] || null;
+        if (removedGraded) home.removed[removedGraded.id] = true;
+        if (removedPage) home.removed[removedPage.id] = true;
+      }
+      if (home.groups && home.groups.length) home.groups[0].weight = 100;
+      home.weighted = true;
+      // Batch: every remaining graded item in the first content module due on one date.
+      if (firstContentModule) batchItems = applyBatch(firstContentModule.id, { due_at: BATCH_DUE });
+      // Module publish-all, both ways, on a second content module.
+      secondModule = (kit.modules || []).filter(function (m) {
+        return m !== firstContentModule && kit.graded_items.some(function (it) { return it.module === m.id; });
+      })[0] || null;
+      if (secondModule) {
+        var inM2 = function () { return kit.graded_items.filter(function (it) { return it.module === secondModule.id; }); };
+        setModulePublished(secondModule, false);
+        var allOff = !modulePublished(secondModule) && inM2().every(function (it) { return !effItem(it).published; });
+        setModulePublished(secondModule, true);
+        modulePublishAll = allOff && modulePublished(secondModule) && inM2().every(function (it) { return effItem(it).published; });
+      }
     }
-    // Themes: the catalog subject picks one; its banner and spark card must be
-    // hosted URLs (never data:), the journey trail must render, and Classic with
-    // the grid and the spark off must carry no theme assets at all.
+    // Themes: the catalog subject picks one; its banner must be a hosted URL (never
+    // data:), the journey trail must render, and Classic with the grid must carry no
+    // theme assets at all. Announcements, the Spark card and the Commonplace Corner
+    // were retired: none may appear.
     var themeKey = themeForSubject(c.subject);
     applyTheme(themeKey);
-    home.modStyle = 'journey'; home.spotlight = 'on';
+    home.modStyle = 'journey';
     var themedHtml = currentHtml(), TT = THEMES[themeKey];
     var themeOk = themedHtml.indexOf(ASSET_BASE + 'themes/' + TT.banner) >= 0
-      && themedHtml.indexOf(ASSET_BASE + 'spotlights/' + TT.spot) >= 0
       && themedHtml.indexOf('data:') < 0
       && themedHtml.indexOf('STOP 1') >= 0
-      && themedHtml.indexOf(TT.accent) >= 0;
+      && themedHtml.indexOf(TT.accent) >= 0
+      && themedHtml.indexOf('spotlights/') < 0
+      && themedHtml.indexOf('ANNOUNCEMENTS') < 0
+      && themedHtml.indexOf('COMMONPLACE') < 0;
     var keepTheme = home.theme;
-    applyTheme('classic'); home.modStyle = 'grid'; home.spotlight = 'off';
+    applyTheme('classic'); home.modStyle = 'grid';
     var classicHtml = currentHtml();
     var classicClean = classicHtml.indexOf('themes/') < 0 && classicHtml.indexOf('spotlights/') < 0
       && classicHtml.indexOf('STOP 1') < 0 && classicHtml.indexOf('MODULE 1') >= 0;
-    applyTheme(keepTheme); home.modStyle = 'journey'; home.spotlight = 'on';
+    applyTheme(keepTheme); home.modStyle = 'journey';
     // Preview toggle: hiding collapses the grid to one column and hides the panel.
     setPreviewShown(false);
     var previewToggle = document.querySelector('.wrap').classList.contains('nopreview')
@@ -2287,7 +2391,7 @@
       var out = { ok: true, code: c.code, kit: k.id, frontPage: k.front_page, entries: r.entries,
         homeBytes: r.html.length, teacher: home.teacherName, moduleLinks: (r.html.match(/\$CANVAS_OBJECT_REFERENCE\$\/modules\//g) || []).length,
         nonAscii: /[^\x00-\x7f]/.test(r.html), filename: kitFilename() };
-      var checks = { datesApplied: false, weightingOn: false, pointsPatched: false, unpublished: false, batchDates: false, quizPoints: false };
+      var checks = { datesApplied: false, weightingOn: false, pointsPatched: false, unpublished: false, batchDates: false, quizPoints: false, removed: false, metaItemState: false };
       var verify = hasSchedule ? JSZip.loadAsync(r.data, { base64: true }) : Promise.resolve(null);
       return verify.then(function (zip2) {
         var reads = [];
@@ -2302,6 +2406,26 @@
         }));
         if (zip2 && kit.settings && kit.settings.course_settings) reads.push(zip2.file(kit.settings.course_settings).async('string').then(function (t) {
           checks.weightingOn = /<group_weighting_scheme>percent<\/group_weighting_scheme>/.test(t);
+        }));
+        // Removal: the module entry, the organization entry, the resource and its files are
+        // gone for the graded item; the page left its module but its resource remains.
+        // Module list: the unpublished item's own entry reads unpublished.
+        if (zip2 && zip2.file(metaName) && zip2.file('imsmanifest.xml')) reads.push(Promise.all([zip2.file(metaName).async('string'), zip2.file('imsmanifest.xml').async('string')]).then(function (r3) {
+          var meta = r3[0], man = r3[1];
+          if (removedGraded) {
+            var g = byGidAll[removedGraded.ref];
+            checks.removed = meta.indexOf('identifier="' + removedGraded.id + '"') < 0
+              && man.indexOf('identifier="' + removedGraded.id + '"') < 0
+              && man.indexOf('identifier="' + removedGraded.ref + '"') < 0
+              && !zip2.file(g.xml)
+              && (!removedPage || (meta.indexOf('identifier="' + removedPage.id + '"') < 0 && man.indexOf('identifier="' + removedPage.id + '"') < 0 && man.indexOf('identifier="' + removedPage.ref + '"') >= 0));
+            out.removed = { graded: removedGraded.title, page: removedPage ? removedPage.title : null, entriesAfter: Object.keys(zip2.files).filter(function (n) { return !zip2.files[n].dir; }).length };
+          }
+          if (unpubItem) {
+            var im = new RegExp('<item identifier="[^"]*">(?:(?!<\\/item>)[\\s\\S])*?<identifierref>' + unpubItem.gid + '<\\/identifierref>[\\s\\S]*?<\\/item>').exec(meta);
+            var blk = im ? im[0] : '';
+            checks.metaItemState = /<workflow_state>unpublished<\/workflow_state>/.test(blk);
+          }
         }));
         if (zip2 && batchItems.length) reads.push(Promise.all(batchItems.map(function (it) { return zip2.file(it.xml).async('string'); })).then(function (texts) {
           var want = '<due_at>' + desiredUtc(BATCH_DUE) + '</due_at>';
@@ -2327,11 +2451,13 @@
         out.unpublished = checks.unpublished;
         out.batchDates = checks.batchDates; out.batchCount = batchItems.length;
         out.quizPoints = checks.quizPoints; out.quiz = quizItem ? quizItem.title : null;
+        out.removedOk = checks.removed; out.metaItemState = checks.metaItemState; out.modulePublishAll = modulePublishAll; out.secondModule = secondModule ? secondModule.title : null;
         out.previewToggle = previewToggle;
         out.theme = themeKey; out.themeOk = themeOk; out.classicClean = classicClean;
         out.ok = out.ok && themeOk && classicClean;
         if (hasSchedule) out.ok = out.ok && checks.datesApplied && checks.weightingOn && checks.pointsPatched && checks.unpublished
-          && checks.batchDates && (!quizItem || checks.quizPoints);
+          && checks.batchDates && (!quizItem || checks.quizPoints)
+          && (!removedGraded || checks.removed) && (!unpubItem || checks.metaItemState) && (!secondModule || modulePublishAll);
         out.ok = out.ok && previewToggle;
         return previewSelfTest();
       }).then(function (pv) {
@@ -2397,7 +2523,7 @@
       res.noAnswers = !/respcondition|<varequal/i.test(html);
       res.teacher = html.indexOf(escHtml(home.teacherName)) >= 0;
       res.frameLeft = /<iframe\b/i.test(html.replace(/<template shadowrootmode="open">[\s\S]*?<\/template>/g, ''));
-      var modItems = (kit.graded_items || []).filter(function (it) { return firstContent && it.module === firstContent.id && effItem(it).published; }).length;
+      var modItems = activeGraded().filter(function (it) { return firstContent && it.module === firstContent.id && effItem(it).published; }).length;
       res.gradedInModule = modItems;
       res.ok = s.modules >= 1 && res.itemSections === s.items && s.items >= modItems && res.shadowRoots === s.lessons
         && res.noScripts && res.noAnswers && res.teacher && !res.frameLeft && (!(kit.graded_items || []).some(function (it) { return it.type === 'quiz' && firstContent && it.module === firstContent.id; }) || res.hasQuestions);
@@ -2413,7 +2539,7 @@
     $('code').value = c.code; course = c; renderCourse();
     var k = c.kits.filter(function (x) { return x.status === 'ready' && (!kitId || x.id === kitId); })[0];
     if (!k) { $('selftest-out').textContent = JSON.stringify({ ok: false, error: 'no ready kit ' + (kitId || '') }); return; }
-    selectKit(k).then(function () {
+    selectKit(k).then(loadContents).then(function () {
       home = exampleHome(); home.modules = k.modules.filter(function (m) { return m.published; }).map(function (m) { return { gid: m.gid, title: m.title, show: true }; });
       ensureKitDefaults(); home.courseStart = '2026-08-17'; proposeDates(); fillForm(); renderPreview();
       return printSelfTest(scope);
