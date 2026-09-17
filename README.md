@@ -85,7 +85,7 @@ reports those items as "moved", not as differences.
 
 ## Item preview
 
-In step 4 every graded item's title is a link. Clicking it fetches the kit once, reads
+In step 5 every graded item's title is a link. Clicking it fetches the kit once, reads
 that item's page out of the cartridge, and shows it in the preview pane: assignment
 instructions, a discussion prompt, or a quiz's description and questions with their
 choices (never the answers). Canvas tokens in links are disabled because they resolve
@@ -94,7 +94,7 @@ returns to the home page preview.
 
 ## Printable course (save as PDF)
 
-At the bottom of step 6 a teacher picks **Whole course** or one module and clicks
+At the bottom of step 7 a teacher picks **Whole course** or one module and clicks
 **Open printable course**. The widget reads the module list out of the cartridge
 (`course_settings/module_meta.xml` + `imsmanifest.xml`), walks every module and item in
 Canvas order, and composes one HTML document in a new tab: a cover, the teacher's
@@ -107,12 +107,12 @@ What each item type becomes:
 | Item | Printed as |
 |---|---|
 | Page (`wiki_content/*.html`) | The page body. Each embedded lesson `<iframe>` is fetched from its live GitHub Pages URL and placed inline inside a declarative shadow root (`<template shadowrootmode="open">`) so the lesson keeps its own CSS without leaking into the document. Lesson scripts are dropped (they only wire interactivity), every `<details>` is opened, flip cards show their back face, the read-aloud bar is hidden, the 1100px frame is widened to the page. Frames that cannot be fetched (video, forms, SharePoint) print as a labelled link. |
-| Assignment | Its instructions, with points and the due date the teacher set in step 4. |
+| Assignment | Its instructions, with points and the due date the teacher set in step 5. |
 | Discussion | The prompt. |
 | Quiz / survey | Description and every question with its choices, never the answers (same reader as the item preview). |
 | File | Its file name. |
 
-Unpublished modules and items (from the kit, or unpublished by the teacher in step 4) are
+Unpublished modules and items (from the kit, or unpublished by the teacher in step 5) are
 left out, so the document is what a student will actually meet. A whole semester of 7th
 ELA S2 is 4 published modules, 208 items, 101 lesson pages, about 1,400 Letter pages;
 composing it takes a few seconds plus the lesson fetches, and Chrome's print dialog needs
@@ -144,7 +144,32 @@ the Commonplace Corner (quote, author, prompt) and the Today's Spark card. The
 `spotlights/*.svg` files stay hosted because home pages imported before that date
 still point at them.
 
-## Step 4: dates, publishing and contents
+## Step 4: your syllabus
+
+The kit fills the course's Canvas **Syllabus** page. The step is the syllabus builder
+from `teacher-homepages/syllabus.html`, lifted into `index.html` by markers (constants,
+document model, Canvas emitter, list forms) and kept in its own scope (`Syl`), so a
+syllabus built here matches one built there and the download reopens in the standalone
+builder (same `OAO-BUILDER` payload). The Word output stays in the standalone builder.
+
+What the kit fills in: title, code and grade band from the catalog course; badges from
+the kit label and grade; the description from `syllabus-courses.json` (fetched from
+teacher-homepages, blank when the catalogue has none); the grading cards from the
+gradebook groups and weights (step 6), following them until the teacher edits the cards;
+teacher name, email, class meeting and Live/On-Demand mode from step 3 on every render
+and build, never typed twice. Every stock section can be edited or switched off; the
+teacher's own sections (paragraphs, bullets, small table, highlighted note) slot in
+wherever she chooses. State lives in `home.syllabus`, saved per kit with the rest.
+
+On build the widget writes `course_settings/syllabus.html` and lists it in the
+course_settings resource of `imsmanifest.xml` (the tickbox at the top of the step turns
+this off). The home page's Syllabus tile already points at Canvas's own Syllabus tab, so
+it needs no change. **Mid-year changes:** come back, edit, **Copy syllabus HTML**, and
+paste into Syllabus, Edit, HTML editor in the live course; the tile keeps working.
+The self-test asserts the file is in the zip and the manifest, is ASCII only, and carries
+the course title, the step-3 teacher and the gradebook's weights.
+
+## Step 5: dates, publishing and contents
 
 Every module in the kit gets a block: a Publish all / Unpublish all pair (the module
 and everything inside it, both ways), the batch date row, the graded-item table with
@@ -155,7 +180,7 @@ the cartridge she downloads: a removed assignment, quiz or discussion loses its 
 entry, organization entry, manifest resource (plus the resources it depends on) and
 files, so it never reaches the gradebook; a removed page leaves the module but keeps
 its resource and file, so it stays in the course's Pages. Nothing in the store changes.
-The gradebook (step 5), the printable course and the self-test all skip removed items.
+The gradebook (step 6), the printable course and the self-test all skip removed items.
 
 The SVGs are hosted here on Pages and reach Canvas as plain `<img>` tags (Canvas
 strips `data:` images). Their CSS animation runs inside `<img>` and every file

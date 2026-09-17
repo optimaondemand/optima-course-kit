@@ -170,6 +170,37 @@
   ol.contents .ct-title { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   ol.contents li.removed .ct-title { text-decoration:line-through; color:var(--mute); }
   ol.contents button.sm { padding:3px 10px; font-size:12px; flex-shrink:0; }
+  /* Step 4, the syllabus: repeatable items and the teacher's own sections, in the kit's palette. */
+  .syl details.sylsec { border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-top:10px; }
+  .syl details.sylsec > summary { color:var(--navy); font-size:15px; display:flex; align-items:center; gap:10px; cursor:pointer; margin:0; }
+  .syl details.sylsec > summary::before { content:"\25B8"; color:var(--mute); font-size:13px; }
+  .syl details.sylsec[open] > summary::before { content:"\25BE"; }
+  .syl details.sylsec > summary { list-style:none; }
+  .syl details.sylsec > summary::-webkit-details-marker { display:none; }
+  .syl details.sylsec.off > summary { color:var(--mute); }
+  .syl details.sylsec.off .body { opacity:.55; }
+  .syl .onoff { display:inline-flex; align-items:center; gap:6px; margin:0 0 0 auto; font-size:12.5px; color:var(--mute); white-space:nowrap; }
+  .syl label.f { display:block; margin:10px 0 4px; }
+  .syl label.f > span { display:block; font-size:13px; color:var(--mute); margin-bottom:4px; }
+  .syl p.hint { margin:6px 0; }
+  .syl p.hint.tight { margin-bottom:2px; }
+  .syl textarea.tall { min-height:140px; }
+  .syl .row.narrow { grid-template-columns:130px 1fr; }
+  .syl .item { border:1px solid var(--line); border-left:4px solid var(--cyan); border-radius:7px; padding:10px 12px 8px; margin:10px 0; background:#FBFCFE; }
+  .syl .item-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .syl .item-title { font-size:12px; font-weight:600; letter-spacing:1px; color:var(--mute); text-transform:uppercase; }
+  .syl .tools { display:flex; gap:5px; flex-shrink:0; }
+  .syl button.mini { padding:2px 9px; font-size:13px; border-radius:12px; background:#fff; color:var(--navy); }
+  .syl button.mini.danger { color:#8C1A0E; border-color:#8C1A0E; }
+  .syl button.mini[disabled] { opacity:.4; cursor:default; }
+  .syl .sect { border:1px solid #B9C6DC; border-left:5px solid var(--navy); border-radius:8px; padding:12px 14px 8px; margin:12px 0; background:#F7F9FD; }
+  .syl .block { border:1px solid var(--line); border-left:4px solid var(--gold); border-radius:7px; padding:10px 12px 8px; margin:10px 0; background:#fff; }
+  .syl .blockbar { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 4px; }
+  .syl .blockbar button, .syl button.add { background:#fff; color:var(--mute); border:2px dashed #B9C6DC; font-size:13px; padding:6px 12px; border-radius:16px; }
+  .syl button.add { width:100%; margin-top:8px; }
+  .syl .empty { font-size:13px; color:var(--mute); font-style:italic; }
+  .syl code.k { background:#EEF1F8; padding:1px 5px; border-radius:4px; font-size:12.5px; }
+  .syl .derived { background:#F9FAFD; border:1px dashed var(--line); border-radius:8px; padding:10px 12px; font-size:13.5px; margin-top:8px; color:var(--navy); }
 </style>
 </head>
 <body>
@@ -226,19 +257,182 @@
       <details><summary>Module cards (edit titles, untick to hide)</summary><div class="mods" id="mods"></div></details>
     </div>
 
+    <div class="step locked collapsible" id="stepS">
+      <h2><span class="n">4</span> Your syllabus</h2>
+      <div class="hint">The kit fills your course's Canvas <b>Syllabus</b> page with this. Your name, email, class meeting and Live/On-Demand mode come from step 3; the course title, code and description come from the course. Every section below can be edited or switched off, and you can add your own. Mid-year changes: come back here, edit, and use <b>Copy syllabus HTML</b>, then in your live course open Syllabus, Edit, the HTML editor, and paste over what is there. The home page's Syllabus tile keeps working either way.</div>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:10px;"><input type="checkbox" id="syl-on" checked> Put this syllabus on the Canvas Syllabus page in my kit</label>
+      <div class="actions"><button type="button" class="sm alt" data-action="sylPreview">Preview syllabus</button><button type="button" class="sm alt" data-action="sylCopy">Copy syllabus HTML</button><button type="button" class="sm alt" data-action="sylDownload">Download syllabus .html</button><button type="button" class="sm alt" data-action="sylReset">Reset to course defaults</button></div>
+      <div class="status" id="syl-status"></div>
+      <div class="syl" id="syl-form">
+        <div class="derived" id="syl-derived">Choose a kit first.</div>
+        <details class="sylsec" id="card-head" open><summary>Banner and course details</summary>
+          <div class="body">
+            <label class="f"><span>Course title</span><input type="text" data-path="meta.title"></label>
+            <div class="row">
+              <label class="f"><span>Badge line 1</span><input type="text" data-path="meta.badge1" placeholder="Semester 1"></label>
+              <label class="f"><span>Badge line 2</span><input type="text" data-path="meta.badge2" placeholder="Grade 9"></label>
+            </div>
+            <div class="row">
+              <label class="f"><span>Course code label</span><input type="text" data-path="meta.codeLabel" placeholder="Florida Course"></label>
+              <label class="f"><span>Course code and what follows it</span><input type="text" data-path="meta.code" placeholder="Florida 1001310 &middot; Semester 1"></label>
+            </div>
+            <div class="row">
+              <label class="f"><span>Grade level, as printed</span><input type="text" data-path="meta.grade" placeholder="Grade 9"></label>
+              <label class="f"><span>Grade band (sets the AI section)</span>
+                <select data-path="meta.band"><option value="k5">Elementary (K&ndash;5)</option><option value="68">Middle school (6&ndash;8)</option><option value="912">High school (9&ndash;12)</option></select></label>
+            </div>
+            <label class="f"><span>Format line (leave blank for the standard wording)</span><input type="text" data-path="meta.fmt" placeholder="Live (synchronous) - scheduled classes on Optima's VR campus"></label>
+          </div>
+        </details>
+        <details class="sylsec" id="card-desc" open><summary>Course description</summary>
+          <div class="body">
+            <label class="f"><span>Course overview, as it will print</span><textarea class="tall" data-path="desc.text" placeholder="What this course is, what scholars do in it, and what it builds toward."></textarea></label>
+            <p class="hint">Prefilled from the school catalogue where it has a description for this course. A blank line starts a new paragraph. <code class="k">**bold**</code> makes bold text.</p>
+          </div>
+        </details>
+    <!-- 4. About this syllabus -->
+        <details class="sylsec" id="card-about"><summary>About this syllabus <label class="onoff"><input type="checkbox" data-path="about.on" /> include</label></summary>
+          <div class="body">
+            <p class="hint">The gold note under the banner. Say how long the course runs and how a scholar moves through it; the opening sentence
+              and the pointer to the other section's syllabus are added for you.</p>
+            <label class="f"><span>Your sentence about pacing</span>
+              <textarea data-path="about.text" placeholder="It is a full-year middle-school course; your class moves through the five modules together across the four quarters of the year."></textarea></label>
+          </div>
+        </details>
+
+        <!-- 5. Objectives -->
+        <details class="sylsec" id="card-objectives"><summary>What scholars will learn to do <label class="onoff"><input type="checkbox" data-path="objectives.on" /> include</label></summary>
+          <div class="body">
+            <p class="hint">One line each. They print as a two-column bulleted list.</p>
+            <div id="list-objectives"></div>
+            <button type="button" class="add" data-action="add" data-list="objectives.items" data-kind="line">+ Add an objective</button>
+          </div>
+        </details>
+
+        <!-- 6. Milestones -->
+        <details class="sylsec" id="card-miles"><summary>Big projects &amp; milestones <label class="onoff"><input type="checkbox" data-path="miles.on" /> include</label></summary>
+          <div class="body">
+            <label class="f"><span>Introduction above the table</span>
+              <textarea data-path="miles.intro" placeholder="The course builds toward a set of finished, real-world artifacts."></textarea></label>
+            <p class="hint tight">Each row is one project. Leave a cell blank and it prints empty.</p>
+            <div id="list-miles"></div>
+            <button type="button" class="add" data-action="add" data-list="miles.rows" data-kind="mrow">+ Add a project</button>
+          </div>
+        </details>
+
+        <!-- 7. Dates -->
+        <details class="sylsec" id="card-dates"><summary>Important dates <label class="onoff"><input type="checkbox" data-path="dates.on" /> include</label></summary>
+          <div class="body">
+            <p class="hint">Prefilled with the board-approved 2026&ndash;2027 school calendar. Change or remove any line, or add your own.</p>
+            <div id="list-dates"></div>
+            <button type="button" class="add" data-action="add" data-list="dates.pairs" data-kind="dpair">+ Add a date</button>
+          </div>
+        </details>
+
+        <!-- 8. Assessment -->
+        <details class="sylsec" id="card-grading"><summary>Assessment &amp; grading <label class="onoff"><input type="checkbox" data-path="grading.on" /> include</label></summary>
+          <div class="body">
+            <p class="hint">Each row is one card in the row of weights. Two to five works best.</p>
+            <div id="list-grading"></div>
+            <button type="button" class="add" data-action="add" data-list="grading.items" data-kind="gitem">+ Add a category</button>
+            <label class="f" style="margin-top:12px;"><span>Note under the weights (optional)</span>
+              <textarea data-path="grading.note" placeholder="How grades are reported, what a late or missing assignment does, and anything else a family should know."></textarea></label>
+          </div>
+        </details>
+
+        <!-- 9. Delivery -->
+        <details class="sylsec" id="card-delivery"><summary>How this section runs <label class="onoff"><input type="checkbox" data-path="delivery.on" /> include</label></summary>
+          <div class="body">
+            <p class="hint" id="deliveryHint"></p>
+            <label class="f"><span>Sentence added to the end of the first paragraph (optional)</span>
+              <textarea data-path="delivery.cumulative" placeholder="Anything else about how the pacing works in your section."></textarea></label>
+            <label class="f"><span>The cyan panel's sentence (optional)</span>
+              <textarea data-path="delivery.tagline" placeholder="A live facilitator grades your work, gives feedback, and hosts a weekly study hall and VR workshops."></textarea></label>
+          </div>
+        </details>
+
+        <!-- 10. AI -->
+        <details class="sylsec" id="card-ai"><summary>Using AI in this course <label class="onoff"><input type="checkbox" data-path="ai.on" /> include</label></summary>
+          <div class="body">
+            <p class="hint">This is Optima's AI policy written for your grade band. Changing the grade band under Banner and course details replaces the wording below with that band's version, so set the band first. Add a sentence of your own about how AI works in <em>your</em> course.</p>
+            <label class="f"><span>Your sentence, added to the opening paragraph</span>
+              <textarea data-path="ai.framing" placeholder="This is a course about reasoning, so AI may support your work but it may not do the reasoning an assignment asks of you."></textarea></label>
+            <p class="hint tight">The policy points, as they will print:</p>
+            <div id="list-ai"></div>
+            <button type="button" class="add" data-action="add" data-list="ai.bullets" data-kind="line">+ Add a point</button>
+            <label class="f" style="margin-top:12px;"><span>Closing line</span>
+              <textarea data-path="ai.close"></textarea></label>
+          </div>
+        </details>
+
+        <!-- 11. Standard closing sections -->
+        <details class="sylsec" id="card-vr"><summary>Learning in virtual reality <label class="onoff"><input type="checkbox" data-path="vr.on" /> include</label></summary>
+          <div class="body">
+            <label class="f"><span>What scholars do in VR in this course</span>
+              <textarea data-path="vr.what" placeholder="take part in live activities and explore places and ideas you could not visit in an ordinary classroom" /></textarea></label>
+            <p class="hint" style="margin-bottom:0;">The rest of the paragraph &mdash; headsets charged, courtesy on campus, a non-VR alternate so
+              nobody falls behind &mdash; is standard and added for you.</p>
+          </div>
+        </details>
+
+        <details class="sylsec" id="card-scholar"><summary>Being an Optima scholar <label class="onoff"><input type="checkbox" data-path="scholar.on" /> include</label></summary>
+          <div class="body">
+            <p class="hint">The seven virtues and what they look like in practice. Standard text, with one clause you can make your own.</p>
+            <label class="f"><span>A practice specific to your course (optional)</span>
+              <input type="text" data-path="scholar.clause" placeholder="report your results truthfully, even when the number is not what you hoped" /></label>
+          </div>
+        </details>
+
+        <details class="sylsec" id="card-needs"><summary>What you need &amp; staying connected <label class="onoff"><input type="checkbox" data-path="needs.on" /> include</label></summary>
+          <div class="body">
+            <p class="hint">One line per item. They print as a two-column ticked list.</p>
+            <div id="list-needs"></div>
+            <button type="button" class="add" data-action="add" data-list="needs.items" data-kind="line">+ Add an item</button>
+            <label class="f" style="margin-top:12px;"><span>Anything else before the closing paragraph (optional)</span>
+              <textarea data-path="needs.extra"></textarea></label>
+          </div>
+        </details>
+
+        <details class="sylsec" id="card-footer"><summary>Footer line <label class="onoff"><input type="checkbox" data-path="footer.on" /> include</label></summary>
+          <div class="body">
+            <p class="hint">The small grey line at the very end that says where the syllabus came from.</p>
+            <label class="f"><span>Footer</span>
+              <textarea data-path="footer.text"></textarea></label>
+          </div>
+        </details>
+
+        <!-- 15. Your own sections -->
+        <details class="sylsec"><summary>Your own sections</summary>
+          <div class="body">
+            <p class="hint">Anything the standard sections do not cover: your meeting schedule, how you handle revision, your VR norms, a letter to
+              families. Each one can go wherever you want it in the document.</p>
+            <div id="list-custom"></div>
+            <div class="blockbar" style="margin-bottom:0;">
+              <button type="button" data-action="addSection" data-preset="blank">+ Blank section</button>
+              <button type="button" data-action="addSection" data-preset="schedule">+ My meeting schedule</button>
+              <button type="button" data-action="addSection" data-preset="reach">+ How to reach me</button>
+              <button type="button" data-action="addSection" data-preset="revision">+ My revision practice</button>
+              <button type="button" data-action="addSection" data-preset="norms">+ Our discussion &amp; VR norms</button>
+              <button type="button" data-action="addSection" data-preset="welcome">+ A letter to families</button>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
     <div class="step locked collapsible" id="step4">
-      <h2><span class="n">4</span> Dates, publishing and contents</h2>
+      <h2><span class="n">5</span> Dates, publishing and contents</h2>
       <div id="dates-panel"><div class="hint">Choose a kit first.</div></div>
     </div>
 
     <div class="step locked collapsible" id="step5">
-      <h2><span class="n">5</span> Set up your gradebook</h2>
+      <h2><span class="n">6</span> Set up your gradebook</h2>
       <div id="gradebook-panel"><div class="hint">Choose a kit first.</div></div>
     </div>
 
     <div class="step locked collapsible" id="step6">
-      <h2><span class="n">6</span> Download and import</h2>
-      <div class="hint">One file. Your home page is already inside it, set as the course front page, with the module cards linked to the real modules.</div>
+      <h2><span class="n">7</span> Download and import</h2>
+      <div class="hint">One file. Your home page is already inside it, set as the course front page, with the module cards linked to the real modules, and your syllabus fills the Syllabus page.</div>
       <div class="actions">
         <button id="dl" disabled>Download my course kit (.imscc)</button>
         <button id="copy" class="alt" disabled>Copy home page HTML only</button>
@@ -251,7 +445,7 @@
         <li>Content: <b>All content</b>. Leave dates unadjusted. Leave <b>Import existing quizzes as New Quizzes</b> <u>unchecked</u>: that option drops the module Intro and Outro surveys and hands you empty quizzes.</li>
         <li>Click <b>Import</b> and wait for the green check.</li>
         <li>Open <b>Home</b>. Your page should be there with your name on it. If not: Pages &rarr; set it as Front Page &rarr; Home &rarr; Choose Home Page &rarr; Pages Front Page.</li>
-        <li>Check <b>Modules</b> (count matches the kit) and <b>Assignments</b> (group weights present), then <b>Publish</b> the course.</li>
+        <li>Check <b>Modules</b> (count matches the kit), <b>Assignments</b> (group weights present) and <b>Syllabus</b> (your text is there), then <b>Publish</b> the course.</li>
       </ol>
       <div class="hint">Importing the same kit again later updates the course in place instead of duplicating it.</div>
       <div class="printrow">
@@ -640,6 +834,940 @@
     return out.join('');
   }
 
+
+  // ------------------------------------------------------------ syllabus builder
+  // Ported from teacher-homepages/syllabus.html (2026-09-17): the same document
+  // model and Canvas emitter, so a syllabus built here matches one built there and
+  // the OAO-BUILDER payload lets the standalone builder reopen the download. The
+  // Word output stays in the standalone builder. Everything lives in its own scope.
+  var Syl = (function () {
+    var YEAR = '2026\u20132027', YEAR_ASCII = '2026-2027';
+    var H = { navy: '#0E1C42', cyan: '#55C8E8', gold: '#C7922C', ink: '#1A2340',
+              muted: '#44507A', label: '#6B7494', panel: '#EEF1F8', goldbg: '#FDF3E3',
+              cyanbg: '#EAF6FB', rule: '#D0D9E8' };
+
+    var DATES = [
+      ['Aug 12, 2026', 'First day of school'], ['Sep 7', 'Holiday (Labor Day)'],
+      ['Oct 9', 'Quarter 1 ends'], ['Oct 12', 'Holiday (Columbus Day)'],
+      ['Nov 11', 'Holiday (Veterans’ Day)'], ['Nov 23–27', 'Thanksgiving break'],
+      ['Dec 18', 'Quarter 2 ends · fall semester ends'], ['Dec 21–Jan 1', 'Winter break'],
+      ['Jan 5, 2027', 'Classes resume'], ['Jan 18', 'Holiday (MLK Day)'],
+      ['Feb 15', 'Holiday (Presidents’ Day)'], ['Mar 5', 'Quarter 3 ends'],
+      ['Mar 26–Apr 5', 'Spring break'], ['Apr 6', 'Classes resume'],
+      ['May 28, 2027', 'Quarter 4 ends · last day of school'],
+      ['May 31', 'Holiday (Memorial Day)']
+    ];
+
+    var AI_INTRO = {
+      k5: 'Optima’s AI policy does not ask whether a scholar used AI. It asks whether AI was used **honestly, and in a way that helped you learn something yourself**. ',
+      '68': 'Optima’s AI policy does not ask whether a scholar used AI. It asks whether AI was used **honestly, skillfully, and in a way that genuinely built your own thinking**. ',
+      '912': 'Optima’s AI policy does not ask whether a scholar used AI. It asks whether AI was used **honestly, skillfully, and in a way that genuinely built your own thinking**. '
+    };
+
+    var AI_CLOSE = {
+      k5: 'Some assignments do not allow AI at all, so that you build the skill yourself. The assignment page will say so.',
+      '68': 'Some assignments limit or exclude AI so that you build the underlying skill yourself, and the assignment page will say so: you cannot judge whether an AI’s answer is any good unless you can do the work without it.',
+      '912': 'Some assignments limit or exclude AI so that you build the underlying skill yourself, and the assignment page will say so: you cannot judge whether an AI’s answer is any good unless you can do the work without it.'
+    };
+
+    var AI_BULLETS = {
+      k5: [
+        '**School tools only.** Any AI this course uses lives inside **Canvas** or Optima’s VR platform, set up and supervised by the school. No assignment asks you to create or use a personal AI account, and your {role} may not ask, suggest, or require one. Optima does not provide, endorse, or manage personal AI accounts for elementary scholars.',
+        '**Grown-ups decide, and grown-ups stay responsible.** Whether an AI tool is used at home is your family’s decision, not the school’s. A parent or guardian chooses it, sets it up, watches how it is used, and stays responsible for the account.',
+        '**The work has to be yours.** A computer cannot notice what you noticed or feel what you felt, and it should not write your reflection either. If an adult or a tool helped you with something you turned in, say so — saying so is honest, and hiding it is not.',
+        '**Check what a computer tells you.** AI sounds certain even when it is wrong, and it sometimes makes things up. If something you read does not match what you found, what your lesson said, or what your {role} told you, ask before you use it.'
+      ],
+      '68': [
+        '**Grades 6–8 — school-controlled tools.** Any AI this course provides is built into **Canvas** and into Optima’s VR platform, and no assignment requires a personal account. An outside tool is your family’s decision, not the school’s: it needs written parent or guardian permission on file with your {role}, and your family selects, sets up, monitors, and stays responsible for the account. Optima does not provide, endorse, or manage personal AI accounts. Under 14, your {role} may not ask, suggest, or require one at all.',
+        '**Document it, then verify it.** Record the **tool**, the **prompt** you gave it, and the **date**. Using AI is not plagiarism; turning in AI-generated work as entirely your own thought, undocumented, is. AI states wrong things confidently and invents data, sources, and citations that look real, so check every claim and number against your own work or a credible source before it goes into your work.',
+        '**Own it.** Your work should read the way you write and speak in the rest of the course, take a real position rather than hedging, and be something you can explain on the spot when your {role} asks a follow-up you did not expect. Keep the process too — prompt logs, drafts, and notes are gradeable evidence.',
+        '**Never put a person into a tool.** Do not feed another person’s likeness, voice, or personal information into an AI tool, and do not paste anything confidential into one. Where an assignment has you build or configure an AI tool, turn in your design, your prompting strategy, your tests, and your conclusions.'
+      ],
+      '912': [
+        '**Grades 9–10 — school-controlled tools.** Any AI this course provides is built into **Canvas** and into Optima’s VR platform, and no assignment requires a personal account. An outside tool is your family’s decision, not the school’s: it needs written parent or guardian permission on file with your {role}, and your family selects, sets up, monitors, and stays responsible for the account. Optima does not provide, endorse, or manage personal AI accounts. Under 14, your {role} may not ask, suggest, or require one at all.',
+        '**Grades 11–12 — the school-managed account.** Optima issues each scholar a school-managed AI license on the platform the administration selects and maintains, and that account is the tool of record for any graded AI-integrated work, so privacy, data handling, and oversight stay under the school’s control. A personal account is not a substitute for it on graded work.',
+        '**Document it, then verify it.** Record the **tool**, the **prompt** you gave it, and the **date**. Using AI is not plagiarism; turning in AI-generated work as entirely your own thought, undocumented, is. AI states wrong things confidently and invents data, sources, and citations that look real, so check every claim and number against your own data, the work done by hand, or a credible source before it goes into your work.',
+        '**Own it.** Your work should read the way you write and speak in the rest of the course, take a real position rather than hedging, and be something you can explain on the spot when your {role} asks a follow-up you did not expect. Keep the process too — prompt logs, drafts, and data tables are gradeable evidence. Where an assignment has you build or configure an AI tool, turn in your design, prompting strategy, tests, and conclusions, and never feed another person’s likeness or personal information into a tool.'
+      ]
+    };
+
+    var NEEDS_DEFAULT = [
+      'A computer with reliable internet and access to Canvas.',
+      'A VR headset, charged and ready for the immersive activities on Optima’s VR campus.',
+      'Microsoft 365 (Word, Excel) with OneDrive, for the documents you create and submit.',
+      'A notebook or binder, and pens or pencils.'
+    ];
+
+    var MILE_HEAD = ['Project / Milestone', 'Course place', 'Sample timing', 'What you turn in'];
+
+    var SECTION_PRESETS = {
+      blank: function () { return { title: '', at: 'grading', blocks: [{ kind: 'text', text: '' }] }; },
+      schedule: function () {
+        return { title: 'My Class Meeting Schedule', at: 'delivery', blocks: [
+          { kind: 'text', text: 'Here is when we meet and what each meeting is for. Times are Eastern.' },
+          { kind: 'table', head: 'Day|Time|What we do', rows: [
+            { a: 'Monday', b: '9:00 - 9:50 AM', c: 'New material and guided practice' },
+            { a: 'Wednesday', b: '9:00 - 9:50 AM', c: 'Discussion and questions' },
+            { a: 'Friday', b: '9:00 - 9:50 AM', c: 'Work time, with me available' }
+          ] }
+        ] };
+      },
+      reach: function () {
+        return { title: 'How to Reach Me', at: 'needs', blocks: [
+          { kind: 'text', text: 'Email is the fastest way to reach me, and I answer within one school day.' },
+          { kind: 'bullets', text: 'Email for anything about an assignment or a grade\nOffice hours for anything that takes more than a paragraph to explain\nA message in Canvas if it is about a specific submission' }
+        ] };
+      },
+      revision: function () {
+        return { title: 'Revision and Late Work in My Section', at: 'grading', blocks: [
+          { kind: 'text', text: 'What I expect, and what to do when something goes wrong.' },
+          { kind: 'callout', tone: 'gold', lead: 'Revision is expected, not a favour.', text: 'Any written assignment can be revised once after feedback, within one week of getting it back.' }
+        ] };
+      },
+      norms: function () {
+        return { title: 'Our Discussion and VR Norms', at: 'vr', blocks: [
+          { kind: 'text', text: 'A few things we agree to, so this is a place where thinking out loud is safe.' },
+          { kind: 'bullets', text: 'Disagree with the idea, never the person\nQuote what you are responding to, so we know what you mean\nCameras and microphones on in VR unless you have told me otherwise\nWhat someone says while working something out is not held against them' }
+        ] };
+      },
+      welcome: function () {
+        return { title: 'A Note to Families', at: 'about', blocks: [
+          { kind: 'text', text: 'Welcome. I am glad your scholar is in this course.\n\nYou do not need to know the material to help. Ask what they are working on, ask them to explain one idea back to you, and tell me when something is not working.' }
+        ] };
+      }
+    };
+
+    var BLOCK_LABEL = { text: 'Paragraphs', bullets: 'Bulleted list', table: 'Small table', callout: 'Highlighted note' };
+
+    // The stock sections a teacher's own section can be placed after.
+    var SLOTS = [
+      ['about', 'the gold note at the top'],
+      ['overview', 'the course overview'],
+      ['objectives', 'what scholars will learn'],
+      ['miles', 'big projects & milestones'],
+      ['dates', 'important dates'],
+      ['grading', 'assessment & grading'],
+      ['delivery', 'how this section runs'],
+      ['ai', 'using AI'],
+      ['vr', 'learning in virtual reality'],
+      ['scholar', 'being an Optima scholar'],
+      ['needs', 'what you need'],
+      ['end', 'the very end, before the footer']
+    ];
+
+    // ---------------------------------------------------------------- state
+    function newBlock(kind) {
+      if (kind === 'table') return { kind: 'table', head: 'Column|Column|Column', rows: [{ a: '', b: '', c: '' }] };
+      if (kind === 'callout') return { kind: 'callout', tone: 'gold', lead: '', text: '' };
+      return { kind: kind || 'text', text: '' };
+    }
+
+    function blankState() {
+      return {
+        meta: { title: '', mode: 'Live', band: '912', codeLabel: 'Florida Course', code: '',
+                badge1: '', badge2: '', grade: '', fmt: '',
+                teacher: '', email: '', office: '' },
+        desc: { pick: '', text: '' },
+        about: { on: true, text: '' },
+        objectives: { on: true, items: [''] },
+        miles: { on: true, intro: 'The course builds toward a set of finished, real-world artifacts.', rows: [{ a: '', b: '', c: '', d: '' }] },
+        dates: { on: true, pairs: DATES.map(function (d) { return { d: d[0], e: d[1] }; }) },
+        grading: { on: true, items: [{ pct: '', label: '' }], note: '' },
+        delivery: { on: true, cumulative: '', tagline: '' },
+        ai: { on: true, framing: '', bullets: AI_BULLETS['912'].slice(), close: AI_CLOSE['912'] },
+        vr: { on: true, what: 'take part in live activities and explore places and ideas you could not visit in an ordinary classroom' },
+        scholar: { on: true, clause: '' },
+        needs: { on: true, items: NEEDS_DEFAULT.slice(), extra: '' },
+        footer: { on: true, text: '' },
+        custom: []
+      };
+    }
+
+    function hydrate(s) {
+      var b = blankState();
+      if (!s || typeof s !== 'object') return b;
+      Object.keys(b).forEach(function (k) {
+        if (s[k] == null) return;
+        if (Array.isArray(b[k])) { b[k] = Array.isArray(s[k]) ? s[k] : b[k]; return; }
+        if (typeof b[k] === 'object') {
+          Object.keys(b[k]).forEach(function (j) { if (s[k][j] != null) b[k][j] = s[k][j]; });
+          return;
+        }
+        b[k] = s[k];
+      });
+      (b.custom || []).forEach(function (c) {
+        c.blocks = Array.isArray(c.blocks) ? c.blocks : [];
+        c.blocks.forEach(function (bl) {
+          if (bl.kind === 'table' && !Array.isArray(bl.rows)) bl.rows = [{ a: '', b: '', c: '' }];
+        });
+      });
+      return b;
+    }
+
+
+    var state = null;
+    var TAG = 'OAO-BUILDER';
+    var PAYLOAD_V = 1;
+
+    function b64enc(str) {
+      return btoa(encodeURIComponent(str).replace(/%([0-9A-Fa-f]{2})/g, function (m, hex) {
+        return String.fromCharCode(parseInt(hex, 16));
+      }));
+    }
+    function b64dec(b64) {
+      var bytes = atob(String(b64).replace(/\s+/g, '')), pct = '';
+      for (var i = 0; i < bytes.length; i++) {
+        pct += '%' + ('0' + bytes.charCodeAt(i).toString(16)).slice(-2);
+      }
+      return decodeURIComponent(pct);
+    }
+    function payloadLines() {
+      return [
+        '  ----------------------------------------------------------------------------',
+        '  REOPENING THIS SYLLABUS: paste this whole file back into the builder and every',
+        '  field comes back filled in, ready to change. The line below is how - it is',
+        '  this page\'s settings. Students never see it. Leave it alone and it keeps',
+        '  working; delete it and the page still renders, it just cannot be reopened.',
+        '',
+        '  ' + TAG + ':' + PAYLOAD_V + ':syllabus:' + b64enc(JSON.stringify(state))
+      ];
+    }
+    function readPayload(text) {
+      var s = String(text || '');
+      var m = s.match(new RegExp(TAG + ':(\\d+):([a-z]+):([A-Za-z0-9+/=\\s]*?)\\s*-->'))
+           || s.match(new RegExp(TAG + ':(\\d+):([a-z]+):([A-Za-z0-9+/=]+)'));
+      if (!m) return null;
+      try {
+        return { v: parseInt(m[1], 10), mode: m[2], state: JSON.parse(b64dec(m[3])) };
+      } catch (e) {
+        return { error: true, mode: m[2] };
+      }
+    }
+
+    function getPath(p) {
+      var parts = p.split('.'), o = state;
+      for (var i = 0; i < parts.length; i++) { if (o == null) return undefined; o = o[parts[i]]; }
+      return o;
+    }
+    function setPath(p, v) {
+      var parts = p.split('.'), o = state;
+      for (var i = 0; i < parts.length - 1; i++) o = o[parts[i]];
+      o[parts[parts.length - 1]] = v;
+    }
+
+    // ------------------------------------------------------- escaping helpers
+    function t(v) { return String(v == null ? '' : v).trim(); }
+    function slug(s) {
+      return String(s || 'syllabus').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'syllabus';
+    }
+    // Canvas wants pure ASCII, so anything above 126 goes out as a numeric reference.
+    function esc(str) {
+      str = String(str == null ? '' : str);
+      var out = '';
+      for (var i = 0; i < str.length; i++) {
+        var cp = str.codePointAt(i), ch = String.fromCodePoint(cp);
+        if (cp > 0xFFFF) i++;
+        if (ch === '&') out += '&amp;';
+        else if (ch === '<') out += '&lt;';
+        else if (ch === '>') out += '&gt;';
+        else if (ch === '"') out += '&quot;';
+        else if (cp > 126 || (cp < 32 && ch !== '\n')) out += '&#' + cp + ';';
+        else out += ch;
+      }
+      return out;
+    }
+    function escAttr(s) {
+      return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    // Word's document.xml is UTF-8, so only the three XML characters need escaping.
+    function xesc(s) {
+      return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    // What this section is called depends on which section it is for.
+    // Optima says teacher in both modes (program rule, 2026-08); the standalone builder still says facilitator for On-Demand.
+    function role() { return 'teacher'; }
+    function isLive() { return state.meta.mode === 'Live'; }
+    function modeLabel() { return isLive() ? 'Live (Synchronous)' : 'On-Demand (Asynchronous)'; }
+    function fmtLine() {
+      return t(state.meta.fmt) || (isLive()
+        ? 'Live (synchronous) · scheduled classes on Optima’s VR campus'
+        : 'On-Demand (asynchronous) · self-paced within each quarter');
+    }
+    function fill(s) { return String(s == null ? '' : s).replace(/\{role\}/g, role()); }
+
+    // Split a list into two balanced columns, as the generator does.
+    function halve(items) {
+      var n = Math.ceil(items.length / 2);
+      return [items.slice(0, n), items.slice(n)];
+    }
+    function lines(txt) {
+      return String(txt == null ? '' : txt).replace(/\r/g, '').split('\n')
+        .map(function (l) { return l.trim(); }).filter(function (l) { return l !== ''; });
+    }
+    function paras(txt) {
+      return String(txt == null ? '' : txt).replace(/\r/g, '').split(/\n\s*\n/)
+        .map(function (c) { return c.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).join(' '); })
+        .filter(Boolean);
+    }
+
+    function sectionBlocks(id) {
+      var m = state.meta, out = [];
+      if (id === 'overview') {
+        if (!t(state.desc.text)) return [];
+        out.push({ t: 'bar', text: 'Course Overview' });
+        paras(state.desc.text).forEach(function (p) { out.push({ t: 'body', text: p }); });
+      }
+      else if (id === 'objectives') {
+        if (!state.objectives.on) return [];
+        var items = lines(state.objectives.items.join('\n'));
+        if (!items.length) return [];
+        out.push({ t: 'lead', text: 'What scholars will learn to do' });
+        out.push({ t: 'twocol', glyph: 'dot', items: items });
+      }
+      else if (id === 'miles') {
+        if (!state.miles.on) return [];
+        var rows = state.miles.rows.filter(function (r) { return t(r.a) || t(r.d); });
+        if (!rows.length) return [];
+        out.push({ t: 'bar', text: 'Big Projects & Milestones' });
+        var intro = t(state.miles.intro);
+        if (intro) {
+          out.push({ t: 'body', text: intro + ' Target dates below follow a sample pacing; ' +
+            (isLive() ? 'your section works to the class schedule your teacher sets'
+                      : 'you pace to your own enrolled term') + ', keeping each milestone roughly in order.' });
+        }
+        out.push({ t: 'table', head: MILE_HEAD, widths: [3000, 1730, 1300, 4626],
+                   rows: rows.map(function (r) { return [t(r.a), t(r.b), t(r.c), t(r.d)]; }) });
+      }
+      else if (id === 'dates') {
+        if (!state.dates.on) return [];
+        var pairs = state.dates.pairs.filter(function (p) { return t(p.d) || t(p.e); });
+        if (!pairs.length) return [];
+        out.push({ t: 'bar', text: 'Important Dates — ' + YEAR });
+        out.push({ t: 'dates', pairs: pairs.map(function (p) { return [t(p.d), t(p.e)]; }) });
+      }
+      else if (id === 'grading') {
+        if (!state.grading.on) return [];
+        var g = state.grading.items.filter(function (x) { return t(x.pct) || t(x.label); });
+        if (!g.length && !t(state.grading.note)) return [];
+        out.push({ t: 'bar', text: 'Assessment & Grading' });
+        if (g.length) out.push({ t: 'grading', items: g.map(function (x) { return [t(x.pct), t(x.label)]; }) });
+        if (t(state.grading.note)) {
+          paras(state.grading.note).forEach(function (p) { out.push({ t: 'body', text: fill(p) }); });
+        }
+      }
+      else if (id === 'delivery') {
+        if (!state.delivery.on) return [];
+        var cum = t(state.delivery.cumulative);
+        if (isLive()) {
+          out.push({ t: 'bar', text: 'Live (Synchronous) Learning' });
+          out.push({ t: 'body', text: 'In the **Live** section you join scheduled class meetings on Optima’s VR campus, where your teacher leads instruction in real time and you learn alongside classmates. The readings, activities, assignments, and projects are the same as the On-Demand course; what differs is the pacing — the class moves through the material together on the class schedule rather than at each scholar’s own pace, and class time is also used for demonstrations, questions, and guided practice.' + (cum ? ' ' + cum : '') });
+          out.push({ t: 'body', text: '**Attendance is measured by presence and participation.** Attend the scheduled sessions on time and ready to take part. If you must miss a class, notify the school in advance and your teacher will tell you how to make up the work. Completing your work still means a **sincere attempt** — real effort on real work — and assignments open and close with each quarter.' });
+          out.push({ t: 'panel', tone: 'cyan', lead: 'You meet regularly with a teacher.',
+                     text: t(state.delivery.tagline) || 'The class gathers throughout the week in VR and on Microsoft Teams for live instruction and discussion.' });
+          out.push({ t: 'body', text: 'This course is also offered as an **On-Demand (asynchronous)** section that scholars pace themselves. If that is your enrollment, use the On-Demand syllabus instead of this one.' });
+        } else {
+          out.push({ t: 'bar', text: 'On-Demand (Asynchronous) Learning' });
+          out.push({ t: 'body', text: 'In the **On-Demand** section you move through the course at your own pace within each quarter, guided by due dates that keep you on track. All assignments for a quarter open at its start and close at its end; there is no grade penalty for missing an individual due date, but any assignment not completed by the end of the quarter receives a **zero**, so steady pacing matters.' + (cum ? ' ' + cum : '') });
+          out.push({ t: 'body', text: '**Attendance is measured by assignment completion.** Per school policy, a scholar who completes no assignment for ten consecutive school days, without notifying the school in advance, may be dropped from the course. Completion means a **sincere attempt** — real effort on real work, not rushed or corrupted files, nonsense submissions, or AI-generated filler.' });
+          out.push({ t: 'panel', tone: 'cyan', lead: 'You are never on your own.',
+                     text: t(state.delivery.tagline) || 'A live teacher grades your work, gives feedback, and hosts a weekly study hall and VR workshops.' });
+          out.push({ t: 'body', text: 'This course is also taught as a **Live (synchronous)** section that meets on a schedule on Optima’s VR campus. If that is your enrollment, use the Live syllabus instead of this one.' });
+        }
+      }
+      else if (id === 'ai') {
+        if (!state.ai.on) return [];
+        var bl = lines(state.ai.bullets.join('\n'));
+        if (!bl.length) return [];
+        out.push({ t: 'bar', text: 'Using AI in This Course' });
+        out.push({ t: 'body', text: AI_INTRO[m.band] + t(state.ai.framing) });
+        out.push({ t: 'twocol', glyph: 'dot', items: bl.map(fill) });
+        if (t(state.ai.close)) out.push({ t: 'body', text: t(state.ai.close) });
+      }
+      else if (id === 'vr') {
+        if (!state.vr.on) return [];
+        out.push({ t: 'bar', text: 'Learning in Virtual Reality' });
+        out.push({ t: 'body', text: 'Optima is a virtual-reality school. Alongside your Canvas coursework you will join immersive sessions on Optima’s VR campus, where you meet your ' + role() + ' and fellow scholars and ' + (t(state.vr.what) || 'take part in live activities') + ' — things you could not do in an ordinary classroom. Keep your headset charged for any scheduled sessions, and treat the VR campus with the courtesy and seriousness you would a physical campus. Every VR activity has a non-VR alternate, so if you cannot get into VR, tell your ' + role() + ' and you will not fall behind.' });
+      }
+      else if (id === 'scholar') {
+        if (!state.scholar.on) return [];
+        var clause = t(state.scholar.clause);
+        out.push({ t: 'bar', text: 'Being an Optima Scholar' });
+        out.push({ t: 'body', text: 'Optima’s mission is an excellent, virtue-centered education. Every scholar is expected to practice the seven virtues that shape life here — **courage, courtesy, honesty, perseverance, self-government, service, and responsibility**. In practice: do your own honest work; ' + (clause ? clause + '; ' : '') + 'treat everyone you meet in this course with respect, in writing, in discussion, and in VR; engage actively rather than passively; come to office hours to know your ' + role() + '; and take responsibility for your own ' + (isLive() ? 'work' : 'pacing') + ' and progress. You belong to a house and a community of scholars, not only to a course.' });
+      }
+      else if (id === 'needs') {
+        if (!state.needs.on) return [];
+        var ni = lines(state.needs.items.join('\n'));
+        out.push({ t: 'bar', text: 'What You Need & Staying Connected' });
+        if (ni.length) out.push({ t: 'twocol', glyph: 'check', items: ni });
+        if (t(state.needs.extra)) {
+          paras(state.needs.extra).forEach(function (p) { out.push({ t: 'body', text: fill(p) }); });
+        }
+        out.push({ t: 'body', text: '**Staying connected.** Updates about this course are posted on the course’s **Canvas** page; school-wide updates are posted in your **Homeroom Canvas** course. Check both regularly. Your ' + role() + ' holds office hours and is glad to help with the material, to meet you, or to talk through your plans.' });
+      }
+      return out;
+    }
+
+    // A teacher's own section becomes the same kind of blocks as a stock one.
+    function customBlocks(c) {
+      var out = [];
+      var hasBody = (c.blocks || []).some(function (b) {
+        return b.kind === 'table' ? (b.rows || []).some(function (r) { return t(r.a) || t(r.b) || t(r.c); })
+                                  : t(b.text) || t(b.lead);
+      });
+      if (!t(c.title) && !hasBody) return [];
+      out.push({ t: 'bar', text: t(c.title) || 'Untitled Section' });
+      (c.blocks || []).forEach(function (b) {
+        if (b.kind === 'text') {
+          paras(b.text).forEach(function (p) { out.push({ t: 'body', text: fill(p) }); });
+        } else if (b.kind === 'bullets') {
+          var it = lines(b.text);
+          if (it.length) out.push({ t: 'twocol', glyph: 'dot', items: it.map(fill) });
+        } else if (b.kind === 'table') {
+          var rows = (b.rows || []).filter(function (r) { return t(r.a) || t(r.b) || t(r.c); });
+          if (!rows.length) return;
+          var head = String(b.head || '').split('|').map(function (x) { return x.trim(); });
+          var n = Math.max(2, Math.min(3, head.filter(Boolean).length || 3));
+          var W = n === 2 ? [4000, 6656] : [3000, 2400, 5256];
+          out.push({ t: 'table', head: head.slice(0, n), widths: W,
+                     rows: rows.map(function (r) {
+                       var cells = [t(r.a), t(r.b), t(r.c)].slice(0, n);
+                       return cells;
+                     }) });
+        } else if (b.kind === 'callout') {
+          if (!t(b.lead) && !t(b.text)) return;
+          out.push({ t: 'panel', tone: b.tone === 'cyan' ? 'cyan' : 'gold',
+                     lead: t(b.lead), text: fill(t(b.text)) });
+        }
+      });
+      return out;
+    }
+
+    // The whole document, in order, with the teacher's sections slotted in.
+    function documentBlocks() {
+      var m = state.meta, doc = [];
+
+      doc.push({ t: 'header', title: t(m.title) || 'Course Title',
+                 sub: 'OPTIMA ACADEMY ONLINE · COURSE SYLLABUS · ' + YEAR,
+                 badges: [modeLabel()].concat([t(m.badge1), t(m.badge2)].filter(Boolean)) });
+
+      doc.push({ t: 'identity', fields: [
+        [role(), t(m.teacher) || '[' + role().charAt(0).toUpperCase() + role().slice(1) + ' Name]', !t(m.teacher)],
+        ['Email & Office', (t(m.email) || '[name@optimaed.com]') + ' · 239.673.2801 (OAO Front Office)', !t(m.email)],
+        [t(m.codeLabel) || 'Florida Course', t(m.code) || '[Course code]', !t(m.code)],
+        ['Office Hours', t(m.office) || '[Office hours — days and times, posted in Canvas]', !t(m.office)],
+        ['Grade Level', t(m.grade) || '[Grade level]', !t(m.grade)],
+        ['Format', fmtLine(), false]
+      ] });
+
+      if (state.about.on) {
+        var tail = isLive()
+          ? 'Optima also offers this course as an On-Demand section with the same content and expectations, described in its own syllabus. Exact pacing, scheduled dates, and a few activities may vary from section to section and term to term. Your teacher will confirm the specifics for your section.'
+          : 'Optima also offers this course as a Live section with the same content and expectations, described in its own syllabus. Exact pacing and a few activities may vary from term to term. Your teacher will confirm the specifics for your section.';
+        doc.push({ t: 'note', lead: 'About this syllabus.',
+                   text: 'This is the plan for the **' + modeLabel() + '** section of the course as designed. ' +
+                         (t(state.about.text) ? t(state.about.text) + ' ' : '') + tail });
+      }
+
+      var order = ['overview', 'objectives', 'miles', 'dates', 'grading', 'delivery', 'ai', 'vr', 'scholar', 'needs'];
+      var placed = {};
+      (state.custom || []).forEach(function (c) {
+        var at = c.at || 'grading';
+        (placed[at] = placed[at] || []).push(c);
+      });
+      // A section slotted after the gold note comes before everything else.
+      (placed.about || []).forEach(function (c) { doc = doc.concat(customBlocks(c)); });
+      order.forEach(function (id) {
+        doc = doc.concat(sectionBlocks(id));
+        (placed[id] || []).forEach(function (c) { doc = doc.concat(customBlocks(c)); });
+      });
+      (placed.end || []).forEach(function (c) { doc = doc.concat(customBlocks(c)); });
+
+      if (state.footer.on && t(state.footer.text)) {
+        var tailF = t(m.title) + ' · ' + (isLive() ? 'Live (synchronous)' : 'On-Demand (asynchronous)') +
+          ' section' + (t(m.code) ? ' · ' + t(m.code) : '') + ' · Optima Academy Online, ' + YEAR + '. ';
+        doc.push({ t: 'footer', text: tailF + t(state.footer.text) });
+      }
+      return doc;
+    }
+
+    var TBL = 'width: 100%; border-collapse: collapse; margin: 0 0 14px 0;';
+    var BODY_TD = 'font-size: 15px; color: ' + H.ink + '; line-height: 1.6; padding: 0;';
+
+    function hinline(s) {
+      return esc(s).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    }
+    function hbody(md) {
+      return '<p style="font-size: 15px; color: ' + H.ink + '; line-height: 1.65; margin: 0 0 12px 0;">' +
+        hinline(md) + '</p>';
+    }
+    function hbar(text) {
+      return '<table role="presentation" style="' + TBL + ' margin: 22px 0 10px 0;"><tr>' +
+        '<td style="border-left: 5px solid ' + H.cyan + '; padding: 3px 0 3px 12px;">' +
+        '<span style="font-size: 14px; color: ' + H.navy + '; letter-spacing: 0.6px;"><strong>' +
+        esc(String(text).toUpperCase()) + '</strong></span></td></tr></table>';
+    }
+    function hlead(text) {
+      return '<p style="font-size: 12px; color: ' + H.gold + '; margin: 4px 0 8px 0;"><strong>' +
+        esc(String(text).toUpperCase()) + '</strong></p>';
+    }
+    function hbulletCell(items, glyph) {
+      return items.map(function (x) {
+        var g = glyph === 'check' ? '&#10003;' : '&#9679;';
+        var gc = glyph === 'check' ? H.gold : H.cyan;
+        return '<table role="presentation" style="width: 100%; border-collapse: collapse; margin: 0 0 8px 0;"><tr>' +
+          '<td style="width: 18px; vertical-align: top; padding: 0; font-size: 11px; color: ' + gc + ';">' + g + '</td>' +
+          '<td style="' + BODY_TD + '">' + hinline(x) + '</td></tr></table>';
+      }).join('');
+    }
+
+    function htmlBlock(b) {
+      if (b.t === 'header') {
+        return '<table role="presentation" style="' + TBL + ' margin-bottom: 0;"><tr>' +
+          '<td style="background: ' + H.navy + '; padding: 22px 24px; vertical-align: middle; width: 72%;">' +
+          '<div style="font-size: 25px; color: #FFFFFF; line-height: 1.2; margin-bottom: 7px;"><strong>' +
+          esc(b.title) + '</strong></div>' +
+          '<div style="font-size: 11px; color: ' + H.cyan + '; letter-spacing: 1px;">' + esc(b.sub) + '</div></td>' +
+          '<td style="background: ' + H.gold + '; padding: 22px 18px; vertical-align: middle; text-align: center;">' +
+          b.badges.map(function (x) {
+            return '<div style="font-size: 12.5px; color: #FFFFFF; line-height: 1.45;"><strong>' + esc(x) + '</strong></div>';
+          }).join('') + '</td></tr></table>';
+      }
+      if (b.t === 'identity') {
+        var rows = [];
+        for (var i = 0; i < b.fields.length; i += 2) {
+          var pair = b.fields.slice(i, i + 2);
+          rows.push('<tr>' + pair.map(function (f) {
+            return '<td style="width: 50%; background: ' + H.panel + '; padding: 9px 14px; vertical-align: top; ' +
+              'border-left: 3px solid ' + H.gold + ';">' +
+              '<div style="font-size: 10px; color: ' + H.label + '; letter-spacing: 0.8px; margin-bottom: 2px;"><strong>' +
+              esc(String(f[0]).toUpperCase()) + '</strong></div>' +
+              '<div style="font-size: 13.5px; color: ' + H.navy + ';"><strong>' + esc(f[1]) + '</strong></div></td>';
+          }).join('') + (pair.length === 1 ? '<td style="width:50%;"></td>' : '') + '</tr>');
+        }
+        return '<table role="presentation" style="' + TBL + ' margin-top: 8px;">' + rows.join('') + '</table>';
+      }
+      if (b.t === 'note' || b.t === 'panel') {
+        var gold = b.t === 'note' || b.tone === 'gold';
+        return '<table role="presentation" style="' + TBL + '"><tr>' +
+          '<td style="background: ' + (gold ? H.goldbg : H.cyanbg) + '; border-left: 4px solid ' +
+          (gold ? H.gold : H.cyan) + '; padding: 12px 15px; font-size: 13.5px; color: ' + H.ink + '; line-height: 1.6;">' +
+          (b.lead ? '<strong>' + esc(b.lead) + '</strong> ' : '') + hinline(b.text) + '</td></tr></table>';
+      }
+      if (b.t === 'bar') return hbar(b.text);
+      if (b.t === 'lead') return hlead(b.text);
+      if (b.t === 'body') return hbody(b.text);
+      if (b.t === 'twocol') {
+        var h = halve(b.items);
+        return '<table role="presentation" style="' + TBL + '"><tr>' +
+          '<td style="width: 50%; vertical-align: top; padding: 0 14px 0 0;">' + hbulletCell(h[0], b.glyph) + '</td>' +
+          '<td style="width: 50%; vertical-align: top; padding: 0 0 0 6px;">' + hbulletCell(h[1], b.glyph) + '</td>' +
+          '</tr></table>';
+      }
+      if (b.t === 'table') {
+        var total = b.widths.reduce(function (a, c) { return a + c; }, 0);
+        var head = '<tr>' + b.head.map(function (hh, i) {
+          return '<td style="background: ' + H.navy + '; color: #FFFFFF; font-size: 10.5px; letter-spacing: 0.7px; ' +
+            'padding: 7px 9px; border: 1px solid ' + H.rule + '; width: ' +
+            Math.round(b.widths[i] / total * 100) + '%;"><strong>' + esc(String(hh).toUpperCase()) + '</strong></td>';
+        }).join('') + '</tr>';
+        var body = b.rows.map(function (r) {
+          return '<tr>' + r.map(function (cell, i) {
+            var col = i === 0 ? H.navy : ((i === 1 || i === 2) ? H.muted : H.ink);
+            return '<td style="padding: 7px 9px; border: 1px solid ' + H.rule + '; font-size: 13px; color: ' + col +
+              '; line-height: 1.5; vertical-align: top;">' + (i === 0 ? '<strong>' + esc(cell) + '</strong>' : hinline(cell)) + '</td>';
+          }).join('') + '</tr>';
+        }).join('');
+        return '<table role="presentation" style="' + TBL + '">' + head + body + '</table>';
+      }
+      if (b.t === 'dates') {
+        var halfN = Math.ceil(b.pairs.length / 2), rowsD = [];
+        for (var k = 0; k < halfN; k++) {
+          var cells = '';
+          [b.pairs[k], b.pairs[k + halfN] || ['', '']].forEach(function (p) {
+            cells += '<td style="width: 14%; padding: 5px 6px; border-bottom: 1px solid ' + H.panel +
+              '; font-size: 13px; color: ' + H.navy + '; vertical-align: top;"><strong>' + esc(p[0]) + '</strong></td>' +
+              '<td style="width: 36%; padding: 5px 6px; border-bottom: 1px solid ' + H.panel +
+              '; font-size: 13px; color: ' + H.muted + '; text-align: right; vertical-align: top;">' + esc(p[1]) + '</td>';
+          });
+          rowsD.push('<tr>' + cells + '</tr>');
+        }
+        return '<table role="presentation" style="' + TBL + '">' + rowsD.join('') + '</table>';
+      }
+      if (b.t === 'grading') {
+        return '<table role="presentation" style="' + TBL + ' border-top: 4px solid ' + H.gold + ';"><tr>' +
+          b.items.map(function (g) {
+            return '<td style="background: ' + H.panel + '; padding: 14px 14px; vertical-align: top; text-align: left; width: ' +
+              Math.round(100 / b.items.length) + '%;">' +
+              '<div style="font-size: 22px; color: ' + H.navy + '; line-height: 1.1; margin-bottom: 5px;"><strong>' +
+              esc(g[0]) + '</strong></div>' +
+              '<div style="font-size: 12.5px; color: ' + H.muted + '; line-height: 1.4;">' + esc(g[1]) + '</div></td>';
+          }).join('') + '</tr></table>';
+      }
+      if (b.t === 'footer') {
+        return '<p style="font-size: 10.5px; color: ' + H.label + '; line-height: 1.55; margin: 22px 0 0 0;">' +
+          esc(b.text) + '</p>';
+      }
+      return '';
+    }
+
+    function buildCanvas() {
+      var m = state.meta;
+      var ascii = function (s) { return String(s == null ? '' : s).replace(/[^\x20-\x7E]/g, '-'); };
+      var head = [
+        '<!--',
+        '  ====================================================',
+        '  ' + ascii((t(m.title) || 'COURSE').toUpperCase()) + ' - COURSE SYLLABUS  (Optima Academy Online)',
+        '  ' + ascii(modeLabel()) + ' section  -  ' + YEAR_ASCII,
+        '  ====================================================',
+        '  Built with the Optima Syllabus Builder.',
+        '  Paste this into the course Syllabus page using the HTML editor.'
+      ].concat(payloadLines()).concat(['-->']).join('\n');
+
+      var body = documentBlocks().map(htmlBlock).join('\n');
+      return head + '\n<div style="font-family: \'Segoe UI\', Arial, Helvetica, sans-serif; max-width: 960px;">\n' +
+        body + '\n</div>';
+    }
+
+    function tools(listPath, i, len, kind) {
+      return '<div class="tools">' +
+        '<button type="button" class="mini" data-action="up" data-list="' + listPath + '" data-idx="' + i + '"' + (i === 0 ? ' disabled' : '') + ' title="Move up">&uarr;</button>' +
+        '<button type="button" class="mini" data-action="down" data-list="' + listPath + '" data-idx="' + i + '"' + (i === len - 1 ? ' disabled' : '') + ' title="Move down">&darr;</button>' +
+        '<button type="button" class="mini danger" data-action="del" data-list="' + listPath + '" data-idx="' + i + '" data-kind="' + (kind || '') + '" title="Remove">&times;</button>' +
+        '</div>';
+    }
+    function selectOf(path, current, pairs) {
+      var o = ['<select data-path="' + path + '">'];
+      pairs.forEach(function (pr) {
+        o.push('<option value="' + escAttr(pr[0]) + '"' + (pr[0] === current ? ' selected' : '') + '>' + escAttr(pr[1]) + '</option>');
+      });
+      o.push('</select>');
+      return o.join('');
+    }
+    function lineList(elId, listPath, items, label, placeholders) {
+      document.getElementById(elId).innerHTML = items.map(function (x, i) {
+        var ph = placeholders[i % placeholders.length];
+        return '<div class="item">' +
+          '<div class="item-head"><span class="item-title">' + label + ' ' + (i + 1) + '</span>' + tools(listPath, i, items.length, 'line') + '</div>' +
+          '<label class="f"><textarea data-path="' + listPath + '.' + i + '" placeholder="' + escAttr(ph) + '">' + escAttr(x) + '</textarea></label>' +
+          '</div>';
+      }).join('');
+    }
+
+    function renderLists() {
+      lineList('list-objectives', 'objectives.items', state.objectives.items || [], 'Objective',
+        ['Read closely and critically, and say what a passage is doing',
+         'Build an argument and defend it against counter-arguments']);
+
+      document.getElementById('list-miles').innerHTML = (state.miles.rows || []).map(function (r, i) {
+        var p = 'miles.rows.' + i;
+        return '<div class="item">' +
+          '<div class="item-head"><span class="item-title">Project ' + (i + 1) + '</span>' + tools('miles.rows', i, state.miles.rows.length, 'mrow') + '</div>' +
+          '<label class="f"><span>Project or milestone</span><input type="text" data-path="' + p + '.a" value="' + escAttr(r.a) + '" placeholder="The Good Life Experiment" /></label>' +
+          '<div class="row">' +
+          '<label class="f"><span>Where it falls</span><input type="text" data-path="' + p + '.b" value="' + escAttr(r.b) + '" placeholder="Module 3 - Weeks 14-24" /></label>' +
+          '<label class="f"><span>Sample timing</span><input type="text" data-path="' + p + '.c" value="' + escAttr(r.c) + '" placeholder="by Feb 26 (Q3)" /></label>' +
+          '</div>' +
+          '<label class="f"><span>What they turn in</span><textarea data-path="' + p + '.d" placeholder="A week-long self-experiment with a daily data log, submitted in Canvas.">' + escAttr(r.d) + '</textarea></label>' +
+          '</div>';
+      }).join('');
+
+      document.getElementById('list-dates').innerHTML = (state.dates.pairs || []).map(function (p, i) {
+        return '<div class="item"><div class="item-head"><span class="item-title">Date ' + (i + 1) + '</span>' +
+          tools('dates.pairs', i, state.dates.pairs.length, 'dpair') + '</div>' +
+          '<div class="row"><label class="f"><span>When</span><input type="text" data-path="dates.pairs.' + i + '.d" value="' + escAttr(p.d) + '" placeholder="Oct 9" /></label>' +
+          '<label class="f"><span>What</span><input type="text" data-path="dates.pairs.' + i + '.e" value="' + escAttr(p.e) + '" placeholder="Quarter 1 ends" /></label></div></div>';
+      }).join('');
+
+      document.getElementById('list-grading').innerHTML = (state.grading.items || []).map(function (g, i) {
+        return '<div class="item"><div class="item-head"><span class="item-title">Category ' + (i + 1) + '</span>' +
+          tools('grading.items', i, state.grading.items.length, 'gitem') + '</div>' +
+          '<div class="row narrow"><label class="f fixed"><span>Weight</span><input type="text" data-path="grading.items.' + i + '.pct" value="' + escAttr(g.pct) + '" placeholder="50%" /></label>' +
+          '<label class="f"><span>What it covers</span><input type="text" data-path="grading.items.' + i + '.label" value="' + escAttr(g.label) + '" placeholder="Weekly written assignments" /></label></div></div>';
+      }).join('');
+
+      lineList('list-ai', 'ai.bullets', state.ai.bullets || [], 'Point',
+        ['Write **bold** for the opening phrase. {role} becomes teacher or facilitator.']);
+
+      lineList('list-needs', 'needs.items', state.needs.items || [], 'Item',
+        ['A computer with reliable internet and access to Canvas.',
+         'A VR headset, charged and ready.']);
+
+      renderCustom();
+    }
+
+    function blockForm(b, listPath, j, len) {
+      var p = listPath + '.' + j, o = [];
+      o.push('<div class="block"><div class="item-head"><span class="item-title">' +
+        (BLOCK_LABEL[b.kind] || b.kind) + '</span>' + tools(listPath, j, len, 'block') + '</div>');
+      if (b.kind === 'text') {
+        o.push('<label class="f"><textarea data-path="' + p + '.text" placeholder="Type as you would in an email. A blank line starts a new paragraph.">' + escAttr(b.text) + '</textarea></label>');
+      } else if (b.kind === 'bullets') {
+        o.push('<label class="f"><span>One per line</span><textarea data-path="' + p + '.text" placeholder="First point&#10;Second point">' + escAttr(b.text) + '</textarea></label>');
+      } else if (b.kind === 'callout') {
+        o.push('<div class="row"><label class="f fixed"><span>Colour</span>' +
+          selectOf(p + '.tone', b.tone || 'gold', [['gold', 'Gold'], ['cyan', 'Blue']]) + '</label>' +
+          '<label class="f"><span>Opening phrase, in bold</span><input type="text" data-path="' + p + '.lead" value="' + escAttr(b.lead) + '" placeholder="Revision is expected." /></label></div>');
+        o.push('<label class="f"><span>The rest</span><textarea data-path="' + p + '.text">' + escAttr(b.text) + '</textarea></label>');
+      } else if (b.kind === 'table') {
+        o.push('<label class="f"><span>Column headings, separated by |</span><input type="text" data-path="' + p + '.head" value="' + escAttr(b.head) + '" placeholder="Day|Time|What we do" /></label>');
+        o.push((b.rows || []).map(function (r, k) {
+          var rp = p + '.rows.' + k;
+          return '<div class="item" style="border-left-color:#B9C6DC;"><div class="item-head"><span class="item-title">Row ' + (k + 1) + '</span>' +
+            tools(p + '.rows', k, b.rows.length, 'trow') + '</div><div class="row">' +
+            '<label class="f"><input type="text" data-path="' + rp + '.a" value="' + escAttr(r.a) + '" /></label>' +
+            '<label class="f"><input type="text" data-path="' + rp + '.b" value="' + escAttr(r.b) + '" /></label>' +
+            '<label class="f"><input type="text" data-path="' + rp + '.c" value="' + escAttr(r.c) + '" /></label>' +
+            '</div></div>';
+        }).join(''));
+        o.push('<button type="button" class="add" data-action="add" data-list="' + p + '.rows" data-kind="trow">+ Add a row</button>');
+      }
+      o.push('</div>');
+      return o.join('');
+    }
+
+    function renderCustom() {
+      var el = document.getElementById('list-custom');
+      if (!(state.custom || []).length) {
+        el.innerHTML = '<p class="empty">Nothing of your own yet. The buttons below start one.</p>';
+        return;
+      }
+      el.innerHTML = state.custom.map(function (c, i) {
+        var lp = 'custom.' + i;
+        var o = ['<div class="sect"><div class="item-head"><span class="item-title">Your section ' + (i + 1) + '</span>' +
+          tools('custom', i, state.custom.length, 'section') + '</div>'];
+        o.push('<label class="f"><span>Heading</span><input type="text" data-path="' + lp + '.title" value="' + escAttr(c.title) + '" placeholder="My Class Meeting Schedule" /></label>');
+        o.push('<label class="f"><span>Where it goes</span>' +
+          selectOf(lp + '.at', c.at || 'grading', SLOTS.map(function (s) { return [s[0], 'After ' + s[1]]; })) + '</label>');
+        o.push((c.blocks || []).map(function (b, j) { return blockForm(b, lp + '.blocks', j, c.blocks.length); }).join(''));
+        o.push('<div class="blockbar">' +
+          '<button type="button" data-action="add" data-list="' + lp + '.blocks" data-kind="text">+ Paragraphs</button>' +
+          '<button type="button" data-action="add" data-list="' + lp + '.blocks" data-kind="bullets">+ Bulleted list</button>' +
+          '<button type="button" data-action="add" data-list="' + lp + '.blocks" data-kind="table">+ Small table</button>' +
+          '<button type="button" data-action="add" data-list="' + lp + '.blocks" data-kind="callout">+ Highlighted note</button>' +
+          '</div></div>');
+        return o.join('');
+      }).join('');
+    }
+
+    var NEW = {
+      line: function () { return ''; },
+      mrow: function () { return { a: '', b: '', c: '', d: '' }; },
+      dpair: function () { return { d: '', e: '' }; },
+      gitem: function () { return { pct: '', label: '' }; },
+      trow: function () { return { a: '', b: '', c: '' }; },
+      section: function () { return SECTION_PRESETS.blank(); }
+    };
+
+    function swap(arr, i, j) {
+      if (j < 0 || j >= arr.length) return;
+      var x = arr[i]; arr[i] = arr[j]; arr[j] = x;
+    }
+
+
+    function renderScalars(root) {
+      var nodes = root.querySelectorAll('[data-path]');
+      for (var i = 0; i < nodes.length; i++) {
+        var el = nodes[i], p = el.getAttribute('data-path');
+        if (/\.\d+(\.|$)/.test(p)) continue;
+        var v = getPath(p);
+        if (el.type === 'checkbox') el.checked = !!v;
+        else el.value = v == null ? '' : v;
+      }
+      var dh = root.querySelector('#deliveryHint');
+      if (dh) dh.textContent = isLive()
+        ? 'The Live wording is used: scheduled meetings on the VR campus, attendance by presence and participation, and a pointer to the On-Demand syllabus.'
+        : 'The On-Demand wording is used: self-paced within each quarter, attendance by assignment completion, the ten-day rule, and a pointer to the Live syllabus.';
+      ['about', 'objectives', 'miles', 'dates', 'grading', 'delivery', 'ai', 'vr', 'scholar', 'needs', 'footer'].forEach(function (id) {
+        var card = root.querySelector('#card-' + id);
+        if (card) card.classList.toggle('off', !state[id].on);
+      });
+    }
+    return {
+      blank: blankState, hydrate: hydrate,
+      use: function (s) { state = s; return s; },
+      setAiBand: function (s, band) { if (!AI_BULLETS[band]) return; s.ai.bullets = AI_BULLETS[band].slice(); s.ai.close = AI_CLOSE[band]; },
+      canvas: buildCanvas, blocks: documentBlocks,
+      render: function (root) { renderLists(); renderScalars(root); },
+      getPath: getPath, setPath: setPath, NEW: NEW, newBlock: newBlock, presets: SECTION_PRESETS, swap: swap
+    };
+  })();
+
+  // ------------------------------------------------------------ syllabus step (kit side)
+  // The syllabus state lives in home.syllabus, saved with the rest of the teacher's
+  // choices for this kit. Name, email, meeting and mode are never typed twice: they
+  // are read from step 3 every time the syllabus is rendered or built.
+  var SYL_CATALOGUE_URL = 'https://optimaondemand.github.io/teacher-homepages/syllabus-courses.json';
+  var sylCatalogue = null;
+  function loadSylCatalogue() {
+    return fetch(SYL_CATALOGUE_URL, { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : []; }).then(function (list) {
+      sylCatalogue = {};
+      (list || []).forEach(function (c) { if (c.code) sylCatalogue[String(c.code)] = c; });
+      // A syllabus made before the catalogue landed takes its description now, if still blank.
+      if (kit && course && home.syllabus && !String(home.syllabus.desc.text || '').trim()) {
+        var c = sylCatalogue[course.code];
+        if (c && c.desc) { home.syllabus.desc.text = c.desc; save(); renderSyllabus(); }
+      }
+    }).catch(function () { sylCatalogue = sylCatalogue || {}; });
+  }
+  function gradeBand(g) {
+    var s = String(g || ''), m = /\d+/.exec(s);
+    if (/^k/i.test(s.trim()) || (m && +m[0] <= 5)) return 'k5';
+    if (m && +m[0] <= 8) return '68';
+    return '912';
+  }
+  function gradeText(g) {
+    var s = String(g || '').trim();
+    if (!s) return '';
+    return (/[-,\/]/.test(s) ? 'Grades ' : 'Grade ') + s.replace(/^k$/i, 'K');
+  }
+  function syllabusGradingAuto() {
+    if (!home.weighted || !home.groups) return null;
+    var items = home.groups.filter(function (g) { return Number(g.weight) > 0 && String(g.title || '').trim(); })
+      .map(function (g) { return { pct: Math.round(Number(g.weight)) + '%', label: String(g.title).trim() }; });
+    return items.length ? items : null;
+  }
+  function syllabusDefaults() {
+    var s = Syl.blank();
+    s.meta.title = course.title || '';
+    s.meta.band = gradeBand(course.grade);
+    s.meta.grade = gradeText(course.grade);
+    s.meta.badge1 = kit.label || '';
+    s.meta.badge2 = gradeText(course.grade);
+    s.meta.code = 'Florida ' + course.code + (kit.label ? ' \u00b7 ' + kit.label : '');
+    Syl.setAiBand(s, s.meta.band);
+    var c = sylCatalogue && sylCatalogue[course.code];
+    if (c && c.desc) s.desc.text = c.desc;
+    var auto = syllabusGradingAuto();
+    if (auto) s.grading.items = auto;
+    s._gradingAuto = JSON.stringify(s.grading.items);
+    s.footer.text = 'Built from the course as designed and the board-approved 2026\u20132027 academic calendar. School calendar dates may be adjusted by the school.';
+    return s;
+  }
+  // The grading cards follow the gradebook (step 6) until the teacher types her own.
+  function syncSyllabusGrading() {
+    var s = home.syllabus; if (!s || !kit) return;
+    var cur = JSON.stringify(s.grading.items || []);
+    if (s._gradingAuto == null || cur !== s._gradingAuto) return;
+    var auto = syllabusGradingAuto();
+    var next = JSON.stringify(auto || s.grading.items);
+    if (auto && next !== cur) { s.grading.items = auto; s._gradingAuto = next; save(); renderSyllabus(); }
+  }
+  function ensureSyllabus() {
+    if (!kit || !course) return;
+    if (!home.syllabus || !home.syllabus.meta) home.syllabus = syllabusDefaults();
+    if (home.syllabusOn == null) home.syllabusOn = true;
+  }
+  function deriveSyllabusMeta() {
+    var s = home.syllabus; if (!s) return s;
+    s.meta.teacher = String(home.teacherName || '').trim();
+    s.meta.email = String(home.teacherEmail || '').trim();
+    s.meta.office = String(home.meeting || '').trim();
+    s.meta.mode = home.mode === 'Live' ? 'Live' : 'OnDemand';
+    return s;
+  }
+  function syllabusHtml() { ensureSyllabus(); Syl.use(deriveSyllabusMeta()); return Syl.canvas(); }
+  function syllabusDoc() {
+    return '<html>\n<head>\n<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>\n<title>Syllabus</title>\n</head>\n<body>\n' + syllabusHtml() + '\n</body>\n</html>\n';
+  }
+  // The course_settings resource lists every settings file; Canvas reads the syllabus
+  // body from course_settings/syllabus.html when it is listed there.
+  function addSyllabusToManifest(text) {
+    if (text.indexOf('course_settings/syllabus.html') >= 0) return text;
+    var anchor = '<file href="course_settings/course_settings.xml"/>';
+    if (text.indexOf(anchor) < 0) return text;
+    return text.replace(anchor, anchor + '\n      <file href="course_settings/syllabus.html"/>');
+  }
+  function sylStatus(msg, cls) { var el = $('syl-status'); if (el) { el.textContent = msg; el.className = 'status ' + (cls || ''); } }
+  function renderSyllabus() {
+    var root = $('syl-form'); if (!root) return;
+    if (!kit) return;
+    ensureSyllabus();
+    Syl.use(deriveSyllabusMeta());
+    var focus = document.activeElement && document.activeElement.getAttribute ? document.activeElement.getAttribute('data-path') : null;
+    Syl.render(root);
+    $('syl-on').checked = home.syllabusOn !== false;
+    var s = home.syllabus, who = [s.meta.teacher || '[your name]', s.meta.email || '[your email]', s.meta.office || '[class meeting or office hours]'].join(' \u00b7 ');
+    $('syl-derived').textContent = 'From step 3: ' + who + ' \u00b7 ' + (s.meta.mode === 'Live' ? 'Live' : 'On-Demand') + ' section. Change those in step 3 and they change here.';
+    if (focus) { var again = root.querySelector('[data-path="' + focus + '"]'); if (again && again !== document.activeElement) again.focus(); }
+    refreshSyllabusPreview();
+  }
+  function onSylField(e) {
+    var p = e.target.getAttribute && e.target.getAttribute('data-path');
+    if (!p || !kit) return;
+    ensureSyllabus();
+    var v = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    Syl.use(home.syllabus); Syl.setPath(p, v);
+    if (p === 'meta.band') Syl.setAiBand(home.syllabus, v);
+    save();
+    if (p === 'meta.band' || /\.on$/.test(p) || /\.(at|tone|kind)$/.test(p)) renderSyllabus(); else refreshSyllabusPreview();
+  }
+  function previewSyllabus() {
+    if (!kit) return;
+    previewItemId = '__syllabus__';
+    setPreviewShown(true);
+    $('preview-home').hidden = false;
+    var pv = $('preview'); pv.className = 'item'; pv.innerHTML = '';
+    var fr = document.createElement('iframe'); fr.className = 'itemframe'; fr.setAttribute('sandbox', ''); fr.setAttribute('title', 'Syllabus preview');
+    pv.appendChild(fr);
+    $('preview-note').textContent = 'Previewing: your syllabus. In Canvas its own assignment list follows below.';
+    refreshSyllabusPreview();
+  }
+  function refreshSyllabusPreview() {
+    if (previewItemId !== '__syllabus__') return;
+    var fr = $('preview').querySelector('iframe.itemframe'); if (!fr) return;
+    fr.srcdoc = '<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0;padding:18px;background:#e8ecf5;">' + syllabusHtml() + '</body></html>';
+  }
+  function syllabusFilename() {
+    return [slug(course.title), 'syllabus', home.mode === 'Live' ? 'live' : 'on-demand', slug(home.teacherName) || 'teacher'].filter(Boolean).join('-') + '.html';
+  }
+  function wireSyllabus() {
+    var step = $('stepS'), root = $('syl-form');
+    root.addEventListener('input', onSylField);
+    root.addEventListener('change', onSylField);
+    $('syl-on').addEventListener('change', function () { home.syllabusOn = this.checked; save(); });
+    step.addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('button[data-action]') : null;
+      if (!btn || !kit) return;
+      var act = btn.dataset.action, listPath = btn.dataset.list, kind = btn.dataset.kind, idx = parseInt(btn.dataset.idx, 10);
+      ensureSyllabus();
+      Syl.use(home.syllabus);
+      var arr = listPath ? Syl.getPath(listPath) : null;
+      if (act === 'sylPreview') { previewSyllabus(); return; }
+      if (act === 'sylCopy') {
+        var html = syllabusHtml();
+        var done = function () { sylStatus('Syllabus HTML copied. In your live course: Syllabus, Edit, the HTML editor button, select all, paste, Update Syllabus.', 'ok'); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(html).then(done, function () { fallbackCopy(html); done(); });
+        else { fallbackCopy(html); done(); }
+        return;
+      }
+      if (act === 'sylDownload') {
+        saveBlob(new Blob([syllabusHtml()], { type: 'text/html;charset=utf-8' }), syllabusFilename());
+        sylStatus('Downloaded ' + syllabusFilename() + '. The standalone Syllabus Builder can reopen it.', 'ok');
+        return;
+      }
+      if (act === 'sylReset') {
+        if (btn.dataset.armed !== '1') {
+          btn.dataset.armed = '1'; btn.textContent = 'Replace everything with the course defaults?';
+          setTimeout(function () { btn.dataset.armed = ''; btn.textContent = 'Reset to course defaults'; }, 5000);
+          return;
+        }
+        btn.dataset.armed = ''; btn.textContent = 'Reset to course defaults';
+        home.syllabus = syllabusDefaults(); save(); renderSyllabus(); sylStatus('Back to the course defaults.', 'ok');
+        return;
+      }
+      if (act === 'add') { if (!arr) return; arr.push(Syl.NEW[kind] ? Syl.NEW[kind]() : Syl.newBlock(kind)); }
+      else if (act === 'del') { if (!arr) return; arr.splice(idx, 1); if (!arr.length && Syl.NEW[kind] && kind !== 'section' && kind !== 'block') arr.push(Syl.NEW[kind]()); }
+      else if (act === 'up') { if (!arr) return; Syl.swap(arr, idx, idx - 1); }
+      else if (act === 'down') { if (!arr) return; Syl.swap(arr, idx, idx + 1); }
+      else if (act === 'addSection') { home.syllabus.custom.push((Syl.presets[btn.dataset.preset] || Syl.presets.blank)()); }
+      else return;
+      save(); renderSyllabus();
+    });
+    loadSylCatalogue();
+  }
+
   // ------------------------------------------------------------ catalog
   function loadCatalog() {
     return fetch(BASE + 'catalog.json', { cache: 'no-store' }).then(function (r) {
@@ -724,11 +1852,11 @@
     // catalog's subject suggests; a theme the teacher already picked stays.
     if (!home.theme || !THEMES[home.theme]) applyTheme(themeForSubject(course.subject));
     if (!home.modStyle) home.modStyle = 'journey';
-    lock(3, false); lock(4, false); lock(5, false); lock(6, false);
+    lock(3, false); lock('S', false); lock(4, false); lock(5, false); lock(6, false);
     ['dl', 'copy', 'dl-plain', 'print-open', 'print-scope'].forEach(function (id) { $(id).disabled = false; });
     fillPrintScope();
     loadContents();
-    renderKits(); fillForm(); renderStyle(); renderMods(); renderDates(); renderGradebook(); renderPreview();
+    renderKits(); fillForm(); renderStyle(); renderMods(); renderSyllabus(); renderDates(); renderGradebook(); renderPreview();
     return Promise.resolve(k);
   }
 
@@ -747,6 +1875,7 @@
       home.groups = (kit.groups || []).map(function (g) { return { id: g.id, title: g.title, weight: g.weight, position: g.position }; });
     }
     if (home.weighted == null) home.weighted = !!kit.weighted;
+    ensureSyllabus();
   }
   function randHex(n) {
     var s = '';
@@ -1079,7 +2208,7 @@
     out.push('</tbody></table></div>');
     out.push('<div class="actions"><button type="button" class="alt" id="gb-addgroup">Add group</button></div>');
     out.push('<div class="status" id="gb-summary"></div>');
-    out.push('<div class="hint" style="margin-top:14px;">A graded quiz total is split evenly across its questions when you change it. Publishing is set in step 4.</div>');
+    out.push('<div class="hint" style="margin-top:14px;">A graded quiz total is split evenly across its questions when you change it. Publishing is set in step 5.</div>');
     var graded = activeGraded();
     (kit.modules || []).forEach(function (m) {
       var items = graded.filter(function (it) { return it.module === m.id && !(it.type === 'quiz' && it.quiz_type === 'survey'); });
@@ -1122,6 +2251,7 @@
     });
   }
   function renderGbSummary() {
+    syncSyllabusGrading();
     var el = $('gb-summary'); if (!el) return;
     var totals = {};
     home.groups.forEach(function (g) { totals[g.id] = 0; });
@@ -1587,7 +2717,14 @@
         var i = doc.indexOf('<body>'), j = doc.lastIndexOf('</body>');
         if (i < 0 || j < 0) throw new Error('front page has no <body>');
         zip.file(kit.front_page, doc.slice(0, i + 6) + '\n' + html + '\n' + doc.slice(j));
-        return applyScheduleAndGradebook(zip).then(function () {
+        // The syllabus: course_settings/syllabus.html, listed in the course_settings
+        // resource, becomes the Canvas Syllabus page on import.
+        var sylTask = home.syllabusOn === false ? Promise.resolve() : Promise.resolve().then(function () {
+          zip.file('course_settings/syllabus.html', syllabusDoc());
+          var mf = zip.file('imsmanifest.xml');
+          return mf ? mf.async('string').then(function (mt) { zip.file('imsmanifest.xml', addSyllabusToManifest(mt)); }) : null;
+        });
+        return sylTask.then(function () { return applyScheduleAndGradebook(zip); }).then(function () {
           var note = zip.file('course_settings/canvas_export.txt');
           var stamp = 'Home page customized in Course Kit for ' + (home.teacherName || 'a teacher') + ' on ' + new Date().toISOString().slice(0, 10) + '.\n';
           return (note ? note.async('string') : Promise.resolve('')).then(function (t) {
@@ -2245,6 +3382,7 @@
       });
     });
     wireTiles();
+    wireSyllabus();
     if (location.hash === '#tiles') setTab('tiles'); else if (uiPref().tab === 'tiles') setTab('tiles');
     $('hide-preview').addEventListener('click', function () { setPreviewShown(false); });
     $('preview-home').addEventListener('click', leaveItemPreview);
@@ -2256,7 +3394,7 @@
     });
     $('code').addEventListener('input', function () { course = findCourse(this.value); kit = null; renderCourse(); renderPreview(); });
     $('preview').addEventListener('click', function (e) { if (e.target.closest('a')) e.preventDefault(); });
-    FIELDS.forEach(function (f) { $('f-' + f).addEventListener('input', function () { readForm(); save(); renderPreview(); }); });
+    FIELDS.forEach(function (f) { $('f-' + f).addEventListener('input', function () { readForm(); save(); renderPreview(); if (kit) renderSyllabus(); }); });
     $('dl').addEventListener('click', function () {
       status('Building your kit…');
       patchedKit('blob').then(function (r) {
@@ -2385,13 +3523,13 @@
       && !$('show-preview').hidden;
     setPreviewShown(true);
 
-    fillForm(); renderStyle(); renderMods(); renderDates(); renderGradebook(); renderPreview();
+    fillForm(); renderStyle(); renderMods(); renderSyllabus(); renderDates(); renderGradebook(); renderPreview();
     patchedKit('base64').then(function (r) {
       $('selftest-b64').textContent = r.data;
       var out = { ok: true, code: c.code, kit: k.id, frontPage: k.front_page, entries: r.entries,
         homeBytes: r.html.length, teacher: home.teacherName, moduleLinks: (r.html.match(/\$CANVAS_OBJECT_REFERENCE\$\/modules\//g) || []).length,
         nonAscii: /[^\x00-\x7f]/.test(r.html), filename: kitFilename() };
-      var checks = { datesApplied: false, weightingOn: false, pointsPatched: false, unpublished: false, batchDates: false, quizPoints: false, removed: false, metaItemState: false };
+      var checks = { datesApplied: false, weightingOn: false, pointsPatched: false, unpublished: false, batchDates: false, quizPoints: false, removed: false, metaItemState: false, syllabus: false };
       var verify = hasSchedule ? JSZip.loadAsync(r.data, { base64: true }) : Promise.resolve(null);
       return verify.then(function (zip2) {
         var reads = [];
@@ -2406,6 +3544,19 @@
         }));
         if (zip2 && kit.settings && kit.settings.course_settings) reads.push(zip2.file(kit.settings.course_settings).async('string').then(function (t) {
           checks.weightingOn = /<group_weighting_scheme>percent<\/group_weighting_scheme>/.test(t);
+        }));
+        // Syllabus: the file is in the zip and listed in the manifest, ASCII only, carries the
+        // course title, the teacher from step 3, the gradebook's 100% group, and the form rendered.
+        if (zip2) reads.push((zip2.file('course_settings/syllabus.html') ? zip2.file('course_settings/syllabus.html').async('string') : Promise.resolve('')).then(function (t) {
+          return zip2.file('imsmanifest.xml').async('string').then(function (man) {
+            var g0 = home.groups && home.groups[0] ? String(home.groups[0].title || '').trim() : '';
+            checks.syllabus = t.indexOf('COURSE SYLLABUS') >= 0 && t.indexOf(escHtml(home.teacherName)) >= 0 && !/facilitator/i.test(t)
+              && t.indexOf(escHtml(c.title)) >= 0 && !/[^\x00-\x7f]/.test(t)
+              && man.indexOf('course_settings/syllabus.html') >= 0
+              && $('syl-form').querySelectorAll('[data-path]').length > 20
+              && (!g0 || (t.indexOf('100%') >= 0 && t.indexOf('OAO-BUILDER:') >= 0));
+            out.syllabusBytes = t.length;
+          });
         }));
         // Removal: the module entry, the organization entry, the resource and its files are
         // gone for the graded item; the page left its module but its resource remains.
@@ -2451,10 +3602,10 @@
         out.unpublished = checks.unpublished;
         out.batchDates = checks.batchDates; out.batchCount = batchItems.length;
         out.quizPoints = checks.quizPoints; out.quiz = quizItem ? quizItem.title : null;
-        out.removedOk = checks.removed; out.metaItemState = checks.metaItemState; out.modulePublishAll = modulePublishAll; out.secondModule = secondModule ? secondModule.title : null;
+        out.syllabus = checks.syllabus; out.removedOk = checks.removed; out.metaItemState = checks.metaItemState; out.modulePublishAll = modulePublishAll; out.secondModule = secondModule ? secondModule.title : null;
         out.previewToggle = previewToggle;
         out.theme = themeKey; out.themeOk = themeOk; out.classicClean = classicClean;
-        out.ok = out.ok && themeOk && classicClean;
+        out.ok = out.ok && themeOk && classicClean && checks.syllabus;
         if (hasSchedule) out.ok = out.ok && checks.datesApplied && checks.weightingOn && checks.pointsPatched && checks.unpublished
           && checks.batchDates && (!quizItem || checks.quizPoints)
           && (!removedGraded || checks.removed) && (!unpubItem || checks.metaItemState) && (!secondModule || modulePublishAll);
