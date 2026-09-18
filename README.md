@@ -1,6 +1,8 @@
 # Optima Course Kit
 
-A teacher opens one page, types a CPALMS course code, picks the kit for their
+A teacher opens one page, finds their course (by CPALMS code, by name, or by
+browsing grade and subject; Honors and Standard sit side by side, and a course
+that ships Live and On-Demand kits shows a switch), picks the kit for their
 section, fills in a short home-page form, sets dates and gradebook choices, and
 downloads one Canvas cartridge (`.imscc`) with the whole sequenced course inside.
 Canvas is no longer a step in distribution: cartridges are generated from the

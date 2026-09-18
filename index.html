@@ -6,7 +6,7 @@
 <title>Optima Course Kit</title>
 <!--
   Optima Course Kit - PROTOTYPE
-  A teacher types a CPALMS course code, picks the kit for their section, fills in
+  A teacher finds their course (by code, name, or grade and subject), picks the kit for their section, fills in
   a short home-page form, and downloads one Canvas cartridge (.imscc) with the
   whole sequenced course inside and their home page already set as the front page.
 
@@ -63,6 +63,37 @@
   .kit .s { font-size:13px; color:var(--mute); }
   .pill { display:inline-block; font-size:11px; letter-spacing:.5px; padding:2px 8px; border-radius:10px; background:var(--gold); color:var(--navy); margin-left:6px; vertical-align:middle; }
   .pill.grey { background:#D0D9E8; }
+  .browse { margin-top:10px; }
+  .browse > summary { cursor:pointer; font-size:14px; font-weight:500; color:var(--navy); list-style:none; display:flex; align-items:center; gap:6px; }
+  .browse > summary::before { content:"\25B8"; color:var(--mute); font-size:13px; }
+  .browse[open] > summary::before { content:"\25BE"; }
+  .browse > summary::-webkit-details-marker { display:none; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 8px; }
+  .chip { font:inherit; font-size:13px; line-height:1.2; padding:5px 11px; border-radius:16px; border:1px solid var(--line); background:#fff; color:var(--navy); cursor:pointer; }
+  .chip:hover { border-color:var(--navy); }
+  .chip.on { background:var(--navy); color:#fff; border-color:var(--navy); }
+  .chip.empty { color:#8E9BB5; background:#F4F6FB; }
+  .chip small { font-size:11px; opacity:.75; margin-left:4px; }
+  .row2 { display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center; }
+  .row2 select { margin:0; }
+  .row2 .hint { margin:0; white-space:nowrap; }
+  .clist { margin-top:10px; border:1px solid var(--line); border-radius:8px; max-height:360px; overflow:auto; background:#fff; }
+  .clist .grp { position:sticky; top:0; z-index:1; background:#EEF1F8; font-size:11.5px; letter-spacing:.6px; text-transform:uppercase; color:var(--mute); padding:5px 12px; }
+  .clist .empty { padding:14px 12px; font-size:14px; color:var(--mute); }
+  .crow { display:grid; grid-template-columns:1fr auto; gap:8px; padding:8px 12px; border-top:1px solid var(--line); cursor:pointer; align-items:center; }
+  .crow:first-child, .clist .grp + .crow { border-top:0; }
+  .crow:hover, .crow:focus { background:#F9FAFD; outline:none; }
+  .crow.sel { background:#F9FAFD; box-shadow: inset 4px 0 0 var(--navy); }
+  .crow .t { font-size:15px; }
+  .crow .m { font-size:12.5px; color:var(--mute); }
+  .crow .st { font-size:12px; white-space:nowrap; color:#1E4620; }
+  .crow.none .st { color:var(--mute); }
+  .card .sib { margin-top:8px; font-size:13px; color:var(--mute); display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .card .sib button { font-size:13px; padding:3px 11px; border-radius:14px; }
+  .seg { display:inline-flex; border:1px solid var(--navy); border-radius:20px; overflow:hidden; margin:4px 0 6px; }
+  .seg button { border:0; border-radius:0; background:#fff; color:var(--navy); padding:6px 16px; font-size:14px; }
+  .seg button + button { border-left:1px solid var(--navy); }
+  .seg button.on { background:var(--navy); color:#fff; }
   .mods { margin-top:8px; }
   .mod { display:grid; grid-template-columns:24px 1fr; gap:8px; align-items:center; margin:6px 0; }
   .mod input[type=text] { padding:6px 9px; font-size:14px; }
@@ -219,11 +250,16 @@
   <section class="col">
     <div class="step" id="step1">
       <h2><span class="n">1</span> Find your course</h2>
-      <label for="code">CPALMS course code</label>
-      <input type="text" id="code" list="codes" placeholder="e.g. 1001310" autocomplete="off" inputmode="numeric">
-      <datalist id="codes"></datalist>
-      <div class="hint">Type the seven-digit code from your course assignment, or start typing a course name.</div>
+      <label for="code">Course name or CPALMS code</label>
+      <input type="text" id="code" placeholder="e.g. English 1 or 1001310" autocomplete="off">
+      <div class="hint">Type the seven-digit code from your course assignment, or part of the course name, then click your course in the list. Honors and standard versions have their own codes.</div>
       <div id="course-card"></div>
+      <details class="browse" id="browse" open>
+        <summary id="browse-label">Browse by grade and subject</summary>
+        <div class="chips" id="grade-chips" role="group" aria-label="Grade"></div>
+        <div class="row2"><select id="subject-filter" aria-label="Subject"><option value="">All subjects</option></select><span class="hint" id="finder-count"></span></div>
+        <div class="clist" id="course-list" role="listbox" aria-label="Courses"></div>
+      </details>
     </div>
 
     <div class="step locked" id="step2">
@@ -1785,25 +1821,186 @@
     return byTitle.length ? byTitle[0] : null;
   }
 
+  // ------------------------------------------------------------ course finder
+  // The store lists ~130 courses across K-12. A teacher reaches theirs three ways:
+  // type a name or code (an exact code or title selects at once), narrow the list
+  // by grade and subject and click a row, or jump between sibling levels on the
+  // course card (Honors and Standard share a title and never a code). Live and
+  // On-Demand, when a course ships one kit per mode, are a switch in step 2, not
+  // two courses. Grade, subject and mode choices persist per browser.
+  var finder = { grade: '', subject: '', mode: '' };
+  function saveFinder() {
+    try { var u = uiPref(); u.finder = { grade: finder.grade, subject: finder.subject, mode: finder.mode }; localStorage.setItem(UI_STORE, JSON.stringify(u)); } catch (e) { /* ignore */ }
+  }
+  function loadFinder() {
+    var f = uiPref().finder || {};
+    finder.grade = (typeof f.grade === 'number' && f.grade >= 0 && f.grade <= 12) ? f.grade : '';
+    finder.subject = typeof f.subject === 'string' ? f.subject : '';
+    finder.mode = f.mode === 'live' || f.mode === 'od' ? f.mode : '';
+  }
+  // "K" -> [0]; "7" -> [7]; "9-12" -> [9,10,11,12]; "K-5" -> [0..5]; "6, 8" -> [6,8].
+  function gradeList(g) {
+    var s = String(g || '').toUpperCase().replace(/GRADES?/g, ''), out = [];
+    s.split(/[,\/]/).forEach(function (part) {
+      var m = /^\s*(PK|K|\d{1,2})\s*(?:[-\u2013]\s*(K|\d{1,2}))?\s*$/.exec(part);
+      if (!m) return;
+      var a = /K/.test(m[1]) ? 0 : +m[1], b = m[2] == null ? a : (m[2] === 'K' ? 0 : +m[2]);
+      for (var i = Math.min(a, b); i <= Math.max(a, b); i++) if (i <= 12 && out.indexOf(i) < 0) out.push(i);
+    });
+    return out;
+  }
+  function gradeLabel(n) { return n === 0 ? 'K' : String(n); }
+  function gradeSortKey(c) { var g = gradeList(c.grade); return g.length ? Math.min.apply(null, g) : 99; }
+  var LEVEL_RE = /\b(Honors?|Standard|Advanced|Gifted|Pre-?AP|AP)\b/i;
+  // course.json may say `level` and `family` outright; otherwise the title tells.
+  function courseLevel(c) {
+    if (c.level) return String(c.level);
+    var m = LEVEL_RE.exec(c.title || '');
+    return m ? m[1].replace(/^Honor$/i, 'Honors') : '';
+  }
+  function courseFamily(c) {
+    if (c.family) return String(c.family).trim().toLowerCase();
+    return String(c.title || '').replace(LEVEL_RE, ' ').replace(/[\s\-\u2013:,]+$/, '').replace(/\s{2,}/g, ' ').trim().toLowerCase();
+  }
+  function siblings(c) {
+    var fam = courseFamily(c), g = gradeList(c.grade);
+    return catalog.courses.filter(function (x) {
+      if (x === c || courseFamily(x) !== fam) return false;
+      var gx = gradeList(x.grade);
+      return !g.length || !gx.length || gx.some(function (n) { return g.indexOf(n) >= 0; });
+    });
+  }
+  // A kit is for one section type when course.json says `mode` (live | od) or the
+  // kit id ends in -live / -od. No mode = the kit serves both.
+  function kitMode(k) {
+    var m = String(k.mode || '').toLowerCase().replace(/[^a-z]/g, '');
+    if (!m) { var t = /-(live|od|ondemand)$/i.exec(k.id || ''); m = t ? t[1].toLowerCase() : ''; }
+    if (m === 'live' || m === 'synchronous') return 'live';
+    if (m === 'od' || m === 'ondemand' || m === 'asynchronous') return 'od';
+    return '';
+  }
+  var MODE_LABEL = { live: 'Live', od: 'On-Demand' };
+  function readyCount(c) { return c.kits.filter(function (k) { return k.status === 'ready'; }).length; }
+  function matchesFinder(c) {
+    if (finder.grade !== '' && gradeList(c.grade).indexOf(finder.grade) < 0) return false;
+    if (finder.subject && (c.subject || 'Other') !== finder.subject) return false;
+    return true;
+  }
+  function searchCourses(q) {
+    q = String(q || '').trim().toLowerCase();
+    if (!q) return catalog.courses.slice();
+    var words = q.split(/\s+/);
+    return catalog.courses.filter(function (c) {
+      var hay = (c.code + ' ' + c.title + ' ' + (c.canvas_title || '') + ' ' + (c.subject || '') + ' ' + gradeText(c.grade)).toLowerCase();
+      return words.every(function (w) { return hay.indexOf(w) >= 0; });
+    });
+  }
+  function chooseCourse(c) {
+    course = c || null; kit = null;
+    renderCourse(); renderPreview();
+  }
+  function lockDownstream() { lock(3, true); lock('S', true); lock(4, true); lock(5, true); lock(6, true); }
+  function renderFinder() {
+    var counts = {};
+    catalog.courses.forEach(function (c) { gradeList(c.grade).forEach(function (n) { counts[n] = (counts[n] || 0) + 1; }); });
+    var chips = $('grade-chips'); chips.innerHTML = '';
+    var mk = function (label, n, count) {
+      var b = document.createElement('button'); b.type = 'button';
+      b.className = 'chip' + (finder.grade === n ? ' on' : '') + (n !== '' && !count ? ' empty' : '');
+      b.innerHTML = escHtml(label) + (n !== '' && count ? '<small>' + count + '</small>' : '');
+      b.title = n === '' ? 'Every grade' : (count ? count + ' course' + (count === 1 ? '' : 's') : 'No courses for this grade yet');
+      b.setAttribute('aria-pressed', finder.grade === n ? 'true' : 'false');
+      b.addEventListener('click', function () { finder.grade = (finder.grade === n || n === '') ? '' : n; saveFinder(); renderFinder(); });
+      chips.appendChild(b);
+    };
+    mk('All grades', '', catalog.courses.length);
+    for (var n = 0; n <= 12; n++) mk(gradeLabel(n), n, counts[n] || 0);
+
+    var subjects = {};
+    catalog.courses.forEach(function (c) { if (finder.grade === '' || gradeList(c.grade).indexOf(finder.grade) >= 0) { var s = c.subject || 'Other'; subjects[s] = (subjects[s] || 0) + 1; } });
+    var names = Object.keys(subjects).sort();
+    if (finder.subject && names.indexOf(finder.subject) < 0) finder.subject = '';
+    $('subject-filter').innerHTML = '<option value="">All subjects</option>' + names.map(function (s) {
+      return '<option value="' + escHtml(s) + '"' + (finder.subject === s ? ' selected' : '') + '>' + escHtml(s) + ' (' + subjects[s] + ')</option>';
+    }).join('');
+
+    var rows = searchCourses($('code').value).filter(matchesFinder);
+    rows.sort(function (a, b) {
+      return (a.subject || 'Other').localeCompare(b.subject || 'Other') || gradeSortKey(a) - gradeSortKey(b)
+        || courseFamily(a).localeCompare(courseFamily(b)) || courseLevel(a).localeCompare(courseLevel(b)) || a.code.localeCompare(b.code);
+    });
+    var list = $('course-list'); list.innerHTML = '';
+    if (!rows.length) {
+      list.innerHTML = '<div class="empty">' + (catalog.courses.length
+        ? 'No course matches. Clear a filter or check the code. Courses appear here as they are built.'
+        : 'No courses in the store yet.') + '</div>';
+    }
+    var lastGrp = null;
+    rows.forEach(function (c) {
+      var grp = c.subject || 'Other';
+      if (grp !== lastGrp) { var h = document.createElement('div'); h.className = 'grp'; h.textContent = grp; list.appendChild(h); lastGrp = grp; }
+      var ready = readyCount(c), lvl = courseLevel(c);
+      var r = document.createElement('div');
+      r.className = 'crow' + (course === c ? ' sel' : '') + (ready ? '' : ' none');
+      r.setAttribute('role', 'option'); r.setAttribute('aria-selected', course === c ? 'true' : 'false'); r.tabIndex = 0; r.dataset.code = c.code;
+      r.innerHTML = '<div><div class="t">' + escHtml(c.title) + (lvl ? ' <span class="pill' + (/honors/i.test(lvl) ? '' : ' grey') + '">' + escHtml(lvl.toUpperCase()) + '</span>' : '') + '</div>' +
+        '<div class="m">' + escHtml(gradeText(c.grade)) + ' &middot; ' + escHtml(c.code) + '</div></div>' +
+        '<div class="st">' + (ready ? ready + ' of ' + c.kits.length + ' kit' + (c.kits.length === 1 ? '' : 's') + ' ready' : (c.kits.length ? 'Coming' : 'No kits listed')) + '</div>';
+      var pick = function () { chooseCourse(c); };
+      r.addEventListener('click', pick);
+      r.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
+      list.appendChild(r);
+    });
+    $('finder-count').textContent = rows.length + ' of ' + catalog.courses.length + ' course' + (catalog.courses.length === 1 ? '' : 's');
+    $('browse-label').textContent = course ? 'Pick a different course' : 'Browse by grade and subject';
+  }
+
   // ------------------------------------------------------------ rendering
   function renderCourse() {
     var el = $('course-card');
+    renderFinder();
     if (!course) {
-      var q = $('code').value.trim();
-      el.innerHTML = q ? '<div class="card"><div class="t">No kit for &ldquo;' + escHtml(q) + '&rdquo; yet</div><div class="m">Check the code, or pick a course from the list. Kits are added as courses are built.</div></div>' : '';
-      lock(2, true); lock(3, true); lock(4, true); lock(5, true); lock(6, true); kit = null; renderKits(); renderPreview(); return;
+      el.innerHTML = '';
+      $('browse').open = true;
+      lock(2, true); lockDownstream(); kit = null; renderKits(); renderPreview(); return;
     }
-    var ready = course.kits.filter(function (k) { return k.status === 'ready'; }).length;
+    var ready = readyCount(course), sibs = siblings(course), lvl = courseLevel(course);
     el.innerHTML = '<div class="card"><div class="t">' + escHtml(course.title) + ' <span class="pill grey">' + escHtml(course.code) + '</span></div>' +
-      '<div class="m">Grade ' + escHtml(course.grade) + ' &middot; ' + escHtml(course.subject) + ' &middot; ' + ready + ' of ' + course.kits.length + ' kit' + (course.kits.length === 1 ? '' : 's') + ' ready</div></div>';
-    lock(2, false);
+      '<div class="m">' + escHtml(gradeText(course.grade)) + ' &middot; ' + escHtml(course.subject) + ' &middot; ' + ready + ' of ' + course.kits.length + ' kit' + (course.kits.length === 1 ? '' : 's') + ' ready</div>' +
+      (sibs.length ? '<div class="sib">' + (lvl ? 'This is the ' + escHtml(lvl) + ' course. ' : '') + 'Also offered as:' + sibs.map(function (s) {
+        return '<button type="button" class="sm alt" data-code="' + escHtml(s.code) + '">' + escHtml(courseLevel(s) || s.title) + ' <span class="pill grey">' + escHtml(s.code) + '</span></button>';
+      }).join('') + '</div>' : '') + '</div>';
+    Array.prototype.forEach.call(el.querySelectorAll('button[data-code]'), function (b) {
+      b.addEventListener('click', function () { chooseCourse(findCourse(b.dataset.code)); });
+    });
+    $('browse').open = false;
+    lock(2, false); lockDownstream();
     renderKits();
   }
   function renderKits() {
     var el = $('kits');
     if (!course) { el.innerHTML = '<div class="hint">Find a course first.</div>'; return; }
     el.innerHTML = '';
+    var modes = {}; course.kits.forEach(function (k) { var m = kitMode(k); if (m) modes[m] = true; });
+    var hasModes = !!(modes.live || modes.od);
+    if (hasModes) {
+      if (!finder.mode || !modes[finder.mode]) finder.mode = modes.live ? 'live' : 'od';
+      var seg = document.createElement('div'); seg.className = 'seg'; seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', 'Section type');
+      ['live', 'od'].forEach(function (m) {
+        if (!modes[m]) return;
+        var b = document.createElement('button'); b.type = 'button'; b.className = finder.mode === m ? 'on' : ''; b.textContent = MODE_LABEL[m];
+        b.setAttribute('aria-pressed', finder.mode === m ? 'true' : 'false');
+        b.addEventListener('click', function () { if (finder.mode === m) return; finder.mode = m; saveFinder(); kit = null; lockDownstream(); renderKits(); renderPreview(); });
+        seg.appendChild(b);
+      });
+      el.appendChild(seg);
+      var h = document.createElement('div'); h.className = 'hint';
+      h.textContent = 'This course has separate kits for Live and On-Demand sections. Pick your section type; a kit with no section label works for both.';
+      el.appendChild(h);
+    }
     course.kits.forEach(function (k) {
+      var m = kitMode(k);
+      if (hasModes && m && m !== finder.mode) return;
       var d = document.createElement('label');
       d.className = 'kit' + (k.status === 'ready' ? '' : ' pending') + (kit && kit.id === k.id ? ' sel' : '');
       // a light catalog row has no modules[] yet; it carries student_modules as a count
@@ -1812,7 +2009,7 @@
         ? k.items + ' items &middot; ' + nMods + ' student modules &middot; ' + (k.bytes / 1048576).toFixed(1) + ' MB &middot; v' + escHtml(k.version) + '<br>' + escHtml(k.source || '')
         : (k.status === 'spec-only' ? 'Authored, not built yet' : 'Not built yet');
       d.innerHTML = '<input type="radio" name="kit" value="' + escHtml(k.id) + '"' + (k.status !== 'ready' ? ' disabled' : '') + (kit && kit.id === k.id ? ' checked' : '') + '>' +
-        '<div><div class="l">' + escHtml(k.label) + (k.status === 'ready' ? '<span class="pill">READY</span>' : '<span class="pill grey">PENDING</span>') + '</div><div class="s">' + s + '</div></div>';
+        '<div><div class="l">' + escHtml(k.label) + (m ? '<span class="pill grey">' + escHtml(MODE_LABEL[m].toUpperCase()) + '</span>' : '') + (k.status === 'ready' ? '<span class="pill">READY</span>' : '<span class="pill grey">PENDING</span>') + '</div><div class="s">' + s + '</div></div>';
       if (k.status === 'ready') d.querySelector('input').addEventListener('change', function () { selectKit(k); });
       el.appendChild(d);
     });
@@ -1845,6 +2042,8 @@
     if (previewItemId) { previewItemId = null; $('preview').className = ''; $('preview-home').hidden = true; $('preview-note').textContent = 'Links work after import, not here.'; }
     var saved = loadSaved(k.id);
     home = saved || blankHome();
+    // A kit built for one section type sets the home page's course mode on first use.
+    if (!saved && kitMode(k)) home.mode = MODE_LABEL[kitMode(k)];
     if (!home.modules || !home.modules.length || home.modules.length !== k.modules.filter(function (m) { return m.published; }).length) {
       home.modules = k.modules.filter(function (m) { return m.published; }).map(function (m) { return { gid: m.gid, title: m.title, show: true }; });
     }
@@ -3408,11 +3607,11 @@
     $('preview-home').addEventListener('click', leaveItemPreview);
     $('show-preview').addEventListener('click', function () { setPreviewShown(true); });
     if (uiPref().previewHidden) setPreviewShown(false);
-    catalog.courses.forEach(function (c) {
-      var o = document.createElement('option'); o.value = c.code; o.label = c.title + ' (grade ' + c.grade + ')'; o.textContent = c.title;
-      $('codes').appendChild(o);
-    });
-    $('code').addEventListener('input', function () { course = findCourse(this.value); kit = null; renderCourse(); renderPreview(); });
+    loadFinder();
+    // The search box drives the picker: an exact code or title selects the course;
+    // anything else narrows the browse list and clears the current selection.
+    $('code').addEventListener('input', function () { chooseCourse(findCourse(this.value)); });
+    $('subject-filter').addEventListener('change', function () { finder.subject = this.value; saveFinder(); renderFinder(); });
     $('preview').addEventListener('click', function (e) { if (e.target.closest('a')) e.preventDefault(); });
     FIELDS.forEach(function (f) { $('f-' + f).addEventListener('input', function () { readForm(); save(); renderPreview(); if (kit) renderSyllabus(); }); });
     $('dl').addEventListener('click', function () {
@@ -3437,7 +3636,8 @@
     });
     var saved = null;
     try { saved = JSON.parse(localStorage.getItem(STORE) || '{}').__lastCode; } catch (e) { /* ignore */ }
-    if (saved) { $('code').value = saved; course = findCourse(saved); renderCourse(); }
+    course = saved ? findCourse(saved) : null;
+    renderCourse();
     renderPreview();
   }
   function fallbackCopy(text) {
@@ -3457,7 +3657,22 @@
     var c = code ? findCourse(code) : null;
     if (!c) c = catalog.courses.filter(function (x) { return x.kits.some(function (k) { return k.status === 'ready'; }); })[0];
     if (!c) { $('selftest-out').textContent = JSON.stringify({ ok: false, error: 'no ready kits' }); return; }
+    // The finder must list every course, filter by grade, find a course by a word of
+    // its title, and read grade ranges the way course.json writes them.
+    finder.grade = ''; finder.subject = ''; $('code').value = ''; course = null; renderCourse();
+    var finderCheck = {
+      chips: $('grade-chips').children.length === 14,
+      allRows: $('course-list').querySelectorAll('.crow').length === catalog.courses.length,
+      gradeRange: gradeList('9-12').join() === '9,10,11,12' && gradeList('K').join() === '0' && gradeList('K-5').length === 6 && gradeList('7').join() === '7',
+      search: searchCourses(c.title.split(/\s+/)[0]).indexOf(c) >= 0 && searchCourses(c.code).indexOf(c) >= 0
+    };
+    finder.grade = gradeList(c.grade)[0]; renderFinder();
+    finderCheck.gradeFilter = Array.prototype.some.call($('course-list').querySelectorAll('.crow'), function (r) { return r.dataset.code === c.code; })
+      && Array.prototype.every.call($('course-list').querySelectorAll('.crow'), function (r) { return gradeList(findCourse(r.dataset.code).grade).indexOf(finder.grade) >= 0; });
+    finder.grade = '';
     $('code').value = c.code; course = c; renderCourse();
+    finderCheck.selected = !!$('course-list').querySelector('.crow.sel[data-code="' + c.code + '"]') && !$('browse').open && !$('step2').classList.contains('locked');
+    finderCheck.ok = finderCheck.chips && finderCheck.allRows && finderCheck.gradeRange && finderCheck.search && finderCheck.gradeFilter && finderCheck.selected;
     var k = c.kits.filter(function (x) { return x.status === 'ready' && (!kitId || x.id === kitId); })[0];
     if (!k) { $('selftest-out').textContent = JSON.stringify({ ok: false, error: 'no ready kit ' + (kitId || '') }); return; }
     selectKit(k).then(loadContents).then(function () {
@@ -3624,6 +3839,7 @@
         out.quizPoints = checks.quizPoints; out.quiz = quizItem ? quizItem.title : null;
         out.syllabus = checks.syllabus; out.removedOk = checks.removed; out.metaItemState = checks.metaItemState; out.modulePublishAll = modulePublishAll; out.secondModule = secondModule ? secondModule.title : null;
         out.previewToggle = previewToggle;
+        out.finder = finderCheck; out.ok = out.ok && finderCheck.ok;
         // Art pack: a kit whose sidecar declares figures must show the second-file notice
         // naming its art pack; a kit without figures must keep the notice hidden.
         var apBox = $('artpack');
