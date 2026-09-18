@@ -3,7 +3,8 @@
 A teacher opens one page, finds their course (by CPALMS code, by name, or by
 browsing grade and subject; Honors and Standard sit side by side, and a course
 that ships Live and On-Demand kits shows a switch), picks the kit for their
-section, fills in a short home-page form, sets dates and gradebook choices, and
+section (the course list rechecks the store every minute, so a course pushed while
+the page is open appears without a reload), fills in a short home-page form, sets dates and gradebook choices, and
 downloads one Canvas cartridge (`.imscc`) with the whole sequenced course inside.
 Canvas is no longer a step in distribution: cartridges are generated from the
 course build folders and served from a repo.

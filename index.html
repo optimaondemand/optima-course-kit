@@ -77,6 +77,10 @@
   .row2 { display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center; }
   .row2 select { margin:0; }
   .row2 .hint { margin:0; white-space:nowrap; }
+  .catstat { display:flex; gap:8px; align-items:center; margin-top:8px; font-size:12.5px; color:var(--mute); }
+  .catstat button.link { font:inherit; font-size:12.5px; background:none; border:0; padding:0; color:var(--navy); text-decoration:underline; cursor:pointer; border-radius:0; }
+  .catstat button.link:disabled { opacity:.5; cursor:default; }
+  .catstat .new { color:#1E4620; }
   .clist { margin-top:10px; border:1px solid var(--line); border-radius:8px; max-height:360px; overflow:auto; background:#fff; }
   .clist .grp { position:sticky; top:0; z-index:1; background:#EEF1F8; font-size:11.5px; letter-spacing:.6px; text-transform:uppercase; color:var(--mute); padding:5px 12px; }
   .clist .empty { padding:14px 12px; font-size:14px; color:var(--mute); }
@@ -259,6 +263,7 @@
         <div class="chips" id="grade-chips" role="group" aria-label="Grade"></div>
         <div class="row2"><select id="subject-filter" aria-label="Subject"><option value="">All subjects</option></select><span class="hint" id="finder-count"></span></div>
         <div class="clist" id="course-list" role="listbox" aria-label="Courses"></div>
+        <div class="catstat"><span id="catalog-status">Course list loading&hellip;</span><button type="button" class="link" id="catalog-refresh">Check now</button></div>
       </details>
     </div>
 
@@ -1806,11 +1811,91 @@
   }
 
   // ------------------------------------------------------------ catalog
+  // GitHub Pages serves catalog.json with max-age=600, so a plain refetch can come
+  // back from the CDN up to ten minutes stale; the query string defeats that.
   function loadCatalog() {
-    return fetch(BASE + 'catalog.json', { cache: 'no-store' }).then(function (r) {
+    return fetch(BASE + 'catalog.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) {
       if (!r.ok) throw new Error('catalog.json ' + r.status);
       return r.json();
     });
+  }
+
+  // ------------------------------------------------------------ live catalog
+  // Builders push new courses and kits to the store all day. The page checks the
+  // catalog every minute while it is visible, when the tab comes back to the front,
+  // and on demand; a changed catalog is swapped in with the teacher's course and kit
+  // still selected, and the status line names what arrived.
+  var CATALOG_POLL_MS = 60000, catalogTimer = null, catalogChecking = false, catalogCheckedAt = null;
+  function catalogStamp(c) { return JSON.stringify((c && c.courses) || []); }
+  function kitKeys(c) { var m = {}; (c.courses || []).forEach(function (x) { x.kits.forEach(function (k) { m[k.id] = k; }); }); return m; }
+  function catalogDiff(oldC, newC) {
+    var oldCodes = {}; (oldC.courses || []).forEach(function (x) { oldCodes[x.code] = x; });
+    var oldKits = kitKeys(oldC), newKits = kitKeys(newC), d = { courses: [], kits: [], rebuilt: [] };
+    (newC.courses || []).forEach(function (x) { if (!oldCodes[x.code]) d.courses.push(x); });
+    Object.keys(newKits).forEach(function (id) {
+      var n = newKits[id], o = oldKits[id];
+      if (n.status !== 'ready') return;
+      if (!o || o.status !== 'ready') d.kits.push(n);
+      else if (o.version !== n.version || o.spec_sha !== n.spec_sha) d.rebuilt.push(n);
+    });
+    return d;
+  }
+  // Swap a fresh catalog in. The selected course is re-pointed by code; the selected
+  // kit keeps its loaded detail (modules, graded items) so the form does not reset,
+  // and a newer build of it is announced rather than swapped under the teacher.
+  function applyCatalog(c) {
+    var d = catalogDiff(catalog, c);
+    catalog = c;
+    if (course) course = findCourse(course.code);
+    if (kit && course) {
+      var row = course.kits.filter(function (k) { return k.id === kit.id; })[0];
+      if (row) { course.kits[course.kits.indexOf(row)] = kit; kit.status = row.status; if (row.status === 'ready' && (row.version !== kit.version || row.spec_sha !== kit.spec_sha)) kit.newer = row; }
+      else { kit = null; lockDownstream(); }
+    } else if (!course) kit = null;
+    renderCourse();
+    return d;
+  }
+  function describeDiff(d) {
+    var parts = [];
+    if (d.courses.length) parts.push(d.courses.length === 1 ? 'new course: ' + d.courses[0].title : d.courses.length + ' new courses: ' + d.courses.map(function (x) { return x.title; }).join(', '));
+    if (d.kits.length) parts.push(d.kits.length === 1 ? 'kit ready: ' + d.kits[0].id : d.kits.length + ' kits ready: ' + d.kits.map(function (k) { return k.id; }).join(', '));
+    if (d.rebuilt.length) parts.push(d.rebuilt.length === 1 ? 'kit rebuilt: ' + d.rebuilt[0].id : d.rebuilt.length + ' kits rebuilt: ' + d.rebuilt.map(function (k) { return k.id; }).join(', '));
+    return parts.join('; ');
+  }
+  function timeShort(dt) { try { return dt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); } catch (e) { return dt.toTimeString().slice(0, 5); } }
+  function setCatalogStatus(html, cls) { var el = $('catalog-status'); if (el) { el.innerHTML = html; el.className = cls || ''; } }
+  function refreshCatalog(manual) {
+    if (catalogChecking || !catalog) return Promise.resolve(null);
+    catalogChecking = true; $('catalog-refresh').disabled = true;
+    if (manual) setCatalogStatus('Checking the course store&hellip;');
+    return loadCatalog().then(function (c) {
+      catalogCheckedAt = new Date();
+      var changed = catalogStamp(c) !== catalogStamp(catalog), d = null;
+      if (changed) {
+        d = applyCatalog(c);
+        var what = describeDiff(d);
+        setCatalogStatus('<span class="new">Course list updated ' + timeShort(catalogCheckedAt) + (what ? ': ' + escHtml(what) : '') + '</span>');
+        if (kit && kit.newer) status('A newer build of this kit (v' + kit.newer.version + ') is in the store. Reload the page to use it; your home page and settings are saved in this browser.', 'ok');
+      } else {
+        setCatalogStatus((manual ? 'No changes. ' : '') + 'Course list checked ' + timeShort(catalogCheckedAt) + ' \u00b7 ' + catalog.courses.length + ' course' + (catalog.courses.length === 1 ? '' : 's'));
+      }
+      return d;
+    }).catch(function (e) {
+      setCatalogStatus('Could not reach the course store' + (manual ? ' (' + escHtml(e.message) + ')' : '') + '. Showing the list from ' + (catalogCheckedAt ? timeShort(catalogCheckedAt) : 'this page load') + '.');
+      return null;
+    }).then(function (d) { catalogChecking = false; $('catalog-refresh').disabled = false; return d; });
+  }
+  function scheduleCatalogPoll() {
+    if (catalogTimer) clearInterval(catalogTimer);
+    catalogTimer = setInterval(function () { if (!document.hidden) refreshCatalog(false); }, CATALOG_POLL_MS);
+  }
+  function wireCatalogRefresh() {
+    catalogCheckedAt = new Date();
+    setCatalogStatus('Course list loaded ' + timeShort(catalogCheckedAt) + ' \u00b7 ' + catalog.courses.length + ' course' + (catalog.courses.length === 1 ? '' : 's') + ' \u00b7 rechecks every minute');
+    $('catalog-refresh').addEventListener('click', function () { refreshCatalog(true); });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) refreshCatalog(false); });
+    window.addEventListener('focus', function () { refreshCatalog(false); });
+    scheduleCatalogPoll();
   }
   function findCourse(q) {
     q = String(q || '').trim().toLowerCase();
@@ -3672,7 +3757,24 @@
     finder.grade = '';
     $('code').value = c.code; course = c; renderCourse();
     finderCheck.selected = !!$('course-list').querySelector('.crow.sel[data-code="' + c.code + '"]') && !$('browse').open && !$('step2').classList.contains('locked');
-    finderCheck.ok = finderCheck.chips && finderCheck.allRows && finderCheck.gradeRange && finderCheck.search && finderCheck.gradeFilter && finderCheck.selected;
+    // Live catalog: a store that grew by one course shows one more row, names the
+    // newcomer, and keeps the selected course; restoring the old catalog reverses it.
+    (function () {
+      var before = catalog, n0 = catalog.courses.length;
+      var grown = JSON.parse(JSON.stringify(before));
+      grown.courses.push({ code: '9999999', title: 'Selftest Course Honors', grade: '9-12', subject: 'Selftest', owner: '', kits: [{ id: '9999999-s1', label: 'Semester 1', status: 'pending' }] });
+      var d = applyCatalog(grown);
+      // the search box still holds the code, so the list shows the selected course only
+      finderCheck.refresh = catalogStamp(grown) !== catalogStamp(before) && d.courses.length === 1 && d.courses[0].code === '9999999'
+        && /Selftest Course Honors/.test(describeDiff(d)) && !!course && course.code === c.code && course === findCourse(c.code)
+        && !!$('course-list').querySelector('.crow.sel[data-code="' + c.code + '"]');
+      $('code').value = ''; renderFinder();
+      finderCheck.refreshRows = $('course-list').querySelectorAll('.crow').length === n0 + 1 && !!$('course-list').querySelector('.crow[data-code="9999999"]');
+      applyCatalog(before); $('code').value = c.code; renderFinder();
+      finderCheck.refreshRestore = catalog === before && !$('course-list').querySelector('.crow[data-code="9999999"]') && course === c;
+    })();
+    finderCheck.ok = finderCheck.chips && finderCheck.allRows && finderCheck.gradeRange && finderCheck.search && finderCheck.gradeFilter && finderCheck.selected
+      && finderCheck.refresh && finderCheck.refreshRows && finderCheck.refreshRestore;
     var k = c.kits.filter(function (x) { return x.status === 'ready' && (!kitId || x.id === kitId); })[0];
     if (!k) { $('selftest-out').textContent = JSON.stringify({ ok: false, error: 'no ready kit ' + (kitId || '') }); return; }
     selectKit(k).then(loadContents).then(function () {
@@ -3990,7 +4092,7 @@
   }
 
   loadCatalog().then(function (c) {
-    catalog = c; wire();
+    catalog = c; wire(); wireCatalogRefresh();
     var m = /^#selftest(?:=(.+))?$/.exec(location.hash || '');
     if (m) selftest(m[1] ? decodeURIComponent(m[1]) : null);
     var pm = /^#printtest=(.+)$/.exec(location.hash || '');
