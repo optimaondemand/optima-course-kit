@@ -309,7 +309,7 @@
               <label class="f"><span>Badge line 2</span><input type="text" data-path="meta.badge2" placeholder="Grade 9"></label>
             </div>
             <div class="row">
-              <label class="f"><span>Course code label</span><input type="text" data-path="meta.codeLabel" placeholder="Florida Course"></label>
+              <label class="f"><span>Course code label</span><input type="text" data-path="meta.codeLabel" placeholder="Course Code"></label>
               <label class="f"><span>Course code and what follows it</span><input type="text" data-path="meta.code" placeholder="Florida 1001310 &middot; Semester 1"></label>
             </div>
             <div class="row">
@@ -1001,7 +1001,7 @@
 
     function blankState() {
       return {
-        meta: { title: '', mode: 'Live', band: '912', codeLabel: 'Florida Course', code: '',
+        meta: { title: '', mode: 'Live', band: '912', codeLabel: 'Course Code', code: '',
                 badge1: '', badge2: '', grade: '', fmt: '',
                 teacher: '', email: '', office: '' },
         desc: { pick: '', text: '' },
@@ -1292,7 +1292,7 @@
       doc.push({ t: 'identity', fields: [
         [role(), t(m.teacher) || '[' + role().charAt(0).toUpperCase() + role().slice(1) + ' Name]', !t(m.teacher)],
         ['Email & Office', (t(m.email) || '[name@optimaed.com]') + ' · 239.673.2801 (OAO Front Office)', !t(m.email)],
-        [t(m.codeLabel) || 'Florida Course', t(m.code) || '[Course code]', !t(m.code)],
+        [t(m.codeLabel) || 'Course Code', t(m.code) || '[Course code]', !t(m.code)],
         ['Office Hours', t(m.office) || '[Office hours — days and times, posted in Canvas]', !t(m.office)],
         ['Grade Level', t(m.grade) || '[Grade level]', !t(m.grade)],
         ['Format', fmtLine(), false]
@@ -1672,7 +1672,7 @@
     s.meta.grade = gradeText(course.grade);
     s.meta.badge1 = kit.label || '';
     s.meta.badge2 = gradeText(course.grade);
-    s.meta.code = 'Florida ' + course.code + (kit.label ? ' \u00b7 ' + kit.label : '');
+    s.meta.code = course.code + (kit.label ? ' \u00b7 ' + kit.label : '');
     Syl.setAiBand(s, s.meta.band);
     var c = sylCatalogue && sylCatalogue[course.code];
     if (c && c.desc) s.desc.text = c.desc;
