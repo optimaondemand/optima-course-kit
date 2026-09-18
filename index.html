@@ -433,6 +433,7 @@
     <div class="step locked collapsible" id="step6">
       <h2><span class="n">7</span> Download and import</h2>
       <div class="hint">One file. Your home page is already inside it, set as the course front page, with the module cards linked to the real modules, and your syllabus fills the Syllabus page.</div>
+      <div class="hint" id="artpack" hidden style="border-left: 4px solid #0E1C42; padding-left: 12px;"></div>
       <div class="actions">
         <button id="dl" disabled>Download my course kit (.imscc)</button>
         <button id="copy" class="alt" disabled>Copy home page HTML only</button>
@@ -1827,7 +1828,7 @@
       if (!r.ok) throw new Error('could not fetch ' + k.sidecar + ' (' + r.status + ')');
       return r.json();
     }).then(function (s) {
-      ['modules', 'groups', 'graded_items', 'settings', 'weights', 'weighted', 'front_page', 'file', 'bytes', 'items', 'counts', 'version'].forEach(function (f) {
+      ['modules', 'groups', 'graded_items', 'settings', 'weights', 'weighted', 'front_page', 'file', 'bytes', 'items', 'counts', 'version', 'art_pack'].forEach(function (f) {
         if (s[f] !== undefined) k[f] = s[f];
       });
       if (!k.graded_items) k.graded_items = [];
@@ -1857,7 +1858,26 @@
     fillPrintScope();
     loadContents();
     renderKits(); fillForm(); renderStyle(); renderMods(); renderSyllabus(); renderDates(); renderGradebook(); renderPreview();
+    renderArtPack();
     return Promise.resolve(k);
+  }
+
+  // Licensed artwork (Artstor) is never inside a kit on this public site. The kit's
+  // lesson pages link to course files by path; the images arrive by a second,
+  // files-only cartridge (the art pack) that staff keep on the signed-in SharePoint.
+  function renderArtPack() {
+    var box = $('artpack');
+    var ap = kit && kit.art_pack;
+    if (!ap || !ap.figures) { box.hidden = true; box.innerHTML = ''; return; }
+    var url = (course && course.art_pack_url) || (ap && ap.url) || '';
+    var name = ap.cartridge || (kit.id + '-art-pack.imscc');
+    box.innerHTML = '<b>This kit needs a second file.</b> ' + ap.figures + ' licensed artwork' + (ap.figures === 1 ? '' : 's') +
+      ' appear on the lesson pages, and they are not inside the kit. After you import the kit, import the art pack <b>' + esc(name) +
+      '</b> into the same course the same way (Settings &rarr; Import Course Content &rarr; Canvas Course Export Package, All content). ' +
+      (url ? 'Get it from the <a href="' + esc(url) + '" target="_blank" rel="noopener">Optima staff store</a> (sign-in required). '
+           : 'Ask the curriculum team for it; it lives on the signed-in staff SharePoint, not on this site. ') +
+      'Until it is imported, those artwork slots show as missing images.';
+    box.hidden = false;
   }
 
   // ------------------------------------------------------------ dates + gradebook state helpers
@@ -3604,6 +3624,12 @@
         out.quizPoints = checks.quizPoints; out.quiz = quizItem ? quizItem.title : null;
         out.syllabus = checks.syllabus; out.removedOk = checks.removed; out.metaItemState = checks.metaItemState; out.modulePublishAll = modulePublishAll; out.secondModule = secondModule ? secondModule.title : null;
         out.previewToggle = previewToggle;
+        // Art pack: a kit whose sidecar declares figures must show the second-file notice
+        // naming its art pack; a kit without figures must keep the notice hidden.
+        var apBox = $('artpack');
+        out.artPackFigures = kit.art_pack ? (kit.art_pack.figures || 0) : 0;
+        out.artPackNotice = out.artPackFigures ? (!apBox.hidden && apBox.textContent.indexOf(kit.art_pack.cartridge || '-art-pack.imscc') >= 0) : !!apBox.hidden;
+        out.ok = out.ok && out.artPackNotice;
         out.theme = themeKey; out.themeOk = themeOk; out.classicClean = classicClean;
         out.ok = out.ok && themeOk && classicClean && checks.syllabus;
         if (hasSchedule) out.ok = out.ok && checks.datesApplied && checks.weightingOn && checks.pointsPatched && checks.unpublished
