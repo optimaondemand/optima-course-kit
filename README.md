@@ -1,13 +1,15 @@
 # Optima Course Kit
 
-A teacher opens one page, finds their course (by CPALMS code, by name, or by
-browsing grade and subject; Honors and Standard sit side by side, and a course
-that ships Live and On-Demand kits shows a switch), picks the kit for their
-section (the course list rechecks the store every minute, so a course pushed while
-the page is open appears without a reload), fills in a short home-page form, sets dates and gradebook choices, and
-downloads one Canvas cartridge (`.imscc`) with the whole sequenced course inside.
-Canvas is no longer a step in distribution: cartridges are generated from the
-course build folders and served from a repo.
+A teacher opens one page and answers one question per screen, survey style:
+Welcome (customize, or just fetch a course) -> grade -> subject -> course -> preview or
+configure -> whole semester or just a module (module tiles if so) -> their details ->
+yes/skip for the home page, the syllabus, dates, contents and publishing, and the
+gradebook -> Generate my course file (.imscc) or Download PDF, the import checklist, the
+tutorial video slot, and Configure another course. Only the panels a teacher says yes to
+appear. Their name, title, email, mode, term, section, meeting and Teams link are
+remembered on the computer and pre-fill the next course. Canvas is no longer a step in
+distribution: cartridges are generated from the course build folders and served from a
+repo, and the course list rechecks the store every minute.
 
 Live widget: https://optimaondemand.github.io/optima-course-kit/
 Cartridges + catalog (current `DEFAULT_BASE`): https://optimaondemand.github.io/optima-course-cartridges/
@@ -88,7 +90,7 @@ reports those items as "moved", not as differences.
 
 ## Item preview
 
-In step 5 every graded item's title is a link. Clicking it fetches the kit once, reads
+On the dates and publishing panels (and the preview screen) every graded item's title is a link. Clicking it fetches the kit once, reads
 that item's page out of the cartridge, and shows it in the preview pane: assignment
 instructions, a discussion prompt, or a quiz's description and questions with their
 choices (never the answers). Canvas tokens in links are disabled because they resolve
@@ -97,7 +99,7 @@ returns to the home page preview.
 
 ## Printable course (save as PDF)
 
-At the bottom of step 7 a teacher picks **Whole course** or one module and clicks
+On the preview screen a teacher picks **Whole course** or one module and clicks
 **Open printable course**. The widget reads the module list out of the cartridge
 (`course_settings/module_meta.xml` + `imsmanifest.xml`), walks every module and item in
 Canvas order, and composes one HTML document in a new tab: a cover, the teacher's
@@ -110,12 +112,12 @@ What each item type becomes:
 | Item | Printed as |
 |---|---|
 | Page (`wiki_content/*.html`) | The page body. Each embedded lesson `<iframe>` is fetched from its live GitHub Pages URL and placed inline inside a declarative shadow root (`<template shadowrootmode="open">`) so the lesson keeps its own CSS without leaking into the document. Lesson scripts are dropped (they only wire interactivity), every `<details>` is opened, flip cards show their back face, the read-aloud bar is hidden, the 1100px frame is widened to the page. Frames that cannot be fetched (video, forms, SharePoint) print as a labelled link. |
-| Assignment | Its instructions, with points and the due date the teacher set in step 5. |
+| Assignment | Its instructions, with points and the due date the teacher set on the dates panel. |
 | Discussion | The prompt. |
 | Quiz / survey | Description and every question with its choices, never the answers (same reader as the item preview). |
 | File | Its file name. |
 
-Unpublished modules and items (from the kit, or unpublished by the teacher in step 5) are
+Unpublished modules and items (from the kit, or unpublished by the teacher on the publishing panel) are
 left out, so the document is what a student will actually meet. A whole semester of 7th
 ELA S2 is 4 published modules, 208 items, 101 lesson pages, about 1,400 Letter pages;
 composing it takes a few seconds plus the lesson fetches, and Chrome's print dialog needs
@@ -135,9 +137,36 @@ downloaded `.html` file instead (open it and press Ctrl+P); browsers older than 
 without declarative shadow DOM will print the lessons with their styles bleeding
 together.
 
+## The journey (survey-style screens)
+
+| Screen | What it does |
+|---|---|
+| Welcome | "Welcome to the Course Optimizer!" Two tiles: **Customize my course** (the full journey) or **Just fetch a course** (grade -> subject -> course -> part -> download, no configuration). Greets a returning teacher by name. |
+| Grade, subject, course | Tiles built from `catalog.json`: K-12 with counts (empty grades greyed), subjects with counts for that grade, then course tiles (Honors/Standard pills, code, "n of m kits ready"; no ready kit = greyed "Coming"). A folded **Search the full course list** keeps the old finder (search box, grade chips, subject filter, list). |
+| Preview or configure | **Preview the course** shows the home page in the pane, every module's items (click a graded item to read it) and the printable course; **Configure it for Canvas** continues. **Configure for Canvas** goes straight on. |
+| Whole semester or a module | One tile per kit (pending kits greyed), the Live/On-Demand switch when a course has kits per mode, and **Just a module** -> module tiles from every ready kit (multi-select within one kit) -> Continue. |
+| Tell us about you | Name, title, email, mode, term, section, meeting, Teams link. Saved to `localStorage` `optima-course-kit-teacher` and applied to every new kit's home page and syllabus. |
+| Yes/skip gates | Home page (theme, blurb, house, tagline, module cards), syllabus, dates, contents and publishing, gradebook. Skip = the panel never appears; the standard syllabus still ships unless it is switched off. Dates and publishing share one panel; each gate shows only its own controls (`#dates-panel.mode-dates` / `.mode-publish`). |
+| Generate | Summary chips (course, scope, what was customized), **Generate my course file (.imscc)**, **Download PDF** (the printable course), copy home page HTML, original kit; the import checklist; the tutorial video (`TUTORIAL_VIDEO_URL`, a "coming soon" card while empty); **Configure another course** (keeps the teacher's details, clears the course). |
+
+Back and Start over sit above every screen with a dot trail ("Step n of N", computed from
+the answers so far). The screen, path and answers persist per browser (`uiPref().journey`);
+a reload keeps the course and returns to the "whole semester or a module" screen because
+the kit itself is not persisted. `#screen=NAME[:CODE[:KIT-ID]]` opens one screen directly
+(review links, screenshots).
+
+**Module-only kits.** Choosing modules sets `home.onlyModules` (module ids, per kit). On
+build every other module leaves `module_meta.xml` (whole `<module>` block), the manifest
+organization (balanced `<item>` cut, `cutXmlItem`) and, when nothing kept still points at
+it, the cartridge: pages, assignments, quizzes and discussions of dropped modules lose
+their resources and files; course files (`Attachment`) always stay because a kept page may
+link to them. The home page shows only the kept module cards, the dates/gradebook/print
+panels list only kept modules, and the filename carries the module (`...-module-1-electra-...`).
+Whole English 1 S1 = 301 entries; Module 1 alone = 81, `verify_cartridge.py` PASS on both.
+
 ## Home page themes
 
-Step 3 opens with a theme picker. A theme carries a banner (`themes/<name>.svg`), a
+The home page panel opens with a theme picker. A theme carries a banner (`themes/<name>.svg`), a
 palette, a motif and a starter tagline. The catalog's subject pre-picks one; the
 teacher can choose any of the sixteen. One more switch: module list as a journey
 trail or the classic grid. Optima Classic + Classic grid is the pre-theme page.
@@ -147,7 +176,7 @@ the Commonplace Corner (quote, author, prompt) and the Today's Spark card. The
 `spotlights/*.svg` files stay hosted because home pages imported before that date
 still point at them.
 
-## Step 4: your syllabus
+## The syllabus panel (gate: "Do you want to review your syllabus?")
 
 The kit fills the course's Canvas **Syllabus** page. The step is the syllabus builder
 from `teacher-homepages/syllabus.html`, lifted into `index.html` by markers (constants,
@@ -158,8 +187,8 @@ builder (same `OAO-BUILDER` payload). The Word output stays in the standalone bu
 What the kit fills in: title, code and grade band from the catalog course; badges from
 the kit label and grade; the description from `syllabus-courses.json` (fetched from
 teacher-homepages, blank when the catalogue has none); the grading cards from the
-gradebook groups and weights (step 6), following them until the teacher edits the cards;
-teacher name, email, class meeting and Live/On-Demand mode from step 3 on every render
+gradebook groups and weights (the gradebook panel), following them until the teacher edits the cards;
+teacher name, email, class meeting and Live/On-Demand mode from the details screen on every render
 and build, never typed twice. Every stock section can be edited or switched off; the
 teacher's own sections (paragraphs, bullets, small table, highlighted note) slot in
 wherever she chooses. State lives in `home.syllabus`, saved per kit with the rest.
@@ -172,7 +201,7 @@ paste into Syllabus, Edit, HTML editor in the live course; the tile keeps workin
 The self-test asserts the file is in the zip and the manifest, is ASCII only, and carries
 the course title, the step-3 teacher and the gradebook's weights.
 
-## Step 5: dates, publishing and contents
+## Dates, publishing and contents (two gates, one panel)
 
 Every module in the kit gets a block: a Publish all / Unpublish all pair (the module
 and everything inside it, both ways), the batch date row, the graded-item table with
@@ -183,7 +212,7 @@ the cartridge she downloads: a removed assignment, quiz or discussion loses its 
 entry, organization entry, manifest resource (plus the resources it depends on) and
 files, so it never reaches the gradebook; a removed page leaves the module but keeps
 its resource and file, so it stays in the course's Pages. Nothing in the store changes.
-The gradebook (step 6), the printable course and the self-test all skip removed items.
+The gradebook panel, the printable course and the self-test all skip removed items.
 
 The SVGs are hosted here on Pages and reach Canvas as plain `<img>` tags (Canvas
 strips `data:` images). Their CSS animation runs inside `<img>` and every file

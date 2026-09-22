@@ -6,9 +6,11 @@
 <title>Optima Course Kit</title>
 <!--
   Optima Course Kit - PROTOTYPE
-  A teacher finds their course (by code, name, or grade and subject), picks the kit for their section, fills in
-  a short home-page form, and downloads one Canvas cartridge (.imscc) with the
-  whole sequenced course inside and their home page already set as the front page.
+  A survey-style journey: a teacher answers one question per screen (grade, subject,
+  course, preview or configure, whole semester or a module, then yes/skip for the home
+  page, syllabus, dates, publishing and gradebook) and downloads one Canvas cartridge
+  (.imscc) with the sequenced course inside and their home page set as the front page.
+  Teacher details are remembered on the computer for the next course.
 
   The cartridges are built by _build/ in this repo from live Optima courses.
   This page never calls Canvas. It fetches a cartridge, rewrites one file inside
@@ -236,71 +238,232 @@
   .syl .empty { font-size:13px; color:var(--mute); font-style:italic; }
   .syl code.k { background:#EEF1F8; padding:1px 5px; border-radius:4px; font-size:12.5px; }
   .syl .derived { background:#F9FAFD; border:1px dashed var(--line); border-radius:8px; padding:10px 12px; font-size:13.5px; margin-top:8px; color:var(--navy); }
+  /* The journey: one question per screen. Tile screens stand alone; screens that
+     edit the kit show the home page preview beside them. */
+  .wrap.solo { grid-template-columns:1fr; max-width:1040px; }
+  .wrap.solo .preview { display:none; }
+  .jnav { display:flex; align-items:center; gap:14px; margin-bottom:14px; }
+  .jnav[hidden] { display:none; }
+  .jtrail { flex:1; display:flex; align-items:center; gap:5px; flex-wrap:wrap; font-size:12.5px; color:var(--mute); }
+  .jtrail .dot { width:9px; height:9px; border-radius:50%; background:#D0D9E8; flex-shrink:0; }
+  .jtrail .dot.done { background:var(--cyan); }
+  .jtrail .dot.now { background:var(--navy); transform:scale(1.3); }
+  .jtrail .lbl { margin-left:8px; white-space:nowrap; }
+  button.link { font:inherit; font-size:inherit; background:none; border:0; padding:0; color:var(--navy); text-decoration:underline; cursor:pointer; border-radius:0; }
+  .screen { background:#fff; border:1px solid var(--line); border-top:4px solid var(--cyan); border-radius:8px; padding:24px 26px; margin-bottom:16px; }
+  .screen[hidden] { display:none; }
+  .screen .step { border:0; border-radius:0; padding:0; margin:0; background:transparent; }
+  .screen .step.locked { opacity:1; }
+  .screen h2.q { margin:0 0 12px; font-size:24px; font-weight:600; line-height:1.25; }
+  .hero { text-align:center; padding:18px 0 4px; }
+  .hero h1 { font-size:32px; font-weight:600; margin:0 0 8px; line-height:1.2; }
+  .hero .lead { font-size:18px; color:var(--mute); margin:0 0 8px; }
+  .hint.center { text-align:center; margin-top:16px; }
+  .tiles { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px; margin-top:12px; }
+  .tiles.two { grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); }
+  .tiles.grades { grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); }
+  .tiles.subjects { grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); }
+  .tiles.courses, .tiles.kits, .tiles.mods { grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); }
+  .tiles .grp { grid-column:1 / -1; font-size:12px; letter-spacing:.6px; text-transform:uppercase; color:var(--mute); font-weight:600; margin-top:6px; }
+  .tile { font:inherit; text-align:left; background:#fff; color:var(--ink); border:2px solid var(--line); border-radius:10px; padding:16px 16px 14px; cursor:pointer; display:flex; flex-direction:column; gap:6px; min-height:74px; transition:border-color .12s, box-shadow .12s, transform .12s; }
+  .tile:hover:not(:disabled), .tile:focus-visible { border-color:var(--navy); box-shadow:0 4px 14px rgba(14,28,66,.10); transform:translateY(-1px); outline:none; }
+  .tile:disabled { color:#8E9BB5; background:#F4F6FB; cursor:not-allowed; }
+  .tile:disabled .tt, .tile:disabled .tn { color:#8E9BB5; }
+  .tile.on { border-color:var(--navy); box-shadow:0 0 0 2px var(--cyan); }
+  .tile .tt { font-size:17px; font-weight:600; line-height:1.25; }
+  .tile .ts { font-size:13px; color:var(--mute); line-height:1.35; }
+  .tile .tn { font-size:30px; font-weight:600; line-height:1; color:var(--navy); }
+  .tile .pill { margin-left:0; align-self:flex-start; }
+  .tile.big { padding:22px 20px; min-height:120px; }
+  .tile.big .tt { font-size:20px; }
+  .tile.grade { align-items:center; text-align:center; padding:16px 8px; gap:4px; }
+  .tile.grade .ts { font-size:12px; }
+  .tile .ttl { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+  .tile .tick { width:20px; height:20px; border-radius:50%; border:2px solid var(--line); flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; font-size:12px; color:#fff; }
+  .tile.on .tick { background:var(--navy); border-color:var(--navy); }
+  .screen .browse { margin-top:18px; }
+  .screen .browse > summary { font-size:14px; }
+  .summary { display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 14px; }
+  .summary .chipx { font-size:13px; padding:5px 11px; border-radius:16px; background:#EEF1F8; color:var(--navy); }
+  .summary .chipx b { font-weight:600; }
+  .summary .chipx.off { color:var(--mute); }
+  .video { margin-top:18px; }
+  .video h3 { font-size:16px; font-weight:600; margin:0 0 8px; }
+  .video .frame { position:relative; padding-top:56.25%; border-radius:8px; overflow:hidden; background:#000; }
+  .video .frame iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
+  .video .soon { border:1px dashed var(--line); border-radius:8px; padding:14px 16px; background:#F9FAFD; font-size:14px; color:var(--mute); }
+  details.howto { margin-top:14px; }
+  details.howto > summary { font-size:15px; font-weight:600; }
+  .contents-tree { margin-top:8px; }
+  .contents-tree details { border:1px solid var(--line); border-radius:8px; padding:8px 12px; margin-top:8px; }
+  .contents-tree summary { color:var(--navy); font-size:15px; margin:0; }
+  .contents-tree summary .pill { margin-left:8px; }
+  /* Dates and publishing share one panel; each question shows only its own controls. */
+  #dates-panel.mode-dates .gb-pub, #dates-panel.mode-dates .gb-modall, #dates-panel.mode-dates .gb-modpub, #dates-panel.mode-dates #gb-pub-all, #dates-panel.mode-dates #gb-unpub-all,
+  #dates-panel.mode-dates details.contents, #dates-panel.mode-dates .h-pub, #dates-panel.mode-dates table.sched th:nth-child(7), #dates-panel.mode-dates table.sched td:nth-child(7) { display:none; }
+  #dates-panel.mode-publish .batchrow, #dates-panel.mode-publish #course-start, #dates-panel.mode-publish label[for=course-start], #dates-panel.mode-publish #dates-clear, #dates-panel.mode-publish .h-dates,
+  #dates-panel.mode-publish table.sched th:nth-child(4), #dates-panel.mode-publish table.sched td:nth-child(4), #dates-panel.mode-publish table.sched th:nth-child(5), #dates-panel.mode-publish table.sched td:nth-child(5),
+  #dates-panel.mode-publish table.sched th:nth-child(6), #dates-panel.mode-publish table.sched td:nth-child(6) { display:none; }
+  #dates-panel.mode-publish table.sched { min-width:0; }
+  @media (max-width: 640px) { .screen { padding:18px 16px; } .hero h1 { font-size:26px; } .screen h2.q { font-size:21px; } }
 </style>
 </head>
 <body>
 <header class="top">
   <div class="owl"><img src="https://raw.githubusercontent.com/optimaondemand/optima-assets/eeb0b335630058906d52f478028361d352253a93/images/Optima%20Final%20Circle%20-%20Owl%20Only.png" alt="Optima Academy"></div>
   <div class="brand">Optima Academy Online<small>An Education Experience Company</small></div>
-  <div class="tool"><div class="name">Course Kit</div><div class="tag">PROTOTYPE</div></div>
+  <div class="tool"><div class="name">Course Optimizer</div><div class="tag">PROTOTYPE</div></div>
 </header>
 
 <nav class="tabs" aria-label="Tools">
-  <button type="button" class="tab" data-tab="kit" aria-pressed="true">Course kit</button>
+  <button type="button" class="tab" data-tab="kit" aria-pressed="true">Course Optimizer</button>
   <button type="button" class="tab" data-tab="tiles" aria-pressed="false">Course tiles</button>
 </nav>
 
-<main class="wrap" id="kit-view">
+<main class="wrap solo" id="kit-view">
   <section class="col">
-    <div class="step" id="step1">
-      <h2><span class="n">1</span> Find your course</h2>
-      <label for="code">Course name or CPALMS code</label>
-      <input type="text" id="code" placeholder="e.g. English 1 or 1001310" autocomplete="off">
-      <div class="hint">Type the seven-digit code from your course assignment, or part of the course name, then click your course in the list. Honors and standard versions have their own codes.</div>
+    <nav class="jnav" id="jnav" hidden>
+      <button type="button" class="sm alt" id="j-back">&larr; Back</button>
+      <div class="jtrail" id="j-trail" aria-label="Progress"></div>
+      <button type="button" class="link" id="j-restart">Start over</button>
+    </nav>
+
+    <section class="screen" data-screen="welcome">
+      <div class="hero">
+        <h1>Welcome to the Course Optimizer!</h1>
+        <p class="lead">Let&rsquo;s fetch your curriculum and customize it for you.</p>
+        <p class="hint" id="j-greet" hidden></p>
+        <div id="j-error"></div>
+      </div>
+      <div class="tiles two" id="t-path">
+        <button type="button" class="tile big" data-path="customize"><span class="tt">Customize my course</span><span class="ts">Your name on the home page, your syllabus, dates, publishing and gradebook. Only the parts you want; skip the rest.</span></button>
+        <button type="button" class="tile big" data-path="fetch"><span class="tt">Just fetch a course</span><span class="ts">Download the course file exactly as the curriculum team built it, or read it first.</span></button>
+      </div>
+      <div class="hint center">Dashboard tiles for your Canvas courses have their own tool: <button type="button" class="link" id="j-tiles">Course tiles</button>.</div>
+    </section>
+
+    <section class="screen" data-screen="grade" hidden>
+      <h2 class="q">What grade do you teach?</h2>
+      <div class="tiles grades" id="t-grades"></div>
+    </section>
+
+    <section class="screen" data-screen="subject" hidden>
+      <h2 class="q">What subject do you teach?</h2>
+      <div class="tiles subjects" id="t-subjects"></div>
+    </section>
+
+    <section class="screen" data-screen="course" hidden>
+      <h2 class="q">Select your course</h2>
+      <div class="hint" id="t-courses-hint"></div>
+      <div class="tiles courses" id="t-courses"></div>
+      <div class="step" id="step1">
+        <details class="browse" id="browse">
+          <summary id="browse-label">Search the full course list</summary>
+          <label for="code">Course name or CPALMS code</label>
+          <input type="text" id="code" placeholder="e.g. English 1 or 1001310" autocomplete="off">
+          <div class="hint">Type the seven-digit code from your course assignment, or part of the course name, then click your course in the list. Honors and standard versions have their own codes.</div>
+          <div class="chips" id="grade-chips" role="group" aria-label="Grade"></div>
+          <div class="row2"><select id="subject-filter" aria-label="Subject"><option value="">All subjects</option></select><span class="hint" id="finder-count"></span></div>
+          <div class="clist" id="course-list" role="listbox" aria-label="Courses"></div>
+          <div class="catstat"><span id="catalog-status">Course list loading&hellip;</span><button type="button" class="link" id="catalog-refresh">Check now</button></div>
+        </details>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="mode" hidden>
       <div id="course-card"></div>
-      <details class="browse" id="browse" open>
-        <summary id="browse-label">Browse by grade and subject</summary>
-        <div class="chips" id="grade-chips" role="group" aria-label="Grade"></div>
-        <div class="row2"><select id="subject-filter" aria-label="Subject"><option value="">All subjects</option></select><span class="hint" id="finder-count"></span></div>
-        <div class="clist" id="course-list" role="listbox" aria-label="Courses"></div>
-        <div class="catstat"><span id="catalog-status">Course list loading&hellip;</span><button type="button" class="link" id="catalog-refresh">Check now</button></div>
-      </details>
-    </div>
+      <h2 class="q">Do you want to preview the course or configure it for Canvas?</h2>
+      <div class="tiles two" id="t-mode">
+        <button type="button" class="tile big" data-mode="preview"><span class="tt">Preview the course</span><span class="ts">Read it the way students will, module by module, and save the whole thing as a PDF.</span></button>
+        <button type="button" class="tile big" data-mode="configure"><span class="tt">Configure for Canvas</span><span class="ts">Set it up for your section and download one file to import.</span></button>
+      </div>
+    </section>
 
-    <div class="step locked" id="step2">
-      <h2><span class="n">2</span> Choose your kit</h2>
-      <div id="kits"><div class="hint">Find a course first.</div></div>
-    </div>
+    <section class="screen" data-screen="part" hidden>
+      <h2 class="q">Do you want the whole semester or just a module?</h2>
+      <div class="step" id="step2"><div id="kits"><div class="hint">Find a course first.</div></div></div>
+    </section>
 
-    <div class="step locked collapsible" id="step3">
-      <h2><span class="n">3</span> Customize your home page</h2>
-      <div id="style-panel"><div class="hint">Choose a kit first.</div></div>
-      <div class="row">
-        <div><label for="f-teacherName">Your name, as students see it</label><input type="text" id="f-teacherName" placeholder="Ms. Rivera"></div>
-        <div><label for="f-teacherTitle">Title</label><input type="text" id="f-teacherTitle" placeholder="Course Instructor"></div>
-      </div>
-      <label for="f-teacherEmail">Email</label><input type="email" id="f-teacherEmail" placeholder="you@optimaed.com">
-      <div class="row">
-        <div><label for="f-mode">Course mode</label><select id="f-mode"><option value="On-Demand">On-Demand</option><option value="Live">Live</option></select></div>
-        <div><label for="f-term">Term</label><input type="text" id="f-term" placeholder="Fall 2026"></div>
-      </div>
-      <div class="row">
-        <div><label for="f-section">Section</label><input type="text" id="f-section" placeholder="Section 2"></div>
-        <div><label for="f-meeting">Study Hall or class meeting</label><input type="text" id="f-meeting" placeholder="Study Hall: Thursdays, 1:00 PM ET"></div>
-      </div>
-      <label for="f-studyHall">Study Hall link (Teams), optional</label><input type="url" id="f-studyHall" placeholder="https://teams.microsoft.com/...">
-      <label for="f-blurb">A few lines about you, optional</label><textarea id="f-blurb" placeholder="What you teach, what you love about it, one thing students should ask you about."></textarea>
-      <div class="row">
-        <div><label for="f-house">Your house, optional</label>
-          <select id="f-house"><option value="">None</option><option value="galahad">Galahad (Perseverance)</option><option value="cincinnatus">Cincinnatus (Courage)</option><option value="nightingale">Nightingale (Service)</option><option value="odysseus">Odysseus (Self-Governance)</option></select></div>
-        <div><label for="f-tagline">Tagline under the course name</label><input type="text" id="f-tagline" placeholder="Course Home · Start here every week."></div>
-      </div>
-      <details><summary>Module cards (edit titles, untick to hide)</summary><div class="mods" id="mods"></div></details>
-    </div>
+    <section class="screen" data-screen="modules" hidden>
+      <h2 class="q">Which module do you need?</h2>
+      <div class="hint">Pick one or more from the same semester. Everything else stays out of your file.</div>
+      <div id="t-modules"><div class="hint">Loading the module list&hellip;</div></div>
+      <div class="actions"><button type="button" id="j-modules-go" disabled>Continue</button></div>
+    </section>
 
-    <div class="step locked collapsible" id="stepS">
-      <h2><span class="n">4</span> Your syllabus</h2>
-      <div class="hint">The kit fills your course's Canvas <b>Syllabus</b> page with this. Your name, email, class meeting and Live/On-Demand mode come from step 3; the course title, code and description come from the course. Every section below can be edited or switched off, and you can add your own. Mid-year changes: come back here, edit, and use <b>Copy syllabus HTML</b>, then in your live course open Syllabus, Edit, the HTML editor, and paste over what is there. The home page's Syllabus tile keeps working either way.</div>
+    <section class="screen" data-screen="preview" hidden>
+      <h2 class="q">Preview your course</h2>
+      <div class="hint">The course home page is on the right. Click any assignment, discussion or quiz below to read it there. Lesson pages open in the printable course.</div>
+      <div id="j-contents"></div>
+      <div class="printrow">
+        <div><b>Printable course.</b> One document with the course in module order, as students will see it in Canvas: the home page, every lesson page, assignment, discussion and quiz (questions without answers).</div>
+        <div class="actions">
+          <select id="print-scope" aria-label="What to print" disabled><option value="all">Whole course</option></select>
+          <button type="button" id="print-open" class="alt" disabled>Open printable course</button>
+        </div>
+        <div class="hint">It opens in a new tab. Press <b>Save as PDF</b> there (or Ctrl+P) and choose <i>Save as PDF</i> as the destination. A whole semester runs to several hundred pages and can take a minute to prepare; one module is quicker.</div>
+        <div class="status" id="print-status"></div>
+      </div>
+      <div class="actions"><button type="button" id="j-preview-configure">Configure it for Canvas</button><button type="button" class="alt" id="j-preview-another">Pick another course</button></div>
+    </section>
+
+    <section class="screen" data-screen="details" hidden>
+      <h2 class="q">Tell us about you</h2>
+      <div class="hint">These go on your course home page and syllabus. They are remembered on this computer for your next course.</div>
+      <div class="step" id="step3">
+        <div class="row">
+          <div><label for="f-teacherName">Your name, as students see it</label><input type="text" id="f-teacherName" placeholder="Ms. Rivera"></div>
+          <div><label for="f-teacherTitle">Title</label><input type="text" id="f-teacherTitle" placeholder="Course Instructor"></div>
+        </div>
+        <label for="f-teacherEmail">Email</label><input type="email" id="f-teacherEmail" placeholder="you@optimaed.com">
+        <div class="row">
+          <div><label for="f-mode">Course mode</label><select id="f-mode"><option value="On-Demand">On-Demand</option><option value="Live">Live</option></select></div>
+          <div><label for="f-term">Term</label><input type="text" id="f-term" placeholder="Fall 2026"></div>
+        </div>
+        <div class="row">
+          <div><label for="f-section">Section</label><input type="text" id="f-section" placeholder="Section 2"></div>
+          <div><label for="f-meeting">Study Hall or class meeting</label><input type="text" id="f-meeting" placeholder="Study Hall: Thursdays, 1:00 PM ET"></div>
+        </div>
+        <label for="f-studyHall">Study Hall link (Teams), optional</label><input type="url" id="f-studyHall" placeholder="https://teams.microsoft.com/...">
+      </div>
+      <div class="actions"><button type="button" class="next">Continue</button></div>
+    </section>
+
+    <section class="screen" data-screen="q-home" hidden>
+      <h2 class="q">Do you want to customize your home page?</h2>
+      <div class="tiles two yn">
+        <button type="button" class="tile big" data-q="home" data-v="1"><span class="tt">Yes, customize it</span><span class="ts">Choose a look, write a few lines about yourself, pick your house and edit the module cards.</span></button>
+        <button type="button" class="tile big" data-q="home" data-v="0"><span class="tt">Skip</span><span class="ts">Use the look suggested for this subject, with your details from the last step.</span></button>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="home" hidden>
+      <h2 class="q">Customize your home page</h2>
+      <div class="step" id="step3b">
+        <div id="style-panel"><div class="hint">Choose a kit first.</div></div>
+        <label for="f-blurb">A few lines about you, optional</label><textarea id="f-blurb" placeholder="What you teach, what you love about it, one thing students should ask you about."></textarea>
+        <div class="row">
+          <div><label for="f-house">Your house, optional</label>
+            <select id="f-house"><option value="">None</option><option value="galahad">Galahad (Perseverance)</option><option value="cincinnatus">Cincinnatus (Courage)</option><option value="nightingale">Nightingale (Service)</option><option value="odysseus">Odysseus (Self-Governance)</option></select></div>
+          <div><label for="f-tagline">Tagline under the course name</label><input type="text" id="f-tagline" placeholder="Course Home · Start here every week."></div>
+        </div>
+        <details><summary>Module cards (edit titles, untick to hide)</summary><div class="mods" id="mods"></div></details>
+      </div>
+      <div class="actions"><button type="button" class="next">Continue</button></div>
+    </section>
+
+    <section class="screen" data-screen="q-syllabus" hidden>
+      <h2 class="q">Do you want to review your syllabus?</h2>
+      <div class="tiles two yn">
+        <button type="button" class="tile big" data-q="syllabus" data-v="1"><span class="tt">Yes, review it</span><span class="ts">Edit any section, switch sections off, or add your own before it fills the Canvas Syllabus page.</span></button>
+        <button type="button" class="tile big" data-q="syllabus" data-v="0"><span class="tt">Skip</span><span class="ts">The standard syllabus for this course, with your details and gradebook, goes in as is.</span></button>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="syllabus" hidden>
+      <h2 class="q">Your syllabus</h2>
+    <div class="step locked" id="stepS">
+      <div class="hint">The kit fills your course's Canvas <b>Syllabus</b> page with this. Your name, email, class meeting and Live/On-Demand mode come from the details you gave earlier; the course title, code and description come from the course. Every section below can be edited or switched off, and you can add your own. Mid-year changes: come back here, edit, and use <b>Copy syllabus HTML</b>, then in your live course open Syllabus, Edit, the HTML editor, and paste over what is there. The home page's Syllabus tile keeps working either way.</div>
       <label style="display:flex;align-items:center;gap:8px;margin-top:10px;"><input type="checkbox" id="syl-on" checked> Put this syllabus on the Canvas Syllabus page in my kit</label>
       <div class="actions"><button type="button" class="sm alt" data-action="sylPreview">Preview syllabus</button><button type="button" class="sm alt" data-action="sylCopy">Copy syllabus HTML</button><button type="button" class="sm alt" data-action="sylDownload">Download syllabus .html</button><button type="button" class="sm alt" data-action="sylReset">Reset to course defaults</button></div>
       <div class="status" id="syl-status"></div>
@@ -461,45 +624,82 @@
       </div>
     </div>
 
-    <div class="step locked collapsible" id="step4">
-      <h2><span class="n">5</span> Dates, publishing and contents</h2>
-      <div id="dates-panel"><div class="hint">Choose a kit first.</div></div>
-    </div>
+      <div class="actions"><button type="button" class="next">Continue</button></div>
+    </section>
 
-    <div class="step locked collapsible" id="step5">
-      <h2><span class="n">6</span> Set up your gradebook</h2>
-      <div id="gradebook-panel"><div class="hint">Choose a kit first.</div></div>
-    </div>
-
-    <div class="step locked collapsible" id="step6">
-      <h2><span class="n">7</span> Download and import</h2>
-      <div class="hint">One file. Your home page is already inside it, set as the course front page, with the module cards linked to the real modules, and your syllabus fills the Syllabus page.</div>
-      <div class="hint" id="artpack" hidden style="border-left: 4px solid #0E1C42; padding-left: 12px;"></div>
-      <div class="actions">
-        <button id="dl" disabled>Download my course kit (.imscc)</button>
-        <button id="copy" class="alt" disabled>Copy home page HTML only</button>
-        <button id="dl-plain" class="alt" disabled>Original kit, no customization</button>
+    <section class="screen" data-screen="q-dates" hidden>
+      <h2 class="q">Do you want to set up open, due and close dates now?</h2>
+      <div class="tiles two yn">
+        <button type="button" class="tile big" data-q="dates" data-v="1"><span class="tt">Yes, set dates</span><span class="ts">Pick a course start date and every graded item gets a proposed due date you can edit, one at a time or by module.</span></button>
+        <button type="button" class="tile big" data-q="dates" data-v="0"><span class="tt">Skip</span><span class="ts">Import without dates and set them in Canvas later.</span></button>
       </div>
-      <div class="status" id="status"></div>
-      <ol class="check">
-        <li>In your Canvas course: <b>Settings</b> &rarr; <b>Import Course Content</b>.</li>
-        <li>Content Type: <b>Canvas Course Export Package</b>. Choose the file you just downloaded.</li>
-        <li>Content: <b>All content</b>. Leave dates unadjusted. Leave <b>Import existing quizzes as New Quizzes</b> <u>unchecked</u>: that option drops the module Intro and Outro surveys and hands you empty quizzes.</li>
-        <li>Click <b>Import</b> and wait for the green check.</li>
-        <li>Open <b>Home</b>. Your page should be there with your name on it. If not: Pages &rarr; set it as Front Page &rarr; Home &rarr; Choose Home Page &rarr; Pages Front Page.</li>
-        <li>Check <b>Modules</b> (count matches the kit), <b>Assignments</b> (group weights present) and <b>Syllabus</b> (your text is there), then <b>Publish</b> the course.</li>
-      </ol>
-      <div class="hint">Importing the same kit again later updates the course in place instead of duplicating it.</div>
-      <div class="printrow">
-        <div><b>Printable course.</b> One document with the whole course in module order, as students will see it in Canvas: your home page, every lesson page, assignment, discussion and quiz (questions without answers), with the dates and publishing choices above.</div>
+    </section>
+
+    <section class="screen" data-screen="dates" hidden>
+      <h2 class="q">Open, due and close dates</h2>
+      <div class="slot" id="slot-dates"></div>
+      <div class="actions"><button type="button" class="next">Continue</button></div>
+    </section>
+
+    <section class="screen" data-screen="q-publish" hidden>
+      <h2 class="q">Do you want to review the contents and what is published?</h2>
+      <div class="tiles two yn">
+        <button type="button" class="tile big" data-q="publish" data-v="1"><span class="tt">Yes, review it</span><span class="ts">Publish or unpublish modules and items, and remove anything you will not use from this import.</span></button>
+        <button type="button" class="tile big" data-q="publish" data-v="0"><span class="tt">Skip</span><span class="ts">Import everything as the curriculum team built it.</span></button>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="publish" hidden>
+      <h2 class="q">Contents and publishing</h2>
+      <div class="slot" id="slot-publish"></div>
+      <div class="actions"><button type="button" class="next">Continue</button></div>
+    </section>
+
+    <div id="step4" hidden><div id="dates-panel"><div class="hint">Choose a kit first.</div></div></div>
+
+    <section class="screen" data-screen="q-gradebook" hidden>
+      <h2 class="q">Do you want to configure the gradebook?</h2>
+      <div class="tiles two yn">
+        <button type="button" class="tile big" data-q="gradebook" data-v="1"><span class="tt">Yes, configure it</span><span class="ts">Set group weights, move items between groups and change point values.</span></button>
+        <button type="button" class="tile big" data-q="gradebook" data-v="0"><span class="tt">Skip</span><span class="ts">Keep the groups, weights and points as built.</span></button>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="gradebook" hidden>
+      <h2 class="q">Set up your gradebook</h2>
+      <div class="step" id="step5"><div id="gradebook-panel"><div class="hint">Choose a kit first.</div></div></div>
+      <div class="actions"><button type="button" class="next">Continue</button></div>
+    </section>
+
+    <section class="screen" data-screen="generate" hidden>
+      <h2 class="q" id="j-generate-title">Generate my course file</h2>
+      <div class="summary" id="j-summary"></div>
+      <div class="step" id="step6">
+        <div class="hint" id="j-generate-hint">One file. Your home page is already inside it, set as the course front page, with the module cards linked to the real modules, and your syllabus fills the Syllabus page.</div>
+        <div class="hint" id="artpack" hidden style="border-left: 4px solid #0E1C42; padding-left: 12px;"></div>
         <div class="actions">
-          <select id="print-scope" aria-label="What to print" disabled><option value="all">Whole course</option></select>
-          <button id="print-open" class="alt" disabled>Open printable course</button>
+          <button type="button" id="dl" disabled>Generate my course file (.imscc)</button>
+          <button type="button" id="dl-plain" class="alt" disabled>Original kit, no customization</button>
+          <button type="button" id="pdf" class="alt" disabled>Download PDF</button>
+          <button type="button" id="copy" class="alt" disabled>Copy home page HTML only</button>
         </div>
-        <div class="hint">It opens in a new tab. Press <b>Save as PDF</b> there (or Ctrl+P) and choose <i>Save as PDF</i> as the destination. A whole semester runs to several hundred pages and can take a minute to prepare; one module is quicker.</div>
-        <div class="status" id="print-status"></div>
+        <div class="status" id="status"></div>
+        <div class="hint"><button type="button" class="link" id="j-customize-instead" hidden>Customize it for my section instead</button></div>
+        <details class="howto" open><summary>How to import it into Canvas</summary>
+        <ol class="check">
+          <li>In your Canvas course: <b>Settings</b> &rarr; <b>Import Course Content</b>.</li>
+          <li>Content Type: <b>Canvas Course Export Package</b>. Choose the file you just downloaded.</li>
+          <li>Content: <b>All content</b>. Leave dates unadjusted. Leave <b>Import existing quizzes as New Quizzes</b> <u>unchecked</u>: that option drops the module Intro and Outro surveys and hands you empty quizzes.</li>
+          <li>Click <b>Import</b> and wait for the green check.</li>
+          <li>Open <b>Home</b>. Your page should be there with your name on it. If not: Pages &rarr; set it as Front Page &rarr; Home &rarr; Choose Home Page &rarr; Pages Front Page.</li>
+          <li>Check <b>Modules</b> (count matches the kit), <b>Assignments</b> (group weights present) and <b>Syllabus</b> (your text is there), then <b>Publish</b> the course.</li>
+        </ol>
+        <div class="hint">Importing the same kit again later updates the course in place instead of duplicating it.</div>
+        </details>
+        <div class="video" id="j-video"></div>
+        <div class="actions" style="margin-top:18px;"><button type="button" id="j-another">Configure another course</button></div>
       </div>
-    </div>
+    </section>
   </section>
 
   <section class="preview">
@@ -539,6 +739,7 @@
 <div class="foot">Optima Course Kit &middot; kits are built from Optima course files &middot; this page never writes to Canvas</div>
 <pre id="selftest-out" hidden></pre>
 <pre id="selftest-b64" hidden></pre>
+<pre id="selftest-scoped-b64" hidden></pre>
 <pre id="print-html" hidden></pre>
 
 <script>
@@ -1731,7 +1932,7 @@
     Syl.render(root);
     $('syl-on').checked = home.syllabusOn !== false;
     var s = home.syllabus, who = [s.meta.teacher || '[your name]', s.meta.email || '[your email]', s.meta.office || '[class meeting or office hours]'].join(' \u00b7 ');
-    $('syl-derived').textContent = 'From step 3: ' + who + ' \u00b7 ' + (s.meta.mode === 'Live' ? 'Live' : 'On-Demand') + ' section. Change those in step 3 and they change here.';
+    $('syl-derived').textContent = 'From your details: ' + who + ' \u00b7 ' + (s.meta.mode === 'Live' ? 'Live' : 'On-Demand') + ' section. Go back to Tell us about you to change them and they change here.';
     if (focus) { var again = root.querySelector('[data-path="' + focus + '"]'); if (again && again !== document.activeElement) again.focus(); }
     refreshSyllabusPreview();
   }
@@ -1853,6 +2054,7 @@
       else { kit = null; lockDownstream(); }
     } else if (!course) kit = null;
     renderCourse();
+    refreshTiles();
     return d;
   }
   function describeDiff(d) {
@@ -2031,13 +2233,13 @@
       r.innerHTML = '<div><div class="t">' + escHtml(c.title) + (lvl ? ' <span class="pill' + (/honors/i.test(lvl) ? '' : ' grey') + '">' + escHtml(lvl.toUpperCase()) + '</span>' : '') + '</div>' +
         '<div class="m">' + escHtml(gradeText(c.grade)) + ' &middot; ' + escHtml(c.code) + '</div></div>' +
         '<div class="st">' + (ready ? ready + ' of ' + c.kits.length + ' kit' + (c.kits.length === 1 ? '' : 's') + ' ready' : (c.kits.length ? 'Coming' : 'No kits listed')) + '</div>';
-      var pick = function () { chooseCourse(c); };
+      var pick = function () { chooseCourse(c); if (J.screen === 'course') go('mode'); };
       r.addEventListener('click', pick);
       r.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
       list.appendChild(r);
     });
     $('finder-count').textContent = rows.length + ' of ' + catalog.courses.length + ' course' + (catalog.courses.length === 1 ? '' : 's');
-    $('browse-label').textContent = course ? 'Pick a different course' : 'Browse by grade and subject';
+    $('browse-label').textContent = course ? 'Search the full course list for a different course' : 'Search the full course list';
   }
 
   // ------------------------------------------------------------ rendering
@@ -2046,7 +2248,6 @@
     renderFinder();
     if (!course) {
       el.innerHTML = '';
-      $('browse').open = true;
       lock(2, true); lockDownstream(); kit = null; renderKits(); renderPreview(); return;
     }
     var ready = readyCount(course), sibs = siblings(course), lvl = courseLevel(course);
@@ -2062,6 +2263,7 @@
     lock(2, false); lockDownstream();
     renderKits();
   }
+  // Step "whole semester or just a module": one tile per kit, one for a module.
   function renderKits() {
     var el = $('kits');
     if (!course) { el.innerHTML = '<div class="hint">Find a course first.</div>'; return; }
@@ -2083,21 +2285,32 @@
       h.textContent = 'This course has separate kits for Live and On-Demand sections. Pick your section type; a kit with no section label works for both.';
       el.appendChild(h);
     }
+    var out = [], anyReady = false;
     course.kits.forEach(function (k) {
       var m = kitMode(k);
       if (hasModes && m && m !== finder.mode) return;
-      var d = document.createElement('label');
-      d.className = 'kit' + (k.status === 'ready' ? '' : ' pending') + (kit && kit.id === k.id ? ' sel' : '');
+      var ready = k.status === 'ready'; if (ready) anyReady = true;
       // a light catalog row has no modules[] yet; it carries student_modules as a count
-      var nMods = k.modules ? k.modules.filter(function (m) { return m.published; }).length : (k.student_modules != null ? k.student_modules : '?');
-      var s = k.status === 'ready'
-        ? k.items + ' items &middot; ' + nMods + ' student modules &middot; ' + (k.bytes / 1048576).toFixed(1) + ' MB &middot; v' + escHtml(k.version) + '<br>' + escHtml(k.source || '')
-        : (k.status === 'spec-only' ? 'Authored, not built yet' : 'Not built yet');
-      d.innerHTML = '<input type="radio" name="kit" value="' + escHtml(k.id) + '"' + (k.status !== 'ready' ? ' disabled' : '') + (kit && kit.id === k.id ? ' checked' : '') + '>' +
-        '<div><div class="l">' + escHtml(k.label) + (m ? '<span class="pill grey">' + escHtml(MODE_LABEL[m].toUpperCase()) + '</span>' : '') + (k.status === 'ready' ? '<span class="pill">READY</span>' : '<span class="pill grey">PENDING</span>') + '</div><div class="s">' + s + '</div></div>';
-      if (k.status === 'ready') d.querySelector('input').addEventListener('change', function () { selectKit(k); });
-      el.appendChild(d);
+      var nMods = k.modules ? k.modules.filter(function (x) { return x.published; }).length : (k.student_modules != null ? k.student_modules : null);
+      var s = ready ? [k.items + ' items', nMods != null ? nMods + ' modules' : '', (k.bytes / 1048576).toFixed(1) + ' MB'].filter(Boolean).join(' \u00b7 ')
+        : (k.status === 'spec-only' ? 'Authored, not built yet' : 'Coming');
+      var on = kit && kit.id === k.id && !(home.onlyModules && home.onlyModules.length);
+      out.push(tile('kit' + (on ? ' on' : ''),
+        '<span class="tt">The whole ' + escHtml(k.label) + '</span>' + (m ? '<span class="pill grey">' + escHtml(MODE_LABEL[m].toUpperCase()) + '</span>' : '') +
+        '<span class="ts">' + escHtml(s) + '</span>' + (ready ? '' : '<span class="pill grey">PENDING</span>'),
+        ' data-part="kit" data-kit="' + escHtml(k.id) + '"', !ready));
     });
+    var modOn = kit && home.onlyModules && home.onlyModules.length;
+    out.push(tile('kit' + (modOn ? ' on' : ''), '<span class="tt">Just a module</span><span class="ts">Pick one or more modules; the rest stays out of your file.</span>', ' data-part="module"', !anyReady));
+    var grid = document.createElement('div'); grid.className = 'tiles kits'; grid.innerHTML = out.join('');
+    el.appendChild(grid);
+    grid.querySelectorAll('.tile[data-part="kit"]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var k = course.kits.filter(function (x) { return x.id === b.dataset.kit; })[0];
+        if (k) chooseWholeKit(k).catch(function () { /* shown in status */ });
+      });
+    });
+    grid.querySelector('.tile[data-part="module"]').addEventListener('click', function () { J.scope = 'modules'; J.modSel = null; saveJourney(); go('modules'); });
   }
   // A store built for 130+ courses (optima-courses-2026-27) publishes a LIGHT
   // catalog.json: each kit row names its `sidecar` (cartridges/<kit>.json) and the
@@ -2126,19 +2339,20 @@
     kit = k;
     if (previewItemId) { previewItemId = null; $('preview').className = ''; $('preview-home').hidden = true; $('preview-note').textContent = 'Links work after import, not here.'; }
     var saved = loadSaved(k.id);
-    home = saved || blankHome();
+    home = saved ? applyProfile(saved) : applyProfile(blankHome());
     // A kit built for one section type sets the home page's course mode on first use.
     if (!saved && kitMode(k)) home.mode = MODE_LABEL[kitMode(k)];
     if (!home.modules || !home.modules.length || home.modules.length !== k.modules.filter(function (m) { return m.published; }).length) {
       home.modules = k.modules.filter(function (m) { return m.published; }).map(function (m) { return { gid: m.gid, title: m.title, show: true }; });
     }
     ensureKitDefaults();
+    if (home.onlyModules && !home.onlyModules.some(function (id) { return moduleById(id); })) home.onlyModules = null;
     // A first visit (or a home saved before themes existed) gets the theme the
     // catalog's subject suggests; a theme the teacher already picked stays.
     if (!home.theme || !THEMES[home.theme]) applyTheme(themeForSubject(course.subject));
     if (!home.modStyle) home.modStyle = 'journey';
     lock(3, false); lock('S', false); lock(4, false); lock(5, false); lock(6, false);
-    ['dl', 'copy', 'dl-plain', 'print-open', 'print-scope'].forEach(function (id) { $(id).disabled = false; });
+    ['dl', 'copy', 'dl-plain', 'pdf', 'print-open', 'print-scope'].forEach(function (id) { $(id).disabled = false; });
     fillPrintScope();
     loadContents();
     renderKits(); fillForm(); renderStyle(); renderMods(); renderSyllabus(); renderDates(); renderGradebook(); renderPreview();
@@ -2229,7 +2443,7 @@
   function contentsOf(m) {
     return (kit.contents || []).filter(function (c) { return c.gid === m.gid; })[0] || null;
   }
-  function isRemoved(ci) { return !!(home.removed && home.removed[ci.id]); }
+  function isRemoved(ci) { return !!(home.removed && home.removed[ci.id]) || !!(ci.mod && excludedGids()[ci.mod]); }
   // A graded item leaves the cartridge when every module entry pointing at it is removed.
   function removedGids() {
     var remaining = {}, touched = {}, out = {};
@@ -2406,16 +2620,17 @@
     if (hasDates) {
       out.push('<label for="course-start">Course start date</label>');
       out.push('<input type="date" id="course-start" value="' + escHtml(home.courseStart || '') + '">');
-      out.push('<div class="hint">Proposed: 11:59 PM on the last day of each item\u2019s week. Edit any date, or leave a row blank.</div>');
-      out.push('<div class="hint">To set many at once, fill in a batch row and apply it. Blank batch fields leave existing dates alone. Times are your local time.</div>');
+      out.push('<div class="hint h-dates">Proposed: 11:59 PM on the last day of each item\u2019s week. Edit any date, or leave a row blank.</div>');
+      out.push('<div class="hint h-dates">To set many at once, fill in a batch row and apply it. Blank batch fields leave existing dates alone. Times are your local time.</div>');
       out.push(batchRow('all', 'Every graded item in this kit', 'Apply to all items'));
     } else {
       out.push('<div class="hint">This kit has no schedule data yet.</div>');
     }
     out.push('<div class="actions">' + (hasDates ? '<button type="button" class="alt" id="dates-clear">Clear all dates</button>' : '') + '<button type="button" class="sm alt" id="gb-pub-all">Publish everything</button><button type="button" class="sm alt" id="gb-unpub-all">Unpublish everything</button></div>');
-    out.push('<div class="hint">Each module has its own Publish all and Unpublish all, which carry the module and everything inside it. Untick one item in the Published column to import just that item unpublished. Open Module contents to remove an item from this import.</div>');
-    if (!kit.contents) out.push('<div class="hint">' + (kit.contentsError ? 'The module contents could not be read (' + escHtml(kit.contentsError) + '); removal is unavailable for this kit.' : 'Reading the module contents\u2026') + '</div>');
+    out.push('<div class="hint h-pub">Each module has its own Publish all and Unpublish all, which carry the module and everything inside it. Untick one item in the Published column to import just that item unpublished. Open Module contents to remove an item from this import.</div>');
+    if (!kit.contents) out.push('<div class="hint h-pub">' + (kit.contentsError ? 'The module contents could not be read (' + escHtml(kit.contentsError) + '); removal is unavailable for this kit.' : 'Reading the module contents\u2026') + '</div>');
     (kit.modules || []).forEach(function (m) {
+      if (!moduleKept(m)) return;
       var items = graded.filter(function (it) { return it.module === m.id; });
       var cont = contentsOf(m);
       if (!items.length && !cont) return;
@@ -2423,7 +2638,7 @@
       out.push('<details class="modblock"' + (mp ? ' open' : '') + '>');
       out.push('<summary><label style="display:inline-flex;align-items:center;gap:8px;"><input type="checkbox" class="gb-modpub" data-m="' + m.id + '"' + (mp ? ' checked' : '') + '> ' + escHtml(m.title) + '</label>' + (mp ? '' : ' <span class="pill grey">UNPUBLISHED</span>') + '</summary>');
       out.push('<div class="actions"><button type="button" class="sm alt gb-modall" data-m="' + m.id + '" data-v="1">Publish all in this module</button><button type="button" class="sm alt gb-modall" data-m="' + m.id + '" data-v="0">Unpublish all in this module</button></div>');
-      if (!mp) out.push('<div class="hint">This module will import unpublished. Its dates still apply once you publish it.</div>');
+      if (!mp) out.push('<div class="hint h-pub">This module will import unpublished. Its dates still apply once you publish it.</div>');
       if (cont) out.push(contentsList(m, cont));
       if (items.length) {
         out.push(batchRow(m.id, 'Every graded item in this module', 'Apply to this module'));
@@ -2512,9 +2727,10 @@
     out.push('</tbody></table></div>');
     out.push('<div class="actions"><button type="button" class="alt" id="gb-addgroup">Add group</button></div>');
     out.push('<div class="status" id="gb-summary"></div>');
-    out.push('<div class="hint" style="margin-top:14px;">A graded quiz total is split evenly across its questions when you change it. Publishing is set in step 5.</div>');
+    out.push('<div class="hint" style="margin-top:14px;">A graded quiz total is split evenly across its questions when you change it. Publishing has its own step.</div>');
     var graded = activeGraded();
     (kit.modules || []).forEach(function (m) {
+      if (!moduleKept(m)) return;
       var items = graded.filter(function (it) { return it.module === m.id && !(it.type === 'quiz' && it.quiz_type === 'survey'); });
       if (!items.length) return;
       out.push('<details class="modblock" open>');
@@ -2622,7 +2838,13 @@
   var FIELDS = ['teacherName', 'teacherTitle', 'teacherEmail', 'mode', 'term', 'section', 'meeting', 'studyHall', 'blurb', 'house', 'tagline'];
   function fillForm() { FIELDS.forEach(function (f) { $('f-' + f).value = home[f] || ($('f-' + f).tagName === 'SELECT' ? $('f-' + f).options[0].value : ''); }); }
   function readForm() { FIELDS.forEach(function (f) { home[f] = $('f-' + f).value; }); }
-  function currentHtml() { return (course && kit) ? buildHome(course, kit, home) : ''; }
+  function currentHtml() {
+    if (!(course && kit)) return '';
+    if (!home.onlyModules || !home.onlyModules.length) return buildHome(course, kit, home);
+    var keptGid = {}; keptModules().forEach(function (m) { keptGid[m.gid] = true; });
+    var h = Object.assign({}, home, { modules: (home.modules || []).filter(function (m) { return keptGid[m.gid]; }) });
+    return buildHome(course, kit, h);
+  }
   // ------------------------------------------------------------ item preview
   // The cartridge holds every item's page. Fetched once per kit on the first click,
   // then read straight out of the zip. Links carry Canvas tokens that only resolve on
@@ -2744,7 +2966,7 @@
   var lessonCache = {};
   function fillPrintScope() {
     var sel = $('print-scope'); if (!sel) return;
-    sel.innerHTML = '<option value="all">Whole course</option>' + (kit.modules || []).map(function (m) {
+    sel.innerHTML = '<option value="all">Whole course</option>' + keptModules().map(function (m) {
       return '<option value="' + escHtml(m.gid) + '">' + escHtml(m.title) + '</option>';
     }).join('');
   }
@@ -2763,6 +2985,7 @@
           state: attr(ib, 'workflow_state') || 'active', position: parseInt(attr(ib, 'position') || '0', 10), indent: parseInt(attr(ib, 'indent') || '0', 10), url: attr(ib, 'url') };
       });
       items.sort(function (a, b) { return a.position - b.position; });
+      items.forEach(function (it) { it.mod = id ? id[1] : ''; });
       var head = mb.slice(0, mb.indexOf('<items>') >= 0 ? mb.indexOf('<items>') : mb.length);
       mods.push({ gid: id ? id[1] : '', title: attr(head, 'title'), state: attr(head, 'workflow_state') || 'active', position: parseInt(attr(head, 'position') || '0', 10), items: items });
     });
@@ -2851,6 +3074,7 @@
         var mods = readModuleMeta(r[0]), hrefs = readManifestHrefs(r[1]);
         var byGid = {}; (kit.graded_items || []).forEach(function (it) { byGid[it.gid] = it; });
         var modByGid = {}; (kit.modules || []).forEach(function (m) { modByGid[m.gid] = m; });
+        var exGid = excludedGids(); mods = mods.filter(function (m) { return !exGid[m.gid]; });
         if (scope && scope !== 'all') mods = mods.filter(function (m) { return m.gid === scope; });
         var sections = [], toc = [];
         var tasks = [];
@@ -2965,27 +3189,27 @@
     var mod = scope && scope !== 'all' ? (kit.modules || []).filter(function (m) { return m.gid === scope; })[0] : null;
     return [slug(course.title), mod ? slug(mod.title) : slug(kit.label), 'printable'].filter(Boolean).join('-') + '.html';
   }
-  function pstatus(msg, cls) { var el = $('print-status'); el.textContent = msg; el.className = 'status ' + (cls || ''); }
-  function openPrintable() {
-    var scope = $('print-scope').value || 'all';
+  function pstatus(msg, cls, id) { var el = $(id || 'print-status'); el.textContent = msg; el.className = 'status ' + (cls || ''); }
+  function openPrintable(scopeArg, statusId) {
+    var scope = scopeArg || $('print-scope').value || 'all';
     // Open the tab now, inside the click, so pop-up blockers let it through; fill it when ready.
     var w = null;
     try { w = window.open('', '_blank'); } catch (e) { w = null; }
     if (w) { try { w.document.write('<!doctype html><title>Preparing\u2026</title><body style="font-family:Segoe UI,Arial,sans-serif;padding:40px;color:#0e1c42"><h2>Preparing your printable course\u2026</h2><p>Fetching every lesson page. A whole semester takes a little while.</p></body>'); } catch (e) { /* ignore */ }
     }
-    pstatus('Preparing the printable course\u2026');
+    pstatus('Preparing the printable course\u2026', statusId);
     $('print-open').disabled = true;
     return printableCourse(scope).then(function (r) {
       var blob = new Blob([r.html], { type: 'text/html;charset=utf-8' });
       var url = URL.createObjectURL(blob);
       var s = r.stats, summary = s.modules + ' module' + (s.modules === 1 ? '' : 's') + ', ' + s.items + ' items, ' + s.lessons + ' lesson pages' + (s.links ? ', ' + s.links + ' linked videos or forms' : '') + (s.skipped ? '; ' + s.skipped + ' unpublished items left out' : '') + '.';
-      if (w && !w.closed) { w.location.href = url; pstatus('Opened in a new tab: ' + summary + ' Press Save as PDF there.', 'ok'); }
-      else { saveBlob(blob, printFilename(scope)); pstatus('Your browser blocked the new tab, so the printable course was downloaded as a file instead: ' + summary + ' Open it and press Ctrl+P.', 'ok'); }
+      if (w && !w.closed) { w.location.href = url; pstatus('Opened in a new tab: ' + summary + ' Press Save as PDF there.', 'ok', statusId); }
+      else { saveBlob(blob, printFilename(scope)); pstatus('Your browser blocked the new tab, so the printable course was downloaded as a file instead: ' + summary + ' Open it and press Ctrl+P.', 'ok', statusId); }
       $('print-open').disabled = false;
       return r;
     }).catch(function (e) {
       if (w && !w.closed) { try { w.close(); } catch (e2) { /* ignore */ } }
-      pstatus('Could not prepare the printable course: ' + e.message, 'err');
+      pstatus('Could not prepare the printable course: ' + e.message, 'err', statusId);
       $('print-open').disabled = false;
       throw e;
     });
@@ -3010,7 +3234,7 @@
   function patchedKit(type) {
     if (!kit || !course) return Promise.reject(new Error('choose a kit first'));
     var html = currentHtml();
-    return fetch(BASE + kit.file, { cache: 'no-store' }).then(function (r) {
+    return loadContents().then(function () { return fetch(BASE + kit.file, { cache: 'no-store' }); }).then(function (r) {
       if (!r.ok) throw new Error('could not fetch ' + kit.file + ' (' + r.status + ')');
       return r.arrayBuffer();
     }).then(function (buf) { return JSZip.loadAsync(buf); }).then(function (zip) {
@@ -3157,6 +3381,7 @@
       var closeIdx = text.indexOf('</module>', openIdx);
       if (closeIdx < 0) return;
       var end = closeIdx + '</module>'.length;
+      if (!moduleKept(m)) { text = text.slice(0, openIdx) + text.slice(end); return; }
       var block = text.slice(openIdx, end);
       var pub = modulePublished(m);
       block = block.replace(/<workflow_state>[\s\S]*?<\/workflow_state>/, '<workflow_state>' + (pub ? 'active' : 'unpublished') + '</workflow_state>');
@@ -3173,7 +3398,22 @@
   // imsmanifest.xml: removed module items leave the organization; a graded item no
   // module points at any more loses its resource, the resources that one depends on,
   // and (back in the zip) their files. Returns the files those resources listed.
+  // Cut one <item identifier="id"> element with everything nested in it.
+  function cutXmlItem(text, id) {
+    var start = text.indexOf('<item identifier="' + id + '"');
+    if (start < 0) return text;
+    var re = /<item\b|<\/item>/g, depth = 0, pos = -1, m;
+    re.lastIndex = start;
+    while ((m = re.exec(text))) {
+      depth += m[0] === '<item' ? 1 : -1;
+      if (depth === 0) { pos = m.index + m[0].length; break; }
+    }
+    if (pos < 0) return text;
+    var ws = start; while (ws > 0 && /\s/.test(text.charAt(ws - 1))) ws--;
+    return text.slice(0, ws) + text.slice(pos);
+  }
   function patchManifest(text, gone) {
+    Object.keys(excludedGids()).forEach(function (gid) { text = cutXmlItem(text, gid); });
     Object.keys(home.removed || {}).forEach(function (iid) {
       text = text.replace(new RegExp('\\s*<item identifier="' + iid + '"[^>]*>[\\s\\S]*?<\\/item>'), '');
     });
@@ -3256,8 +3496,11 @@
     // Only a graded item's resource leaves the cartridge; a removed page keeps its
     // resource and file, it just leaves the module.
     var gradedGid = {}; (kit.graded_items || []).forEach(function (it) { gradedGid[it.gid] = true; });
-    var gone = {}; Object.keys(removedGids()).forEach(function (g) { if (gradedGid[g]) gone[g] = true; });
-    var anyRemoved = Object.keys(home.removed || {}).length > 0;
+    // Items dropped with a whole module (pages too, never course files) leave with it.
+    var exGid = excludedGids(), scopedRef = {};
+    (kit.contents || []).forEach(function (c) { if (exGid[c.gid]) c.items.forEach(function (ci) { if (ci.ref && ci.type !== 'Attachment') scopedRef[ci.ref] = true; }); });
+    var gone = {}; Object.keys(removedGids()).forEach(function (g) { if (gradedGid[g] || scopedRef[g]) gone[g] = true; });
+    var anyRemoved = Object.keys(home.removed || {}).length > 0 || Object.keys(exGid).length > 0;
     activeGraded().forEach(function (item) {
       tasks.push(function () {
         var eff = effItem(item);
@@ -3310,7 +3553,8 @@
     return chain(tasks);
   }
   function kitFilename() {
-    return [slug(course.title), slug(kit.label), slug(home.teacherName) || 'teacher'].filter(Boolean).join('-') + '.imscc';
+    var kept = keptModules(), part = (home.onlyModules && home.onlyModules.length && kept.length < (kit.modules || []).length) ? (kept.length === 1 ? slug(kept[0].title) : kept.length + '-modules') : '';
+    return [slug(course.title), slug(kit.label), part, slug(home.teacherName) || 'teacher'].filter(Boolean).join('-') + '.imscc';
   }
   function saveBlob(blob, name) {
     var a = document.createElement('a');
@@ -3668,23 +3912,352 @@
     $('kit-view').hidden = name !== 'kit';
     $('tiles-view').hidden = name !== 'tiles';
     if (name !== 'kit') $('show-preview').hidden = true;
-    else $('show-preview').hidden = !uiPref().previewHidden;
+    else syncPreviewButton();
     try { var u = uiPref(); u.tab = name; localStorage.setItem(UI_STORE, JSON.stringify(u)); } catch (e) { /* ignore */ }
     if (name === 'tiles') drawAllTiles();
+  }
+
+  // ------------------------------------------------------------ the journey
+  // One question per screen. The panels below (home page form, syllabus, dates and
+  // publishing, gradebook, download) are unchanged; the journey decides which of
+  // them a teacher sees, in what order, from the answers they give. Teacher details
+  // (name, email, Teams link...) are remembered on this computer for the next course.
+  var PROFILE_STORE = 'optima-course-kit-teacher';
+  var PROFILE_FIELDS = ['teacherName', 'teacherTitle', 'teacherEmail', 'mode', 'term', 'section', 'meeting', 'studyHall'];
+  // Set to the implementation tutorial's embed URL when it exists (YouTube embed,
+  // Stream or SharePoint embed). Empty = a "coming soon" card under the checklist.
+  var TUTORIAL_VIDEO_URL = '';
+  var J = { path: '', screen: 'welcome', mode: '', scope: '', want: {}, history: [], modSel: null };
+  var PANE_SCREENS = { preview: 1, details: 1, home: 1, syllabus: 1, dates: 1, publish: 1, gradebook: 1, generate: 1 };
+  var NEEDS_KIT = { preview: 1, details: 1, home: 1, syllabus: 1, dates: 1, publish: 1, gradebook: 1, generate: 1, 'q-home': 1, 'q-syllabus': 1, 'q-dates': 1, 'q-publish': 1, 'q-gradebook': 1 };
+  var NEEDS_COURSE = { mode: 1, part: 1, modules: 1 };
+  var Q_OF = { home: 'q-home', syllabus: 'q-syllabus', dates: 'q-dates', publish: 'q-publish', gradebook: 'q-gradebook' };
+
+  function loadProfile() { try { return JSON.parse(localStorage.getItem(PROFILE_STORE) || '{}') || {}; } catch (e) { return {}; } }
+  function saveProfile() {
+    var p = {}, any = false;
+    PROFILE_FIELDS.forEach(function (f) { p[f] = home[f] || ''; if (f !== 'mode' && p[f]) any = true; });
+    try { if (any) localStorage.setItem(PROFILE_STORE, JSON.stringify(p)); } catch (e) { /* ignore */ }
+    renderGreeting();
+  }
+  function clearProfile() { try { localStorage.removeItem(PROFILE_STORE); } catch (e) { /* ignore */ } renderGreeting(); }
+  // A new kit starts from the remembered details; a saved home page keeps its own.
+  function applyProfile(h) {
+    var p = loadProfile();
+    PROFILE_FIELDS.forEach(function (f) { if (p[f] && !h[f]) h[f] = p[f]; });
+    if (p.mode && h.mode === 'On-Demand') h.mode = p.mode;
+    return h;
+  }
+  function renderGreeting() {
+    var el = $('j-greet'); if (!el) return;
+    var p = loadProfile();
+    if (!p.teacherName) { el.hidden = true; el.innerHTML = ''; return; }
+    el.hidden = false;
+    el.innerHTML = 'Welcome back, ' + escHtml(p.teacherName) + '. Your details are remembered for the next course. <button type="button" class="link" id="j-forget">Not you?</button>';
+    $('j-forget').addEventListener('click', clearProfile);
+  }
+
+  function saveJourney() {
+    try { var u = uiPref(); u.journey = { path: J.path, screen: J.screen, mode: J.mode, scope: J.scope, want: J.want }; localStorage.setItem(UI_STORE, JSON.stringify(u)); } catch (e) { /* ignore */ }
+  }
+  function loadJourney() {
+    var j = uiPref().journey || {};
+    J.path = j.path === 'fetch' ? 'fetch' : (j.path === 'customize' ? 'customize' : '');
+    J.mode = j.mode === 'preview' || j.mode === 'configure' ? j.mode : '';
+    J.scope = j.scope === 'modules' ? 'modules' : (j.scope === 'all' ? 'all' : '');
+    J.want = (j.want && typeof j.want === 'object') ? j.want : {};
+    var s = typeof j.screen === 'string' && document.querySelector('.screen[data-screen="' + j.screen + '"]') ? j.screen : 'welcome';
+    // A reload keeps the course but not the kit, so kit screens fall back to the choice before them.
+    if (NEEDS_KIT[s] && !kit) s = course ? 'part' : 'welcome';
+    if (NEEDS_COURSE[s] && !course) s = 'welcome';
+    if (s !== 'welcome' && !J.path) J.path = 'customize';
+    J.screen = s;
+  }
+  // The screens a teacher will pass through, given the answers so far. Unanswered
+  // questions count as one screen (the question itself).
+  function sequence() {
+    var seq = ['welcome', 'grade', 'subject', 'course', 'mode', 'part'];
+    if (J.scope === 'modules' || J.screen === 'modules') seq.push('modules');
+    if (J.mode === 'preview' || J.screen === 'preview') seq.push('preview');
+    if (J.path === 'fetch') { seq.push('generate'); return seq; }
+    seq.push('details');
+    ['home', 'syllabus', 'dates', 'publish', 'gradebook'].forEach(function (q) {
+      seq.push(Q_OF[q]);
+      if (J.want[q] || J.screen === q) seq.push(q);
+    });
+    seq.push('generate');
+    return seq;
+  }
+  function nextScreen(from) {
+    var seq = sequence(), i = seq.indexOf(from || J.screen);
+    return i >= 0 && i + 1 < seq.length ? seq[i + 1] : 'generate';
+  }
+  function go(screen, noHistory) {
+    if (screen === J.screen) { renderScreen(); return; }
+    if (!noHistory) J.history.push(J.screen);
+    J.screen = screen;
+    renderScreen(); saveJourney();
+    try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (e) { window.scrollTo(0, 0); }
+  }
+  function back() {
+    var prev = J.history.pop();
+    if (!prev) { var seq = sequence(), i = seq.indexOf(J.screen); prev = i > 0 ? seq[i - 1] : 'welcome'; }
+    J.screen = prev; renderScreen(); saveJourney();
+  }
+  // Another course: the teacher's details stay, everything about this course goes.
+  function startOver(toScreen) {
+    course = null; kit = null; J.mode = ''; J.scope = ''; J.want = {}; J.history = []; J.modSel = null;
+    if (previewItemId) leaveItemPreview();
+    $('code').value = '';
+    renderCourse(); renderPreview();
+    go(toScreen || 'grade', true);
+  }
+  function syncPreviewButton() {
+    var solo = !PANE_SCREENS[J.screen] || $('kit-view').hidden;
+    $('show-preview').hidden = solo || !uiPref().previewHidden;
+  }
+  function renderScreen() {
+    document.querySelectorAll('.screen').forEach(function (s) { s.hidden = s.dataset.screen !== J.screen; });
+    $('jnav').hidden = J.screen === 'welcome';
+    var wrap = $('kit-view');
+    wrap.classList.toggle('solo', !PANE_SCREENS[J.screen]);
+    syncPreviewButton();
+    renderTrail();
+    var panel = $('dates-panel');
+    if (J.screen === 'dates' || J.screen === 'publish') {
+      $('slot-' + (J.screen === 'dates' ? 'dates' : 'publish')).appendChild($('step4'));
+      $('step4').hidden = false;
+      var both = J.want.dates && J.want.publish;
+      panel.className = both ? '' : (J.screen === 'dates' ? 'mode-dates' : 'mode-publish');
+    } else { $('step4').hidden = true; panel.className = ''; }
+    if (J.screen === 'welcome') renderGreeting();
+    if (J.screen === 'grade') renderGradeTiles();
+    if (J.screen === 'subject') renderSubjectTiles();
+    if (J.screen === 'course') renderCourseTiles();
+    if (J.screen === 'part') renderKits();
+    if (J.screen === 'modules') renderModuleTiles();
+    if (J.screen === 'preview') renderContentsPreview();
+    if (J.screen === 'generate') renderGenerate();
+    if (J.screen === 'home' || J.screen === 'details') fillForm();
+  }
+  function renderTrail() {
+    var seq = sequence(), i = seq.indexOf(J.screen), el = $('j-trail');
+    if (i < 0) { el.innerHTML = ''; return; }
+    el.innerHTML = seq.slice(1).map(function (s, k) { return '<span class="dot' + (k + 1 < i ? ' done' : (k + 1 === i ? ' now' : '')) + '" title="' + escHtml(s) + '"></span>'; }).join('')
+      + '<span class="lbl">Step ' + i + ' of ' + (seq.length - 1) + '</span>';
+  }
+  function refreshTiles() {
+    if (J.screen === 'grade' || J.screen === 'subject' || J.screen === 'course' || J.screen === 'part') renderScreen();
+  }
+  function tile(cls, inner, attrs, disabled) {
+    return '<button type="button" class="tile ' + cls + '"' + (attrs || '') + (disabled ? ' disabled' : '') + '>' + inner + '</button>';
+  }
+  function renderGradeTiles() {
+    var counts = {};
+    catalog.courses.forEach(function (c) { gradeList(c.grade).forEach(function (n) { counts[n] = (counts[n] || 0) + 1; }); });
+    var out = [];
+    for (var n = 0; n <= 12; n++) {
+      var k = counts[n] || 0;
+      out.push(tile('grade' + (finder.grade === n ? ' on' : ''), '<span class="tn">' + gradeLabel(n) + '</span><span class="ts">' + (k ? k + ' course' + (k === 1 ? '' : 's') : 'none yet') + '</span>', ' data-g="' + n + '"', !k));
+    }
+    $('t-grades').innerHTML = out.join('');
+    $('t-grades').querySelectorAll('.tile').forEach(function (b) {
+      b.addEventListener('click', function () { finder.grade = +this.dataset.g; finder.subject = ''; saveFinder(); go('subject'); });
+    });
+  }
+  function renderSubjectTiles() {
+    var subjects = {};
+    catalog.courses.forEach(function (c) { if (finder.grade === '' || gradeList(c.grade).indexOf(finder.grade) >= 0) { var s = c.subject || 'Other'; subjects[s] = (subjects[s] || 0) + 1; } });
+    var names = Object.keys(subjects).sort();
+    $('t-subjects').innerHTML = names.map(function (s) {
+      return tile('subject' + (finder.subject === s ? ' on' : ''), '<span class="tt">' + escHtml(s) + '</span><span class="ts">' + subjects[s] + ' course' + (subjects[s] === 1 ? '' : 's') + (finder.grade === '' ? '' : ' in grade ' + gradeLabel(finder.grade)) + '</span>', ' data-s="' + escHtml(s) + '"');
+    }).join('') || '<div class="hint">No courses for this grade yet.</div>';
+    $('t-subjects').querySelectorAll('.tile').forEach(function (b) {
+      b.addEventListener('click', function () { finder.subject = this.dataset.s; saveFinder(); go('course'); });
+    });
+  }
+  function renderCourseTiles() {
+    var rows = catalog.courses.filter(matchesFinder);
+    rows.sort(function (a, b) {
+      return gradeSortKey(a) - gradeSortKey(b) || courseFamily(a).localeCompare(courseFamily(b)) || courseLevel(a).localeCompare(courseLevel(b)) || a.code.localeCompare(b.code);
+    });
+    $('t-courses-hint').textContent = (finder.subject || 'All subjects') + (finder.grade === '' ? '' : ', grade ' + gradeLabel(finder.grade)) + ' · ' + rows.length + ' course' + (rows.length === 1 ? '' : 's') + '. Honors and Standard have their own tiles.';
+    $('t-courses').innerHTML = rows.map(function (c) {
+      var ready = readyCount(c), lvl = courseLevel(c);
+      return tile('course' + (course === c ? ' on' : ''),
+        '<span class="tt">' + escHtml(c.title) + '</span>' +
+        (lvl ? '<span class="pill' + (/honors/i.test(lvl) ? '' : ' grey') + '">' + escHtml(lvl.toUpperCase()) + '</span>' : '') +
+        '<span class="ts">' + escHtml(gradeText(c.grade)) + ' · ' + escHtml(c.code) + '</span>' +
+        '<span class="ts">' + (ready ? ready + ' of ' + c.kits.length + ' kit' + (c.kits.length === 1 ? '' : 's') + ' ready' : (c.kits.length ? 'Coming' : 'No kits listed')) + '</span>',
+        ' data-code="' + escHtml(c.code) + '"', !ready);
+    }).join('') || '<div class="hint">No courses match. Try another subject or grade, or search the full list below.</div>';
+    $('t-courses').querySelectorAll('.tile').forEach(function (b) {
+      b.addEventListener('click', function () { chooseCourse(findCourse(this.dataset.code)); go('mode'); });
+    });
+  }
+  // After the course: whole semester = a kit; a module = a kit plus a scope.
+  function afterScope() { return J.mode === 'preview' ? 'preview' : (J.path === 'fetch' ? 'generate' : 'details'); }
+  function chooseWholeKit(k) {
+    return selectKit(k).then(function () {
+      J.scope = 'all'; J.modSel = null;
+      if (home.onlyModules) { home.onlyModules = null; save(); refreshKitPanels(); }
+      go(afterScope());
+    });
+  }
+  function refreshKitPanels() { fillPrintScope(); renderMods(); renderSyllabus(); renderDates(); renderGradebook(); renderPreview(); }
+  function renderModuleTiles() {
+    var el = $('t-modules'); if (!course) { el.innerHTML = ''; return Promise.resolve(); }
+    var modes = {}; course.kits.forEach(function (k) { var m = kitMode(k); if (m) modes[m] = true; });
+    var hasModes = !!(modes.live || modes.od);
+    var kits = course.kits.filter(function (k) { return k.status === 'ready' && !(hasModes && kitMode(k) && kitMode(k) !== finder.mode); });
+    if (!J.modSel && kit) J.modSel = { kitId: kit.id, ids: (home.onlyModules || []).slice() };
+    if (!J.modSel) J.modSel = { kitId: '', ids: [] };
+    el.innerHTML = '<div class="hint">Loading the module list…</div>';
+    return Promise.all(kits.map(loadKitDetail)).then(function () {
+      var out = [];
+      kits.forEach(function (k) {
+        if (kits.length > 1) out.push('<div class="grp">' + escHtml(k.label) + '</div>');
+        (k.modules || []).forEach(function (m) {
+          var on = J.modSel.kitId === k.id && J.modSel.ids.indexOf(m.id) >= 0;
+          var n = (k.graded_items || []).filter(function (it) { return it.module === m.id; }).length;
+          out.push(tile('modtile' + (on ? ' on' : ''),
+            '<span class="ttl"><span class="tt">' + escHtml(m.title) + '</span><span class="tick">' + (on ? '✓' : '') + '</span></span>' +
+            '<span class="ts">' + (n ? n + ' graded item' + (n === 1 ? '' : 's') : 'No graded items') + (m.published ? '' : ' · unpublished in the kit') + '</span>',
+            ' data-kit="' + escHtml(k.id) + '" data-m="' + escHtml(m.id) + '"'));
+        });
+      });
+      el.innerHTML = '<div class="tiles mods">' + (out.join('') || '<div class="hint">This course has no modules listed yet.</div>') + '</div>';
+      el.querySelectorAll('.tile').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var kid = this.dataset.kit, mid = this.dataset.m;
+          if (J.modSel.kitId !== kid) J.modSel = { kitId: kid, ids: [] };
+          var i = J.modSel.ids.indexOf(mid);
+          if (i >= 0) J.modSel.ids.splice(i, 1); else J.modSel.ids.push(mid);
+          renderModuleTiles();
+        });
+      });
+      var n = J.modSel.ids.length, btn = $('j-modules-go');
+      btn.disabled = !n;
+      btn.textContent = n ? 'Continue with ' + n + ' module' + (n === 1 ? '' : 's') : 'Continue';
+    }).catch(function (e) { el.innerHTML = '<div class="hint">Could not load the module list: ' + escHtml(e.message) + '</div>'; });
+  }
+  function chooseModules() {
+    if (!J.modSel || !J.modSel.ids.length) return Promise.resolve();
+    var k = course.kits.filter(function (x) { return x.id === J.modSel.kitId; })[0];
+    if (!k) return Promise.resolve();
+    var ids = J.modSel.ids.slice();
+    return selectKit(k).then(function () {
+      // keep the kit's own order
+      home.onlyModules = (kit.modules || []).filter(function (m) { return ids.indexOf(m.id) >= 0; }).map(function (m) { return m.id; });
+      J.scope = 'modules'; save(); refreshKitPanels();
+      go(afterScope());
+    });
+  }
+  // Module scope: a kit trimmed to the chosen modules. Everything else leaves the
+  // module list, the organization and (when nothing kept still points at it) the
+  // cartridge itself. Course files stay: a kept page may link to them.
+  function moduleKept(m) { return !home.onlyModules || !home.onlyModules.length || home.onlyModules.indexOf(m.id) >= 0; }
+  function keptModules() { return (kit && kit.modules || []).filter(moduleKept); }
+  function excludedGids() {
+    var out = {};
+    if (!kit || !home.onlyModules || !home.onlyModules.length) return out;
+    (kit.modules || []).forEach(function (m) { if (!moduleKept(m)) out[m.gid] = true; });
+    return out;
+  }
+  function scopeLabel() {
+    if (!kit) return '';
+    var kept = keptModules();
+    if (!home.onlyModules || !home.onlyModules.length || kept.length === (kit.modules || []).length) return kit.label;
+    return kit.label + ' · ' + (kept.length === 1 ? kept[0].title : kept.length + ' modules');
+  }
+  // The preview screen: the kit's modules with their graded items; click one to read it.
+  function renderContentsPreview() {
+    var el = $('j-contents'); if (!kit) { el.innerHTML = ''; return; }
+    var graded = activeGraded(), out = ['<div class="contents-tree">'];
+    keptModules().forEach(function (m) {
+      var items = graded.filter(function (it) { return it.module === m.id; });
+      var cont = contentsOf(m), total = cont ? cont.items.filter(function (ci) { return !isRemoved(ci); }).length : null;
+      out.push('<details' + (items.length ? '' : '') + '><summary>' + escHtml(m.title) + (m.published ? '' : '<span class="pill grey">UNPUBLISHED</span>') + ' <span class="hint" style="display:inline;margin:0;">' + (total != null ? total + ' item' + (total === 1 ? '' : 's') + ', ' : '') + items.length + ' graded</span></summary>');
+      if (cont) {
+        out.push('<ol class="contents">');
+        cont.items.forEach(function (ci, i) {
+          if (isRemoved(ci)) return;
+          var g = graded.filter(function (it) { return it.gid === ci.ref; })[0];
+          out.push('<li><span class="ct-n">' + (i + 1) + '</span><span class="pill grey">' + escHtml(TYPE_LABEL[ci.type] || ci.type) + '</span>' +
+            (g ? '<a href="#" class="prev-link ct-title" data-id="' + escHtml(g.id) + '">' + escHtml(ci.title) + '</a>' : '<span class="ct-title">' + escHtml(ci.title) + '</span>') + '</li>');
+        });
+        out.push('</ol>');
+      } else if (items.length) {
+        out.push('<ol class="contents">' + items.map(function (it, i) { return '<li><span class="ct-n">' + (i + 1) + '</span><a href="#" class="prev-link ct-title" data-id="' + escHtml(it.id) + '">' + escHtml(it.title) + '</a></li>'; }).join('') + '</ol>');
+      }
+      out.push('</details>');
+    });
+    out.push('</div>');
+    el.innerHTML = out.join('');
+    el.querySelectorAll('.prev-link').forEach(function (a) {
+      a.addEventListener('click', function (e) { e.preventDefault(); previewItem(itemById(this.dataset.id)); });
+    });
+    if (!kit.contents) loadContents().then(function () { if (J.screen === 'preview') renderContentsPreview(); });
+  }
+  function renderGenerate() {
+    var fetchOnly = J.path === 'fetch';
+    $('j-generate-title').textContent = fetchOnly ? 'Download your course file' : 'Generate my course file';
+    $('j-generate-hint').textContent = fetchOnly
+      ? 'One file, exactly as the curriculum team built it. Import it into your Canvas course and put your own name on the home page there.'
+      : 'One file. Your home page is already inside it, set as the course front page, with the module cards linked to the real modules, and your syllabus fills the Syllabus page.';
+    $('dl').hidden = fetchOnly; $('copy').hidden = fetchOnly;
+    $('dl-plain').hidden = !fetchOnly && !!home.onlyModules && home.onlyModules.length > 0;
+    $('dl-plain').textContent = fetchOnly ? 'Download the course file (.imscc)' : 'Original kit, no customization';
+    $('j-customize-instead').hidden = !fetchOnly;
+    var chips = [];
+    if (course) chips.push('<span class="chipx"><b>' + escHtml(course.title) + '</b> ' + escHtml(course.code) + '</span>');
+    if (kit) chips.push('<span class="chipx">' + escHtml(scopeLabel()) + '</span>');
+    if (!fetchOnly) {
+      var on = function (label, yes, offText) { return '<span class="chipx' + (yes ? '' : ' off') + '">' + label + ': ' + (yes ? 'customized' : offText) + '</span>'; };
+      chips.push(on('Home page', J.want.home, 'suggested look'));
+      chips.push(on('Syllabus', J.want.syllabus, home.syllabusOn === false ? 'left out' : 'standard'));
+      chips.push(on('Dates', J.want.dates, 'none set'));
+      chips.push(on('Publishing', J.want.publish, 'as built'));
+      chips.push(on('Gradebook', J.want.gradebook, 'as built'));
+    }
+    $('j-summary').innerHTML = chips.join('');
+    var v = $('j-video');
+    v.innerHTML = '<h3>Implementation tutorial</h3>' + (TUTORIAL_VIDEO_URL
+      ? '<div class="frame"><iframe src="' + escHtml(TUTORIAL_VIDEO_URL) + '" title="Implementation tutorial" allowfullscreen loading="lazy"></iframe></div>'
+      : '<div class="soon">The tutorial video for importing your course file is coming soon. Until then, the steps above walk you through the import.</div>');
+  }
+  function wireJourney() {
+    $('t-path').querySelectorAll('.tile').forEach(function (b) {
+      b.addEventListener('click', function () { J.path = this.dataset.path; J.want = {}; J.mode = ''; saveJourney(); go('grade'); });
+    });
+    $('j-tiles').addEventListener('click', function () { setTab('tiles'); });
+    $('j-back').addEventListener('click', back);
+    $('j-restart').addEventListener('click', function () { startOver('welcome'); });
+    $('t-mode').querySelectorAll('.tile').forEach(function (b) {
+      b.addEventListener('click', function () { J.mode = this.dataset.mode; saveJourney(); go('part'); });
+    });
+    $('j-modules-go').addEventListener('click', function () { chooseModules(); });
+    $('j-preview-configure').addEventListener('click', function () { J.path = 'customize'; J.mode = 'configure'; saveJourney(); go('details'); });
+    $('j-preview-another').addEventListener('click', function () { startOver('grade'); });
+    document.querySelectorAll('.tiles.yn .tile').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var q = this.dataset.q, yes = this.dataset.v === '1';
+        J.want[q] = yes; saveJourney();
+        go(yes ? q : nextScreen(Q_OF[q]));
+      });
+    });
+    document.querySelectorAll('.screen .actions button.next').forEach(function (b) {
+      b.addEventListener('click', function () { go(nextScreen()); });
+    });
+    $('j-another').addEventListener('click', function () { startOver('grade'); });
+    $('j-customize-instead').addEventListener('click', function () { J.path = 'customize'; J.mode = 'configure'; saveJourney(); go('details'); });
+    $('pdf').addEventListener('click', function () { openPrintable('all', 'status').catch(function () { /* shown in status */ }); });
+    renderGreeting();
   }
 
   // ------------------------------------------------------------ wiring
   function wire() {
     document.querySelectorAll('.tab').forEach(function (b) { b.addEventListener('click', function () { setTab(this.dataset.tab); }); });
-    // Collapsible steps: click the heading; the choice is remembered per browser.
-    var folded = uiPref().collapsed || {};
-    document.querySelectorAll('.step.collapsible').forEach(function (step) {
-      if (folded[step.id]) step.classList.add('collapsed');
-      step.querySelector('h2').addEventListener('click', function () {
-        step.classList.toggle('collapsed');
-        try { var u = uiPref(); u.collapsed = u.collapsed || {}; u.collapsed[step.id] = step.classList.contains('collapsed'); localStorage.setItem(UI_STORE, JSON.stringify(u)); } catch (e) { /* ignore */ }
-      });
-    });
     wireTiles();
     wireSyllabus();
     if (location.hash === '#tiles') setTab('tiles'); else if (uiPref().tab === 'tiles') setTab('tiles');
@@ -3695,10 +4268,10 @@
     loadFinder();
     // The search box drives the picker: an exact code or title selects the course;
     // anything else narrows the browse list and clears the current selection.
-    $('code').addEventListener('input', function () { chooseCourse(findCourse(this.value)); });
+    $('code').addEventListener('input', function () { var c = findCourse(this.value); chooseCourse(c); if (c && J.screen === 'course') go('mode'); });
     $('subject-filter').addEventListener('change', function () { finder.subject = this.value; saveFinder(); renderFinder(); });
     $('preview').addEventListener('click', function (e) { if (e.target.closest('a')) e.preventDefault(); });
-    FIELDS.forEach(function (f) { $('f-' + f).addEventListener('input', function () { readForm(); save(); renderPreview(); if (kit) renderSyllabus(); }); });
+    FIELDS.forEach(function (f) { $('f-' + f).addEventListener('input', function () { readForm(); save(); saveProfile(); renderPreview(); if (kit) renderSyllabus(); }); });
     $('dl').addEventListener('click', function () {
       status('Building your kit…');
       patchedKit('blob').then(function (r) {
@@ -3724,6 +4297,24 @@
     course = saved ? findCourse(saved) : null;
     renderCourse();
     renderPreview();
+    wireJourney();
+    loadJourney();
+    // #screen=NAME[:CODE[:KIT-ID]] opens one screen directly (review links, screenshots).
+    var sm = /^#screen=([a-z-]+)(?::([^:]+))?(?::(.+))?$/.exec(location.hash || '');
+    if (sm) openScreenFromHash(sm[1], sm[2], sm[3]); else renderScreen();
+  }
+  function openScreenFromHash(screen, code, kitId) {
+    if (!J.path) J.path = 'customize';
+    J.history = [];
+    var c = code ? findCourse(code) : course;
+    if (c) chooseCourse(c);
+    var k = c ? c.kits.filter(function (x) { return x.status === 'ready' && (!kitId || x.id === kitId); })[0] : null;
+    var p = k ? selectKit(k) : Promise.resolve();
+    return p.then(function () {
+      if (NEEDS_KIT[screen] && !kit) screen = c ? 'part' : 'welcome';
+      if (NEEDS_COURSE[screen] && !course) screen = 'welcome';
+      J.screen = screen; renderScreen();
+    }, function () { J.screen = 'welcome'; renderScreen(); });
   }
   function fallbackCopy(text) {
     var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
@@ -3778,6 +4369,7 @@
     var k = c.kits.filter(function (x) { return x.status === 'ready' && (!kitId || x.id === kitId); })[0];
     if (!k) { $('selftest-out').textContent = JSON.stringify({ ok: false, error: 'no ready kit ' + (kitId || '') }); return; }
     selectKit(k).then(loadContents).then(function () {
+    J.path = 'customize'; J.mode = 'configure'; J.want = { home: true, syllabus: true, dates: true, publish: true, gradebook: true }; go('details', true);
     home = exampleHome(); home.modules = k.modules.filter(function (m) { return m.published; }).map(function (m) { return { gid: m.gid, title: m.title, show: true }; });
     ensureKitDefaults();
 
@@ -3954,6 +4546,9 @@
           && checks.batchDates && (!quizItem || checks.quizPoints)
           && (!removedGraded || checks.removed) && (!unpubItem || checks.metaItemState) && (!secondModule || modulePublishAll);
         out.ok = out.ok && previewToggle;
+        return journeySelfTest(c, k);
+      }).then(function (jr) {
+        out.journey = jr; out.ok = out.ok && jr.ok;
         return previewSelfTest();
       }).then(function (pv) {
         out.preview = pv; out.ok = out.ok && pv.ok;
@@ -3974,6 +4569,96 @@
       $('selftest-out').textContent = JSON.stringify({ ok: false, error: 'kit detail: ' + String(e && e.message || e) });
       document.title = 'Optima Course Kit [selftest failed]';
     });
+  }
+
+
+  // Journey: drive the tiles the way a teacher would (grade -> subject -> course ->
+  // configure -> just a module -> one module), build that trimmed kit and read it
+  // back: only the chosen module remains in the module list and the organization,
+  // and a graded item from a dropped module has left the cartridge. Every gate
+  // answered "skip" lands on the download screen; "yes" to dates shows the dates
+  // panel without the publishing column. Then the whole-kit scope is restored.
+  function journeySelfTest(c, k) {
+    var res = { ok: false };
+    var pick = function (sel) { var b = document.querySelector(sel); if (!b) throw new Error('no ' + sel); b.click(); return b; };
+    try {
+      J.path = 'customize'; J.mode = ''; J.scope = ''; J.want = {};
+      go('grade', true);
+      var g = gradeList(c.grade)[0];
+      res.gradeTiles = $('t-grades').querySelectorAll('.tile').length === 13;
+      pick('#t-grades .tile[data-g="' + g + '"]');
+      res.subjectScreen = J.screen === 'subject' && finder.grade === g;
+      pick('#t-subjects .tile[data-s="' + (c.subject || 'Other') + '"]');
+      res.courseScreen = J.screen === 'course' && finder.subject === (c.subject || 'Other');
+      var ct = pick('#t-courses .tile[data-code="' + c.code + '"]');
+      res.courseTile = !ct.disabled;
+      res.modeScreen = J.screen === 'mode' && course === c;
+      pick('#t-mode .tile[data-mode="configure"]');
+      res.partScreen = J.screen === 'part' && $('kits').querySelectorAll('.tile').length === c.kits.length + 1;
+      pick('#kits .tile[data-part="module"]');
+      res.modulesScreen = J.screen === 'modules';
+    } catch (e) { res.error = 'flow: ' + String(e && e.message || e); return Promise.resolve(res); }
+    var target = null, other = null;
+    return renderModuleTiles().then(function () {
+      var withGraded = function (m) { return (k.graded_items || []).some(function (it) { return it.module === m.id; }); };
+      target = (k.modules || []).filter(withGraded)[0];
+      other = (k.modules || []).filter(function (m) { return m !== target && withGraded(m); })[0] || null;
+      if (!target) throw new Error('no module with graded items');
+      pick('#t-modules .tile[data-kit="' + k.id + '"][data-m="' + target.id + '"]');
+      return renderModuleTiles();
+    }).then(function () {
+      res.continueLabel = $('j-modules-go').textContent === 'Continue with 1 module' && !$('j-modules-go').disabled;
+      return chooseModules();
+    }).then(function () {
+      res.detailsScreen = J.screen === 'details' && J.scope === 'modules' && !!home.onlyModules && home.onlyModules.length === 1 && home.onlyModules[0] === target.id;
+      res.homeCards = (currentHtml().match(/\$CANVAS_OBJECT_REFERENCE\$\/modules\//g) || []).length === 1;
+      res.printScope = $('print-scope').options.length === 2;
+      res.filename = kitFilename().indexOf(slug(target.title)) >= 0;
+      return patchedKit('base64');
+    }).then(function (r) {
+      $('selftest-scoped-b64').textContent = r.data;
+      return JSZip.loadAsync(r.data, { base64: true }).then(function (zip2) {
+        var metaName = (k.settings && k.settings.module_meta) || 'course_settings/module_meta.xml';
+        return Promise.all([zip2.file(metaName).async('string'), zip2.file('imsmanifest.xml').async('string')]).then(function (tt) {
+          var meta = tt[0], man = tt[1];
+          res.metaOnlyTarget = (meta.match(/<module identifier=/g) || []).length === 1 && meta.indexOf('identifier="' + target.gid + '"') >= 0;
+          res.orgOnlyTarget = !other || (man.indexOf('<item identifier="' + other.gid + '"') < 0 && man.indexOf('<item identifier="' + target.gid + '"') >= 0);
+          var otherItem = other ? (k.graded_items || []).filter(function (it) { return it.module === other.id; })[0] : null;
+          var keptItem = (k.graded_items || []).filter(function (it) { return it.module === target.id; })[0];
+          res.otherGone = !otherItem || (!zip2.file(otherItem.xml) && man.indexOf('identifier="' + otherItem.gid + '"') < 0);
+          res.keptStays = !keptItem || (!!zip2.file(keptItem.xml) && man.indexOf('identifier="' + keptItem.gid + '"') >= 0);
+          res.entries = Object.keys(zip2.files).filter(function (n) { return !zip2.files[n].dir; }).length;
+          res.target = target.title; res.other = other ? other.title : null;
+        });
+      });
+    }).then(function () {
+      J.want = {}; go('q-home', true);
+      ['home', 'syllabus', 'dates', 'publish', 'gradebook'].forEach(function (q) { pick('.screen[data-screen="' + Q_OF[q] + '"] .tile[data-v="0"]'); });
+      res.skipsToGenerate = J.screen === 'generate';
+      res.summaryChips = $('j-summary').querySelectorAll('.chipx').length === 7 && !$('dl').hidden;
+      J.want = {}; go('q-dates', true); pick('.screen[data-screen="q-dates"] .tile[data-v="1"]');
+      var th7 = $('dates-panel').querySelector('table.sched th:nth-child(7)');
+      res.datesOnly = J.screen === 'dates' && $('slot-dates').contains($('step4')) && $('dates-panel').className === 'mode-dates'
+        && (!th7 || getComputedStyle(th7).display === 'none');
+      J.want = { dates: false, publish: true }; go('q-publish', true); pick('.screen[data-screen="q-publish"] .tile[data-v="1"]');
+      var th4 = $('dates-panel').querySelector('table.sched th:nth-child(4)');
+      res.publishOnly = J.screen === 'publish' && $('slot-publish').contains($('step4')) && $('dates-panel').className === 'mode-publish'
+        && (!th4 || getComputedStyle(th4).display === 'none');
+      saveProfile();
+      var fresh = applyProfile(blankHome());
+      res.profile = !!home.teacherName && fresh.teacherName === home.teacherName && fresh.teacherEmail === home.teacherEmail && fresh.studyHall === (home.studyHall || '');
+      // fetch path: the download screen leads with the original kit
+      J.path = 'fetch'; go('generate', true);
+      res.fetchScreen = $('dl').hidden && !$('dl-plain').hidden && !$('j-customize-instead').hidden;
+      // restore the whole kit and the configure path for the rest of the test
+      J.path = 'customize'; home.onlyModules = null; J.scope = 'all'; save(); refreshKitPanels();
+      go('generate', true); var dlShown = !$('dl').hidden && $('j-customize-instead').hidden;
+      J.want = { home: true, syllabus: true, dates: true, publish: true, gradebook: true }; go('details', true);
+      res.restored = dlShown && keptModules().length === (k.modules || []).length && $('print-scope').options.length === (k.modules || []).length + 1;
+      res.ok = ['gradeTiles', 'subjectScreen', 'courseScreen', 'courseTile', 'modeScreen', 'partScreen', 'modulesScreen', 'continueLabel', 'detailsScreen', 'homeCards', 'printScope', 'filename',
+        'metaOnlyTarget', 'orgOnlyTarget', 'otherGone', 'keptStays', 'skipsToGenerate', 'summaryChips', 'datesOnly', 'publishOnly', 'profile', 'fetchScreen', 'restored'].every(function (kk) { return res[kk] === true; });
+      return res;
+    }).catch(function (e) { res.error = String(e && e.message || e); return res; });
   }
 
   // Tiles: five English 1 sections differing only by period. Asserts Poppins
@@ -4098,7 +4783,7 @@
     var pm = /^#printtest=(.+)$/.exec(location.hash || '');
     if (pm) printtest(decodeURIComponent(pm[1]));
   }).catch(function (e) {
-    $('course-card').innerHTML = '<div class="card"><div class="t">Could not load the kit catalog</div><div class="m">' + escHtml(e.message) + '. Open this page over http (GitHub Pages or a local server), not as a file.</div></div>';
+    $('j-error').innerHTML = '<div class="card"><div class="t">Could not load the kit catalog</div><div class="m">' + escHtml(e.message) + '. Open this page over http (GitHub Pages or a local server), not as a file.</div></div>';
   });
 })();
 </script>
