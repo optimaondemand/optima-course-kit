@@ -305,7 +305,9 @@
   #dates-panel.mode-publish table.sched th:nth-child(4), #dates-panel.mode-publish table.sched td:nth-child(4), #dates-panel.mode-publish table.sched th:nth-child(5), #dates-panel.mode-publish table.sched td:nth-child(5),
   #dates-panel.mode-publish table.sched th:nth-child(6), #dates-panel.mode-publish table.sched td:nth-child(6) { display:none; }
   #dates-panel.mode-publish table.sched { min-width:0; }
-  @media (max-width: 640px) { .screen { padding:18px 16px; } .hero h1 { font-size:26px; } .screen h2.q { font-size:21px; } }
+  /* Continue / Skip stay in view while a long panel scrolls. */
+  .screen > .actions:last-child { position:sticky; bottom:0; z-index:2; background:#fff; margin:14px -26px -24px; padding:12px 26px 16px; border-top:1px solid var(--line); border-radius:0 0 8px 8px; }
+  @media (max-width: 640px) { .screen { padding:18px 16px; } .hero h1 { font-size:26px; } .screen h2.q { font-size:21px; } .screen > .actions:last-child { margin:14px -16px -18px; padding:12px 16px 14px; } }
 </style>
 </head>
 <body>
@@ -449,7 +451,7 @@
         </div>
         <details><summary>Module cards (edit titles, untick to hide)</summary><div class="mods" id="mods"></div></details>
       </div>
-      <div class="actions"><button type="button" class="next">Continue</button></div>
+      <div class="actions"><button type="button" class="next">Continue</button><button type="button" class="alt skip" data-q="home">Skip this step</button></div>
     </section>
 
     <section class="screen" data-screen="q-syllabus" hidden>
@@ -624,7 +626,7 @@
       </div>
     </div>
 
-      <div class="actions"><button type="button" class="next">Continue</button></div>
+      <div class="actions"><button type="button" class="next">Continue</button><button type="button" class="alt skip" data-q="syllabus">Skip this step</button></div>
     </section>
 
     <section class="screen" data-screen="q-dates" hidden>
@@ -638,7 +640,7 @@
     <section class="screen" data-screen="dates" hidden>
       <h2 class="q">Open, due and close dates</h2>
       <div class="slot" id="slot-dates"></div>
-      <div class="actions"><button type="button" class="next">Continue</button></div>
+      <div class="actions"><button type="button" class="next">Continue</button><button type="button" class="alt skip" data-q="dates">Skip this step</button></div>
     </section>
 
     <section class="screen" data-screen="q-publish" hidden>
@@ -652,7 +654,7 @@
     <section class="screen" data-screen="publish" hidden>
       <h2 class="q">Contents and publishing</h2>
       <div class="slot" id="slot-publish"></div>
-      <div class="actions"><button type="button" class="next">Continue</button></div>
+      <div class="actions"><button type="button" class="next">Continue</button><button type="button" class="alt skip" data-q="publish">Skip this step</button></div>
     </section>
 
     <div id="step4" hidden><div id="dates-panel"><div class="hint">Choose a kit first.</div></div></div>
@@ -668,7 +670,7 @@
     <section class="screen" data-screen="gradebook" hidden>
       <h2 class="q">Set up your gradebook</h2>
       <div class="step" id="step5"><div id="gradebook-panel"><div class="hint">Choose a kit first.</div></div></div>
-      <div class="actions"><button type="button" class="next">Continue</button></div>
+      <div class="actions"><button type="button" class="next">Continue</button><button type="button" class="alt skip" data-q="gradebook">Skip this step</button></div>
     </section>
 
     <section class="screen" data-screen="generate" hidden>
@@ -4214,17 +4216,65 @@
     if (kit) chips.push('<span class="chipx">' + escHtml(scopeLabel()) + '</span>');
     if (!fetchOnly) {
       var on = function (label, yes, offText) { return '<span class="chipx' + (yes ? '' : ' off') + '">' + label + ': ' + (yes ? 'customized' : offText) + '</span>'; };
-      chips.push(on('Home page', J.want.home, 'suggested look'));
-      chips.push(on('Syllabus', J.want.syllabus, home.syllabusOn === false ? 'left out' : 'standard'));
-      chips.push(on('Dates', J.want.dates, 'none set'));
-      chips.push(on('Publishing', J.want.publish, 'as built'));
-      chips.push(on('Gradebook', J.want.gradebook, 'as built'));
+      chips.push(on('Home page', panelChanged('home'), 'suggested look'));
+      var syl = home.syllabusOn === false ? 'left out' : (panelChanged('syllabus') ? 'customized' : 'standard');
+      chips.push('<span class="chipx' + (syl === 'standard' ? ' off' : '') + '">Syllabus: ' + syl + '</span>');
+      chips.push(on('Dates', panelChanged('dates'), 'none set'));
+      chips.push(on('Publishing', panelChanged('publish'), 'as built'));
+      chips.push(on('Gradebook', panelChanged('gradebook'), 'as built'));
     }
     $('j-summary').innerHTML = chips.join('');
     var v = $('j-video');
     v.innerHTML = '<h3>Implementation tutorial</h3>' + (TUTORIAL_VIDEO_URL
       ? '<div class="frame"><iframe src="' + escHtml(TUTORIAL_VIDEO_URL) + '" title="Implementation tutorial" allowfullscreen loading="lazy"></iframe></div>'
       : '<div class="soon">The tutorial video for importing your course file is coming soon. Until then, the steps above walk you through the import.</div>');
+  }
+  // Skip on a panel screen: the answer becomes "skip" and that panel's choices go back to
+  // the kit's defaults, so the file matches the summary. Real changes need a second click.
+  // The same detectors drive the summary chips, so "customized" means something changed.
+  function panelChanged(q) {
+    if (!kit || !course) return false;
+    if (q === 'home') {
+      var TT = THEMES[home.theme] || THEMES.classic;
+      var pubMods = (kit.modules || []).filter(function (m) { return m.published; });
+      return home.theme !== themeForSubject(course.subject) || !!(String(home.blurb || '').trim() || home.house)
+        || (!!String(home.tagline || '').trim() && home.tagline !== TT.tagline) || home.modStyle !== 'journey'
+        || (home.modules || []).some(function (m, i) { var k = pubMods[i]; return !m.show || !k || m.title !== k.title; });
+    }
+    if (q === 'syllabus') {
+      if (home.syllabusOn === false) return true;
+      var strip = function (x) { var c = JSON.parse(JSON.stringify(x || {})); delete c._gradingAuto; return JSON.stringify(c); };
+      return strip(home.syllabus) !== strip(syllabusDefaults());
+    }
+    if (q === 'dates') return !!home.courseStart || Object.keys(home.dates || {}).some(function (id) { var d = home.dates[id] || {}; return !!(d.due_at || d.unlock_at || d.lock_at); });
+    if (q === 'publish') return Object.keys(home.moduleOverrides || {}).length > 0 || Object.keys(home.removed || {}).length > 0
+      || (kit.graded_items || []).some(function (it) { var o = home.itemOverrides[it.id]; return !!o && o.published !== it.published; });
+    if (q === 'gradebook') return groupsChanged() || !!home.weighted !== !!kit.weighted
+      || (kit.graded_items || []).some(function (it) { var o = home.itemOverrides[it.id]; return !!o && (o.group !== it.group || Number(o.points) !== Number(it.points)); });
+    return false;
+  }
+  function resetPanel(q) {
+    if (!kit || !course) return;
+    if (q === 'home') {
+      home.blurb = ''; home.house = ''; home.tagline = ''; home.modStyle = 'journey';
+      applyTheme(themeForSubject(course.subject));
+      home.modules = (kit.modules || []).filter(function (m) { return m.published; }).map(function (m) { return { gid: m.gid, title: m.title, show: true }; });
+      fillForm(); renderStyle(); renderMods();
+    } else if (q === 'syllabus') {
+      home.syllabus = syllabusDefaults(); home.syllabusOn = true; renderSyllabus();
+    } else if (q === 'dates') {
+      home.dates = {}; home.courseStart = ''; renderDates();
+    } else if (q === 'publish') {
+      home.moduleOverrides = {}; home.removed = {};
+      (kit.graded_items || []).forEach(function (it) { var o = home.itemOverrides[it.id]; if (o) o.published = it.published; });
+      renderDates(); renderGradebook();
+    } else if (q === 'gradebook') {
+      home.groups = (kit.groups || []).map(function (g) { return { id: g.id, title: g.title, weight: g.weight, position: g.position }; });
+      home.weighted = !!kit.weighted;
+      (kit.graded_items || []).forEach(function (it) { var o = home.itemOverrides[it.id]; if (o) { o.group = it.group; o.points = it.points; } });
+      renderGradebook(); renderDates();
+    }
+    save(); renderPreview();
   }
   function wireJourney() {
     $('t-path').querySelectorAll('.tile').forEach(function (b) {
@@ -4248,6 +4298,21 @@
     });
     document.querySelectorAll('.screen .actions button.next').forEach(function (b) {
       b.addEventListener('click', function () { go(nextScreen()); });
+    });
+    document.querySelectorAll('.screen .actions button.skip').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var q = this.dataset.q, btn = this;
+        if (panelChanged(q) && btn.dataset.armed !== '1') {
+          btn.dataset.armed = '1'; btn.textContent = 'Discard my changes here and skip';
+          setTimeout(function () { btn.dataset.armed = ''; btn.textContent = 'Skip this step'; }, 6000);
+          return;
+        }
+        btn.dataset.armed = ''; btn.textContent = 'Skip this step';
+        resetPanel(q); J.want[q] = false;
+        // leave by way of the question, so Back returns there and the panel drops out of the trail
+        J.screen = Q_OF[q]; saveJourney();
+        go(nextScreen());
+      });
     });
     $('j-another').addEventListener('click', function () { startOver('grade'); });
     $('j-customize-instead').addEventListener('click', function () { J.path = 'customize'; J.mode = 'configure'; saveJourney(); go('details'); });
@@ -4640,6 +4705,13 @@
       var th7 = $('dates-panel').querySelector('table.sched th:nth-child(7)');
       res.datesOnly = J.screen === 'dates' && $('slot-dates').contains($('step4')) && $('dates-panel').className === 'mode-dates'
         && (!th7 || getComputedStyle(th7).display === 'none');
+      // Skip on a panel with changes: first click arms, second click resets the panel and moves on.
+      home.courseStart = home.courseStart || '2026-08-17'; home.dates.__probe = { due_at: '2026-10-09T23:59' };
+      var skipBtn = document.querySelector('.screen[data-screen="dates"] button.skip');
+      var changedBefore = panelChanged('dates'); skipBtn.click();
+      var armed = J.screen === 'dates' && skipBtn.dataset.armed === '1'; skipBtn.click();
+      res.panelSkip = changedBefore && armed && J.screen === 'q-publish' && J.want.dates === false && !home.courseStart && Object.keys(home.dates).length === 0 && !panelChanged('dates')
+        && skipBtn.textContent === 'Skip this step';
       J.want = { dates: false, publish: true }; go('q-publish', true); pick('.screen[data-screen="q-publish"] .tile[data-v="1"]');
       var th4 = $('dates-panel').querySelector('table.sched th:nth-child(4)');
       res.publishOnly = J.screen === 'publish' && $('slot-publish').contains($('step4')) && $('dates-panel').className === 'mode-publish'
@@ -4656,7 +4728,7 @@
       J.want = { home: true, syllabus: true, dates: true, publish: true, gradebook: true }; go('details', true);
       res.restored = dlShown && keptModules().length === (k.modules || []).length && $('print-scope').options.length === (k.modules || []).length + 1;
       res.ok = ['gradeTiles', 'subjectScreen', 'courseScreen', 'courseTile', 'modeScreen', 'partScreen', 'modulesScreen', 'continueLabel', 'detailsScreen', 'homeCards', 'printScope', 'filename',
-        'metaOnlyTarget', 'orgOnlyTarget', 'otherGone', 'keptStays', 'skipsToGenerate', 'summaryChips', 'datesOnly', 'publishOnly', 'profile', 'fetchScreen', 'restored'].every(function (kk) { return res[kk] === true; });
+        'metaOnlyTarget', 'orgOnlyTarget', 'otherGone', 'keptStays', 'skipsToGenerate', 'summaryChips', 'datesOnly', 'panelSkip', 'publishOnly', 'profile', 'fetchScreen', 'restored'].every(function (kk) { return res[kk] === true; });
       return res;
     }).catch(function (e) { res.error = String(e && e.message || e); return res; });
   }
