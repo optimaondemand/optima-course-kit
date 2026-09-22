@@ -305,6 +305,7 @@
   #dates-panel.mode-publish table.sched th:nth-child(4), #dates-panel.mode-publish table.sched td:nth-child(4), #dates-panel.mode-publish table.sched th:nth-child(5), #dates-panel.mode-publish table.sched td:nth-child(5),
   #dates-panel.mode-publish table.sched th:nth-child(6), #dates-panel.mode-publish table.sched td:nth-child(6) { display:none; }
   #dates-panel.mode-publish table.sched { min-width:0; }
+  .skiptop { display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:13.5px; color:var(--mute); margin:-2px 0 12px; }
   /* Continue / Skip stay in view while a long panel scrolls. */
   .screen > .actions:last-child { position:sticky; bottom:0; z-index:2; background:#fff; margin:14px -26px -24px; padding:12px 26px 16px; border-top:1px solid var(--line); border-radius:0 0 8px 8px; }
   @media (max-width: 640px) { .screen { padding:18px 16px; } .hero h1 { font-size:26px; } .screen h2.q { font-size:21px; } .screen > .actions:last-child { margin:14px -16px -18px; padding:12px 16px 14px; } }
@@ -441,6 +442,7 @@
 
     <section class="screen" data-screen="home" hidden>
       <h2 class="q">Customize your home page</h2>
+      <div class="skiptop">Said yes but want to move on? <button type="button" class="sm alt skip" data-q="home">Skip this step</button> keeps the kit’s defaults for this part.</div>
       <div class="step" id="step3b">
         <div id="style-panel"><div class="hint">Choose a kit first.</div></div>
         <label for="f-blurb">A few lines about you, optional</label><textarea id="f-blurb" placeholder="What you teach, what you love about it, one thing students should ask you about."></textarea>
@@ -464,6 +466,7 @@
 
     <section class="screen" data-screen="syllabus" hidden>
       <h2 class="q">Your syllabus</h2>
+      <div class="skiptop">Said yes but want to move on? <button type="button" class="sm alt skip" data-q="syllabus">Skip this step</button> keeps the kit’s defaults for this part.</div>
     <div class="step locked" id="stepS">
       <div class="hint">The kit fills your course's Canvas <b>Syllabus</b> page with this. Your name, email, class meeting and Live/On-Demand mode come from the details you gave earlier; the course title, code and description come from the course. Every section below can be edited or switched off, and you can add your own. Mid-year changes: come back here, edit, and use <b>Copy syllabus HTML</b>, then in your live course open Syllabus, Edit, the HTML editor, and paste over what is there. The home page's Syllabus tile keeps working either way.</div>
       <label style="display:flex;align-items:center;gap:8px;margin-top:10px;"><input type="checkbox" id="syl-on" checked> Put this syllabus on the Canvas Syllabus page in my kit</label>
@@ -639,6 +642,7 @@
 
     <section class="screen" data-screen="dates" hidden>
       <h2 class="q">Open, due and close dates</h2>
+      <div class="skiptop">Said yes but want to move on? <button type="button" class="sm alt skip" data-q="dates">Skip this step</button> keeps the kit’s defaults for this part.</div>
       <div class="slot" id="slot-dates"></div>
       <div class="actions"><button type="button" class="next">Continue</button><button type="button" class="alt skip" data-q="dates">Skip this step</button></div>
     </section>
@@ -653,6 +657,7 @@
 
     <section class="screen" data-screen="publish" hidden>
       <h2 class="q">Contents and publishing</h2>
+      <div class="skiptop">Said yes but want to move on? <button type="button" class="sm alt skip" data-q="publish">Skip this step</button> keeps the kit’s defaults for this part.</div>
       <div class="slot" id="slot-publish"></div>
       <div class="actions"><button type="button" class="next">Continue</button><button type="button" class="alt skip" data-q="publish">Skip this step</button></div>
     </section>
@@ -669,6 +674,7 @@
 
     <section class="screen" data-screen="gradebook" hidden>
       <h2 class="q">Set up your gradebook</h2>
+      <div class="skiptop">Said yes but want to move on? <button type="button" class="sm alt skip" data-q="gradebook">Skip this step</button> keeps the kit’s defaults for this part.</div>
       <div class="step" id="step5"><div id="gradebook-panel"><div class="hint">Choose a kit first.</div></div></div>
       <div class="actions"><button type="button" class="next">Continue</button><button type="button" class="alt skip" data-q="gradebook">Skip this step</button></div>
     </section>
@@ -693,7 +699,7 @@
           <li>Content Type: <b>Canvas Course Export Package</b>. Choose the file you just downloaded.</li>
           <li>Content: <b>All content</b>. Leave dates unadjusted. Leave <b>Import existing quizzes as New Quizzes</b> <u>unchecked</u>: that option drops the module Intro and Outro surveys and hands you empty quizzes.</li>
           <li>Click <b>Import</b> and wait for the green check.</li>
-          <li>Open <b>Home</b>. Your page should be there with your name on it. If not: Pages &rarr; set it as Front Page &rarr; Home &rarr; Choose Home Page &rarr; Pages Front Page.</li>
+          <li class="li-home">Open <b>Home</b>. Your page should be there with your name on it. If not: Pages &rarr; set it as Front Page &rarr; Home &rarr; Choose Home Page &rarr; Pages Front Page.</li>
           <li>Check <b>Modules</b> (count matches the kit), <b>Assignments</b> (group weights present) and <b>Syllabus</b> (your text is there), then <b>Publish</b> the course.</li>
         </ol>
         <div class="hint">Importing the same kit again later updates the course in place instead of duplicating it.</div>
@@ -2948,6 +2954,10 @@
   }
   function renderPreview() {
     if (previewItemId) return; // an item is on show; the home page returns via the Back button
+    if (moduleAddon()) {
+      $('preview').innerHTML = '<div class="empty"><b>' + escHtml(scopeLabel()) + '</b><br><br>A module-only file adds this to a course you already have. Your home page, syllabus and other modules stay exactly as they are. Click an assignment, discussion or quiz to read it here.</div>';
+      return;
+    }
     var html = currentHtml();
     // Rendered inline (the emitted page is fully inline-styled, like Canvas shows it);
     // Canvas tokens become dead links here because they only resolve on import.
@@ -3246,17 +3256,20 @@
       return fp.async('string').then(function (doc) {
         var i = doc.indexOf('<body>'), j = doc.lastIndexOf('</body>');
         if (i < 0 || j < 0) throw new Error('front page has no <body>');
-        zip.file(kit.front_page, doc.slice(0, i + 6) + '\n' + html + '\n' + doc.slice(j));
+        var addon = moduleAddon();
+        // A module-only file leaves the teacher's existing home page alone: the kit's front
+        // page is dropped from the cartridge (removeFromZip) instead of being customized.
+        if (!addon) zip.file(kit.front_page, doc.slice(0, i + 6) + '\n' + html + '\n' + doc.slice(j));
         // The syllabus: course_settings/syllabus.html, listed in the course_settings
-        // resource, becomes the Canvas Syllabus page on import.
-        var sylTask = home.syllabusOn === false ? Promise.resolve() : Promise.resolve().then(function () {
+        // resource, becomes the Canvas Syllabus page on import. Never in a module-only file.
+        var sylTask = (addon || home.syllabusOn === false) ? Promise.resolve() : Promise.resolve().then(function () {
           zip.file('course_settings/syllabus.html', syllabusDoc());
           var mf = zip.file('imsmanifest.xml');
           return mf ? mf.async('string').then(function (mt) { zip.file('imsmanifest.xml', addSyllabusToManifest(mt)); }) : null;
         });
         return sylTask.then(function () { return applyScheduleAndGradebook(zip); }).then(function () {
           var note = zip.file('course_settings/canvas_export.txt');
-          var stamp = 'Home page customized in Course Kit for ' + (home.teacherName || 'a teacher') + ' on ' + new Date().toISOString().slice(0, 10) + '.\n';
+          var stamp = (addon ? 'Module-only file (' + scopeLabel() + ') built in Course Kit' : 'Home page customized in Course Kit for ' + (home.teacherName || 'a teacher')) + ' on ' + new Date().toISOString().slice(0, 10) + '.\n';
           return (note ? note.async('string') : Promise.resolve('')).then(function (t) {
             zip.file('course_settings/canvas_export.txt', t + stamp);
             return zip.generateAsync({ type: type || 'blob', compression: 'DEFLATE' }).then(function (out) {
@@ -3440,6 +3453,10 @@
     var f = zip.file('imsmanifest.xml');
     if (!f) return Promise.resolve();
     return f.async('string').then(function (text) {
+      if (moduleAddon() && kit.front_page) {
+        var fm = new RegExp('<resource identifier="([^"]+)"[^>]*href="' + xmlEsc(kit.front_page).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '"').exec(text);
+        if (fm) gone[fm[1]] = true;
+      }
       var r = patchManifest(text, gone);
       zip.file('imsmanifest.xml', r.text);
       r.files.forEach(function (p) {
@@ -3502,7 +3519,15 @@
     var exGid = excludedGids(), scopedRef = {};
     (kit.contents || []).forEach(function (c) { if (exGid[c.gid]) c.items.forEach(function (ci) { if (ci.ref && ci.type !== 'Attachment') scopedRef[ci.ref] = true; }); });
     var gone = {}; Object.keys(removedGids()).forEach(function (g) { if (gradedGid[g] || scopedRef[g]) gone[g] = true; });
-    var anyRemoved = Object.keys(home.removed || {}).length > 0 || Object.keys(exGid).length > 0;
+    var anyRemoved = Object.keys(home.removed || {}).length > 0 || Object.keys(exGid).length > 0 || moduleAddon();
+    if (moduleAddon() && kit.settings && kit.settings.course_settings) {
+      // The target course keeps its own home view; an add-on must not switch it.
+      tasks.push(function () {
+        var f = zip.file(kit.settings.course_settings);
+        if (!f) return Promise.resolve();
+        return f.async('string').then(function (text) { zip.file(kit.settings.course_settings, text.replace(/\s*<default_view>[^<]*<\/default_view>/, '')); });
+      });
+    }
     activeGraded().forEach(function (item) {
       tasks.push(function () {
         var eff = effItem(item);
@@ -3982,8 +4007,12 @@
     if (J.scope === 'modules' || J.screen === 'modules') seq.push('modules');
     if (J.mode === 'preview' || J.screen === 'preview') seq.push('preview');
     if (J.path === 'fetch') { seq.push('generate'); return seq; }
-    seq.push('details');
+    // A module-only file is an add-on to a course the teacher already has: it never
+    // touches the home page or the syllabus, so those steps (and the details behind them) go.
+    var addon = J.scope === 'modules';
+    if (!addon) seq.push('details');
     ['home', 'syllabus', 'dates', 'publish', 'gradebook'].forEach(function (q) {
+      if (addon && (q === 'home' || q === 'syllabus')) return;
       seq.push(Q_OF[q]);
       if (J.want[q] || J.screen === q) seq.push(q);
     });
@@ -4098,7 +4127,8 @@
     });
   }
   // After the course: whole semester = a kit; a module = a kit plus a scope.
-  function afterScope() { return J.mode === 'preview' ? 'preview' : (J.path === 'fetch' ? 'generate' : 'details'); }
+  function afterScope() { return J.mode === 'preview' ? 'preview' : nextScreen(J.scope === 'modules' ? 'modules' : 'part'); }
+  function moduleAddon() { return !!(kit && home.onlyModules && home.onlyModules.length); }
   function chooseWholeKit(k) {
     return selectKit(k).then(function () {
       J.scope = 'all'; J.modSel = null;
@@ -4207,7 +4237,10 @@
     $('j-generate-hint').textContent = fetchOnly
       ? 'One file, exactly as the curriculum team built it. Import it into your Canvas course and put your own name on the home page there.'
       : 'One file. Your home page is already inside it, set as the course front page, with the module cards linked to the real modules, and your syllabus fills the Syllabus page.';
-    $('dl').hidden = fetchOnly; $('copy').hidden = fetchOnly;
+    var addon = moduleAddon();
+    if (addon && !fetchOnly) $('j-generate-hint').textContent = 'One file with ' + scopeLabel() + '. Import it into the course you already have: it adds the module and its assignments, quizzes and discussions, and leaves your home page, syllabus and other modules as they are.';
+    $('dl').hidden = fetchOnly; $('copy').hidden = fetchOnly || addon;
+    document.querySelectorAll('#step6 li.li-home').forEach(function (li) { li.hidden = addon; });
     $('dl-plain').hidden = !fetchOnly && !!home.onlyModules && home.onlyModules.length > 0;
     $('dl-plain').textContent = fetchOnly ? 'Download the course file (.imscc)' : 'Original kit, no customization';
     $('j-customize-instead').hidden = !fetchOnly;
@@ -4216,9 +4249,12 @@
     if (kit) chips.push('<span class="chipx">' + escHtml(scopeLabel()) + '</span>');
     if (!fetchOnly) {
       var on = function (label, yes, offText) { return '<span class="chipx' + (yes ? '' : ' off') + '">' + label + ': ' + (yes ? 'customized' : offText) + '</span>'; };
-      chips.push(on('Home page', panelChanged('home'), 'suggested look'));
-      var syl = home.syllabusOn === false ? 'left out' : (panelChanged('syllabus') ? 'customized' : 'standard');
-      chips.push('<span class="chipx' + (syl === 'standard' ? ' off' : '') + '">Syllabus: ' + syl + '</span>');
+      if (addon) chips.push('<span class="chipx off">Home page and syllabus: untouched</span>');
+      else {
+        chips.push(on('Home page', panelChanged('home'), 'suggested look'));
+        var syl = home.syllabusOn === false ? 'left out' : (panelChanged('syllabus') ? 'customized' : 'standard');
+        chips.push('<span class="chipx' + (syl === 'standard' ? ' off' : '') + '">Syllabus: ' + syl + '</span>');
+      }
       chips.push(on('Dates', panelChanged('dates'), 'none set'));
       chips.push(on('Publishing', panelChanged('publish'), 'as built'));
       chips.push(on('Gradebook', panelChanged('gradebook'), 'as built'));
@@ -4287,7 +4323,7 @@
       b.addEventListener('click', function () { J.mode = this.dataset.mode; saveJourney(); go('part'); });
     });
     $('j-modules-go').addEventListener('click', function () { chooseModules(); });
-    $('j-preview-configure').addEventListener('click', function () { J.path = 'customize'; J.mode = 'configure'; saveJourney(); go('details'); });
+    $('j-preview-configure').addEventListener('click', function () { J.path = 'customize'; var nx = nextScreen('preview'); J.mode = 'configure'; saveJourney(); go(nx); });
     $('j-preview-another').addEventListener('click', function () { startOver('grade'); });
     document.querySelectorAll('.tiles.yn .tile').forEach(function (b) {
       b.addEventListener('click', function () {
@@ -4299,15 +4335,17 @@
     document.querySelectorAll('.screen .actions button.next').forEach(function (b) {
       b.addEventListener('click', function () { go(nextScreen()); });
     });
-    document.querySelectorAll('.screen .actions button.skip').forEach(function (b) {
+    document.querySelectorAll('.screen button.skip').forEach(function (b) {
       b.addEventListener('click', function () {
         var q = this.dataset.q, btn = this;
+        var twins = document.querySelectorAll('.screen[data-screen="' + q + '"] button.skip');
+        var setAll = function (armed) { twins.forEach(function (x) { x.dataset.armed = armed ? '1' : ''; x.textContent = armed ? 'Discard my changes here and skip' : 'Skip this step'; }); };
         if (panelChanged(q) && btn.dataset.armed !== '1') {
-          btn.dataset.armed = '1'; btn.textContent = 'Discard my changes here and skip';
-          setTimeout(function () { btn.dataset.armed = ''; btn.textContent = 'Skip this step'; }, 6000);
+          setAll(true);
+          setTimeout(function () { setAll(false); }, 6000);
           return;
         }
-        btn.dataset.armed = ''; btn.textContent = 'Skip this step';
+        setAll(false);
         resetPanel(q); J.want[q] = false;
         // leave by way of the question, so Back returns there and the panel drops out of the trail
         J.screen = Q_OF[q]; saveJourney();
@@ -4315,7 +4353,7 @@
       });
     });
     $('j-another').addEventListener('click', function () { startOver('grade'); });
-    $('j-customize-instead').addEventListener('click', function () { J.path = 'customize'; J.mode = 'configure'; saveJourney(); go('details'); });
+    $('j-customize-instead').addEventListener('click', function () { J.path = 'customize'; J.mode = 'configure'; saveJourney(); go(nextScreen(J.scope === 'modules' ? 'modules' : 'part')); });
     $('pdf').addEventListener('click', function () { openPrintable('all', 'status').catch(function () { /* shown in status */ }); });
     renderGreeting();
   }
@@ -4675,7 +4713,13 @@
       res.continueLabel = $('j-modules-go').textContent === 'Continue with 1 module' && !$('j-modules-go').disabled;
       return chooseModules();
     }).then(function () {
-      res.detailsScreen = J.screen === 'details' && J.scope === 'modules' && !!home.onlyModules && home.onlyModules.length === 1 && home.onlyModules[0] === target.id;
+      res.afterModules = J.screen === 'q-dates' && J.scope === 'modules' && !!home.onlyModules && home.onlyModules.length === 1 && home.onlyModules[0] === target.id;
+      var sq = sequence();
+      res.scopeFlow = sq.indexOf('details') < 0 && sq.indexOf('q-home') < 0 && sq.indexOf('q-syllabus') < 0 && sq.indexOf('q-dates') >= 0 && sq.indexOf('q-gradebook') >= 0;
+      go('generate', true);
+      res.scopeGenerate = $('copy').hidden && /leaves your home page/.test($('j-generate-hint').textContent) && $('j-summary').querySelectorAll('.chipx').length === 6
+        && $('preview').textContent.indexOf('module-only file') >= 0;
+      go('q-dates', true);
       res.homeCards = (currentHtml().match(/\$CANVAS_OBJECT_REFERENCE\$\/modules\//g) || []).length === 1;
       res.printScope = $('print-scope').options.length === 2;
       res.filename = kitFilename().indexOf(slug(target.title)) >= 0;
@@ -4684,8 +4728,10 @@
       $('selftest-scoped-b64').textContent = r.data;
       return JSZip.loadAsync(r.data, { base64: true }).then(function (zip2) {
         var metaName = (k.settings && k.settings.module_meta) || 'course_settings/module_meta.xml';
-        return Promise.all([zip2.file(metaName).async('string'), zip2.file('imsmanifest.xml').async('string')]).then(function (tt) {
-          var meta = tt[0], man = tt[1];
+        var csName = (k.settings && k.settings.course_settings) || 'course_settings/course_settings.xml';
+        return Promise.all([zip2.file(metaName).async('string'), zip2.file('imsmanifest.xml').async('string'), zip2.file(csName) ? zip2.file(csName).async('string') : Promise.resolve('')]).then(function (tt) {
+          var meta = tt[0], man = tt[1], cs = tt[2];
+          res.addonClean = !zip2.file(k.front_page) && man.indexOf('href="' + k.front_page + '"') < 0 && !zip2.file('course_settings/syllabus.html') && cs.indexOf('<default_view>') < 0 && man.indexOf('course_settings/syllabus.html') < 0;
           res.metaOnlyTarget = (meta.match(/<module identifier=/g) || []).length === 1 && meta.indexOf('identifier="' + target.gid + '"') >= 0;
           res.orgOnlyTarget = !other || (man.indexOf('<item identifier="' + other.gid + '"') < 0 && man.indexOf('<item identifier="' + target.gid + '"') >= 0);
           var otherItem = other ? (k.graded_items || []).filter(function (it) { return it.module === other.id; })[0] : null;
@@ -4697,21 +4743,25 @@
         });
       });
     }).then(function () {
+      // back to the whole kit and the configure path for the gate checks and the rest of the test
+      J.path = 'customize'; home.onlyModules = null; J.scope = 'all'; save(); refreshKitPanels();
+      res.restoredScope = keptModules().length === (k.modules || []).length && $('print-scope').options.length === (k.modules || []).length + 1 && sequence().indexOf('details') >= 0;
       J.want = {}; go('q-home', true);
       ['home', 'syllabus', 'dates', 'publish', 'gradebook'].forEach(function (q) { pick('.screen[data-screen="' + Q_OF[q] + '"] .tile[data-v="0"]'); });
       res.skipsToGenerate = J.screen === 'generate';
-      res.summaryChips = $('j-summary').querySelectorAll('.chipx').length === 7 && !$('dl').hidden;
+      res.summaryChips = $('j-summary').querySelectorAll('.chipx').length === 7 && !$('dl').hidden && !$('copy').hidden;
       J.want = {}; go('q-dates', true); pick('.screen[data-screen="q-dates"] .tile[data-v="1"]');
       var th7 = $('dates-panel').querySelector('table.sched th:nth-child(7)');
       res.datesOnly = J.screen === 'dates' && $('slot-dates').contains($('step4')) && $('dates-panel').className === 'mode-dates'
         && (!th7 || getComputedStyle(th7).display === 'none');
-      // Skip on a panel with changes: first click arms, second click resets the panel and moves on.
+      // Skip on a panel with changes: first click arms both Skip buttons, second click resets the panel and moves on.
       home.courseStart = home.courseStart || '2026-08-17'; home.dates.__probe = { due_at: '2026-10-09T23:59' };
-      var skipBtn = document.querySelector('.screen[data-screen="dates"] button.skip');
-      var changedBefore = panelChanged('dates'); skipBtn.click();
-      var armed = J.screen === 'dates' && skipBtn.dataset.armed === '1'; skipBtn.click();
+      var skips = document.querySelectorAll('.screen[data-screen="dates"] button.skip');
+      var skipBtn = skips[skips.length - 1];
+      var changedBefore = panelChanged('dates') && skips.length === 2; skipBtn.click();
+      var armed = J.screen === 'dates' && skipBtn.dataset.armed === '1' && skips[0].dataset.armed === '1'; skipBtn.click();
       res.panelSkip = changedBefore && armed && J.screen === 'q-publish' && J.want.dates === false && !home.courseStart && Object.keys(home.dates).length === 0 && !panelChanged('dates')
-        && skipBtn.textContent === 'Skip this step';
+        && skipBtn.textContent === 'Skip this step' && skips[0].textContent === 'Skip this step';
       J.want = { dates: false, publish: true }; go('q-publish', true); pick('.screen[data-screen="q-publish"] .tile[data-v="1"]');
       var th4 = $('dates-panel').querySelector('table.sched th:nth-child(4)');
       res.publishOnly = J.screen === 'publish' && $('slot-publish').contains($('step4')) && $('dates-panel').className === 'mode-publish'
@@ -4722,13 +4772,11 @@
       // fetch path: the download screen leads with the original kit
       J.path = 'fetch'; go('generate', true);
       res.fetchScreen = $('dl').hidden && !$('dl-plain').hidden && !$('j-customize-instead').hidden;
-      // restore the whole kit and the configure path for the rest of the test
-      J.path = 'customize'; home.onlyModules = null; J.scope = 'all'; save(); refreshKitPanels();
-      go('generate', true); var dlShown = !$('dl').hidden && $('j-customize-instead').hidden;
+      J.path = 'customize'; go('generate', true); var dlShown = !$('dl').hidden && $('j-customize-instead').hidden;
       J.want = { home: true, syllabus: true, dates: true, publish: true, gradebook: true }; go('details', true);
-      res.restored = dlShown && keptModules().length === (k.modules || []).length && $('print-scope').options.length === (k.modules || []).length + 1;
-      res.ok = ['gradeTiles', 'subjectScreen', 'courseScreen', 'courseTile', 'modeScreen', 'partScreen', 'modulesScreen', 'continueLabel', 'detailsScreen', 'homeCards', 'printScope', 'filename',
-        'metaOnlyTarget', 'orgOnlyTarget', 'otherGone', 'keptStays', 'skipsToGenerate', 'summaryChips', 'datesOnly', 'panelSkip', 'publishOnly', 'profile', 'fetchScreen', 'restored'].every(function (kk) { return res[kk] === true; });
+      res.restored = dlShown && res.restoredScope;
+      res.ok = ['gradeTiles', 'subjectScreen', 'courseScreen', 'courseTile', 'modeScreen', 'partScreen', 'modulesScreen', 'continueLabel', 'afterModules', 'scopeFlow', 'scopeGenerate', 'homeCards', 'printScope', 'filename',
+        'metaOnlyTarget', 'orgOnlyTarget', 'otherGone', 'keptStays', 'addonClean', 'restoredScope', 'skipsToGenerate', 'summaryChips', 'datesOnly', 'panelSkip', 'publishOnly', 'profile', 'fetchScreen', 'restored'].every(function (kk) { return res[kk] === true; });
       return res;
     }).catch(function (e) { res.error = String(e && e.message || e); return res; });
   }
