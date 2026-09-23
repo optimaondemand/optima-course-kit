@@ -261,8 +261,8 @@
   .hint.center { text-align:center; margin-top:16px; }
   .tiles { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px; margin-top:12px; }
   .tiles.two { grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); }
-  .tiles.grades { grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); }
-  .tiles.subjects { grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); }
+  .tiles.grades { grid-template-columns:repeat(auto-fill, minmax(92px, 1fr)); gap:10px; }
+  .tiles.subjects { grid-template-columns:repeat(auto-fill, minmax(210px, 1fr)); gap:14px; }
   .tiles.courses, .tiles.kits, .tiles.mods { grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); }
   .tiles .grp { grid-column:1 / -1; font-size:12px; letter-spacing:.6px; text-transform:uppercase; color:var(--mute); font-weight:600; margin-top:6px; }
   .tile { font:inherit; text-align:left; background:#fff; color:var(--ink); border:2px solid var(--line); border-radius:10px; padding:16px 16px 14px; cursor:pointer; display:flex; flex-direction:column; gap:6px; min-height:74px; transition:border-color .12s, box-shadow .12s, transform .12s; }
@@ -276,8 +276,23 @@
   .tile .pill { margin-left:0; align-self:flex-start; }
   .tile.big { padding:22px 20px; min-height:120px; }
   .tile.big .tt { font-size:20px; }
-  .tile.grade { align-items:center; text-align:center; padding:16px 8px; gap:4px; }
-  .tile.grade .ts { font-size:12px; }
+  /* Grade: one numeral per tile, nothing else. Cyan rule below, navy fill on hover. */
+  .tile.grade { align-items:center; justify-content:center; text-align:center; padding:18px 8px 14px; gap:0; min-height:92px; border-color:var(--line); border-bottom:4px solid var(--cyan); border-radius:12px; }
+  .tile.grade .tn { font-size:36px; letter-spacing:-.5px; }
+  .tile.grade:hover:not(:disabled), .tile.grade:focus-visible { background:var(--navy); border-color:var(--navy); border-bottom-color:var(--cyan); transform:translateY(-2px); }
+  .tile.grade:hover:not(:disabled) .tn, .tile.grade:focus-visible .tn { color:#fff; }
+  .tile.grade.on { background:var(--navy); border-color:var(--navy); border-bottom-color:var(--gold); box-shadow:none; }
+  .tile.grade.on .tn { color:#fff; }
+  .tile.grade:disabled { border-bottom-color:var(--line); background:#F7F8FC; }
+  .tile.grade:disabled .tn { color:#C3CBDB; }
+  /* Subject: one brand colour per subject (the same palette the course home page uses),
+     white title, a soft disc of the lighter tone in the corner. */
+  .tile.subject { --d:#0E1C42; --b:#55C8E8; color:#fff; background:var(--d); border-color:var(--d); border-radius:14px; padding:22px 20px 20px; min-height:118px; justify-content:flex-end; position:relative; overflow:hidden; box-shadow:0 2px 6px rgba(14,28,66,.08); }
+  .tile.subject::before { content:""; position:absolute; width:150px; height:150px; border-radius:50%; right:-48px; top:-64px; background:var(--b); opacity:.28; transition:transform .18s, opacity .18s; }
+  .tile.subject .tt { font-size:19px; color:#fff; position:relative; }
+  .tile.subject:hover:not(:disabled), .tile.subject:focus-visible { border-color:var(--d); box-shadow:0 8px 22px rgba(14,28,66,.18); transform:translateY(-2px); }
+  .tile.subject:hover:not(:disabled)::before, .tile.subject:focus-visible::before { transform:scale(1.25); opacity:.4; }
+  .tile.subject.on { box-shadow:0 0 0 3px #fff, 0 0 0 5px var(--d); }
   .tile .ttl { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
   .tile .tick { width:20px; height:20px; border-radius:50%; border:2px solid var(--line); flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; font-size:12px; color:#fff; }
   .tile.on .tick { background:var(--navy); border-color:var(--navy); }
@@ -396,7 +411,7 @@
 
     <section class="screen" data-screen="preview" hidden>
       <h2 class="q">Preview your course</h2>
-      <div class="hint">The course home page is on the right. Click any assignment, discussion or quiz below to read it there. Lesson pages open in the printable course.</div>
+      <div class="hint">The course home page is on the right. Click any page, assignment, discussion or quiz below to read it there.</div>
       <div id="j-contents"></div>
       <div class="printrow">
         <div><b>Printable course.</b> One document with the course in module order, as students will see it in Canvas: the home page, every lesson page, assignment, discussion and quiz (questions without answers).</div>
@@ -2176,9 +2191,16 @@
   }
   var MODE_LABEL = { live: 'Live', od: 'On-Demand' };
   function readyCount(c) { return c.kits.filter(function (k) { return k.status === 'ready'; }).length; }
+  // Subjects as a teacher picks them. Career and college courses and critical
+  // thinking are electives, so they share one tile whatever course.json calls them.
+  function subjectGroup(c) {
+    var s = String((c && c.subject) || 'Other');
+    if (/critical thinking|career|college counseling|decision making|study skills|leadership|research skills|elective/i.test(s)) return 'Electives';
+    return s;
+  }
   function matchesFinder(c) {
     if (finder.grade !== '' && gradeList(c.grade).indexOf(finder.grade) < 0) return false;
-    if (finder.subject && (c.subject || 'Other') !== finder.subject) return false;
+    if (finder.subject && subjectGroup(c) !== finder.subject) return false;
     return true;
   }
   function searchCourses(q) {
@@ -2212,7 +2234,7 @@
     for (var n = 0; n <= 12; n++) mk(gradeLabel(n), n, counts[n] || 0);
 
     var subjects = {};
-    catalog.courses.forEach(function (c) { if (finder.grade === '' || gradeList(c.grade).indexOf(finder.grade) >= 0) { var s = c.subject || 'Other'; subjects[s] = (subjects[s] || 0) + 1; } });
+    catalog.courses.forEach(function (c) { if (finder.grade === '' || gradeList(c.grade).indexOf(finder.grade) >= 0) { var s = subjectGroup(c); subjects[s] = (subjects[s] || 0) + 1; } });
     var names = Object.keys(subjects).sort();
     if (finder.subject && names.indexOf(finder.subject) < 0) finder.subject = '';
     $('subject-filter').innerHTML = '<option value="">All subjects</option>' + names.map(function (s) {
@@ -2221,7 +2243,7 @@
 
     var rows = searchCourses($('code').value).filter(matchesFinder);
     rows.sort(function (a, b) {
-      return (a.subject || 'Other').localeCompare(b.subject || 'Other') || gradeSortKey(a) - gradeSortKey(b)
+      return subjectGroup(a).localeCompare(subjectGroup(b)) || gradeSortKey(a) - gradeSortKey(b)
         || courseFamily(a).localeCompare(courseFamily(b)) || courseLevel(a).localeCompare(courseLevel(b)) || a.code.localeCompare(b.code);
     });
     var list = $('course-list'); list.innerHTML = '';
@@ -2232,7 +2254,7 @@
     }
     var lastGrp = null;
     rows.forEach(function (c) {
-      var grp = c.subject || 'Other';
+      var grp = subjectGroup(c);
       if (grp !== lastGrp) { var h = document.createElement('div'); h.className = 'grp'; h.textContent = grp; list.appendChild(h); lastGrp = grp; }
       var ready = readyCount(c), lvl = courseLevel(c);
       var r = document.createElement('div');
@@ -2928,23 +2950,83 @@
         var mod = moduleById(item.module), eff = effItem(item);
         var typeLabel = item.type === 'assignment' ? 'Assignment' : item.type === 'quiz' ? (item.quiz_type === 'survey' ? 'Survey' : 'Quiz') : 'Discussion';
         var meta = [typeLabel, mod ? mod.title : '', (item.type === 'quiz' && item.quiz_type === 'survey') ? 'ungraded' : fmtPoints(eff.points) + ' pts'].filter(Boolean).join(' · ');
-        var doc = '<!doctype html><html><head><meta charset="utf-8"><base target="_blank"><style>' +
-          'body{margin:0;background:#fff;color:#0e1c42;font-family:"Segoe UI",Arial,sans-serif;font-size:16px;line-height:1.5}' +
-          '.wrap{max-width:960px;margin:0 auto;padding:22px 26px 40px}img{max-width:100%}iframe{max-width:100%}' +
-          '.eyebrow{font-size:12px;letter-spacing:1px;color:#6b7a99}h1.t{font-size:26px;margin:4px 0 6px;font-weight:600}.note{font-size:13px;color:#6b7a99;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid #D0D9E8}' +
-          'a[data-token]{color:#6b7a99;text-decoration:underline dotted;cursor:default}' +
-          '</style></head><body><div class="wrap"><div class="eyebrow">' + escHtml(meta) + '</div><h1 class="t">' + escHtml(item.title) + '</h1>' +
-          '<div class="note">' + escHtml(r.note) + '. Links resolve after import.</div>' + neutralize(r.html) + '</div></body></html>';
-        var pv = $('preview'); pv.className = 'item'; pv.innerHTML = '';
-        var fr = document.createElement('iframe'); fr.className = 'itemframe'; fr.setAttribute('sandbox', 'allow-scripts allow-popups'); fr.setAttribute('title', item.title);
-        fr.srcdoc = doc; pv.appendChild(fr);
-        $('preview-note').textContent = 'Previewing: ' + item.title;
+        var doc = previewDoc(meta, item.title, r);
+        showPreviewDoc(doc, item.title);
         return doc;
       });
     }).catch(function (e) {
       $('preview-note').textContent = 'Could not preview: ' + e.message;
       return '';
     });
+  }
+  // Ungraded module entries: lesson pages, links and files. Same frame as a graded
+  // item; the page body comes out of the cartridge by its manifest href.
+  function entryById(modId, entryId) {
+    var m = (kit.modules || []).filter(function (x) { return x.id === modId; })[0];
+    var cont = m ? contentsOf(m) : null;
+    var ci = cont ? cont.items.filter(function (x) { return x.id === entryId; })[0] : null;
+    return ci ? { entry: ci, module: m } : null;
+  }
+  function manifestHrefs(zip) {
+    if (kit.hrefs) return Promise.resolve(kit.hrefs);
+    var f = zip.file('imsmanifest.xml');
+    if (!f) return Promise.reject(new Error('the cartridge has no manifest'));
+    var k = kit;
+    return f.async('string').then(function (t) { k.hrefs = readManifestHrefs(t); return k.hrefs; });
+  }
+  function entryPreviewHtml(zip, ci) {
+    if (ci.type === 'WikiPage') {
+      return manifestHrefs(zip).then(function (hrefs) {
+        var href = hrefs[ci.ref], f = href && zip.file(href);
+        if (!f) throw new Error('this page is missing from the cartridge');
+        return f.async('string').then(function (doc) { return { html: bodyOf(doc), note: 'Lesson page' }; });
+      });
+    }
+    if (ci.type === 'ExternalUrl') {
+      return Promise.resolve({ html: '<p>This module item opens a link in a new tab:</p><p><a href="' + escHtml(ci.url || '#') + '" target="_blank" rel="noopener">' + escHtml(ci.url || ci.title) + '</a></p>', note: 'External link' });
+    }
+    if (ci.type === 'Attachment') {
+      return manifestHrefs(zip).then(function (hrefs) {
+        var fh = hrefs[ci.ref] || '';
+        return { html: '<p>A file students download from the module: <b>' + escHtml(decodeURIComponent(fh.split('/').pop() || ci.title)) + '</b>.</p>', note: 'File' };
+      });
+    }
+    return Promise.reject(new Error('this item type has no preview'));
+  }
+  function previewEntry(hit) {
+    if (!hit) return Promise.resolve('');
+    var ci = hit.entry, m = hit.module, id = 'entry:' + m.id + ':' + ci.id;
+    previewItemId = id;
+    setPreviewShown(true);
+    $('preview-home').hidden = false;
+    $('preview-note').textContent = 'Loading ' + ci.title + '\u2026';
+    return loadKitZip().then(function (zip) {
+      if (previewItemId !== id) return '';
+      return entryPreviewHtml(zip, ci).then(function (r) {
+        var meta = [TYPE_LABEL[ci.type] || ci.type, m.title].filter(Boolean).join(' \u00b7 ');
+        var doc = previewDoc(meta, ci.title, r);
+        showPreviewDoc(doc, ci.title);
+        return doc;
+      });
+    }).catch(function (e) {
+      $('preview-note').textContent = 'Could not preview: ' + e.message;
+      return '';
+    });
+  }
+  function previewDoc(meta, title, r) {
+    return '<!doctype html><html><head><meta charset="utf-8"><base target="_blank"><style>' +
+      'body{margin:0;background:#fff;color:#0e1c42;font-family:"Segoe UI",Arial,sans-serif;font-size:16px;line-height:1.5}' +
+      '.wrap{max-width:960px;margin:0 auto;padding:22px 26px 40px}img{max-width:100%}iframe{max-width:100%}' +
+      '.eyebrow{font-size:12px;letter-spacing:1px;color:#6b7a99}h1.t{font-size:26px;margin:4px 0 6px;font-weight:600}.note{font-size:13px;color:#6b7a99;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid #D0D9E8}' +
+      'a[data-token]{color:#6b7a99;text-decoration:underline dotted;cursor:default}' +
+      '</style></head><body><div class="wrap"><div class="eyebrow">' + escHtml(meta) + '</div><h1 class="t">' + escHtml(title) + '</h1>' +
+      '<div class="note">' + escHtml(r.note) + '. Links resolve after import.</div>' + neutralize(r.html) + '</div></body></html>';
+  }
+  function showPreviewDoc(doc, title) {
+    var pv = $('preview'); pv.className = 'item'; pv.innerHTML = '';
+    var fr = document.createElement('iframe'); fr.className = 'itemframe'; fr.setAttribute('sandbox', 'allow-scripts allow-popups'); fr.setAttribute('title', title);
+    fr.srcdoc = doc; pv.appendChild(fr);
+    $('preview-note').textContent = 'Previewing: ' + title;
   }
   function leaveItemPreview() {
     previewItemId = null;
@@ -2955,7 +3037,7 @@
   function renderPreview() {
     if (previewItemId) return; // an item is on show; the home page returns via the Back button
     if (moduleAddon()) {
-      $('preview').innerHTML = '<div class="empty"><b>' + escHtml(scopeLabel()) + '</b><br><br>A module-only file adds this to a course you already have. Your home page, syllabus and other modules stay exactly as they are. Click an assignment, discussion or quiz to read it here.</div>';
+      $('preview').innerHTML = '<div class="empty"><b>' + escHtml(scopeLabel()) + '</b><br><br>A module-only file adds this to a course you already have. Your home page, syllabus and other modules stay exactly as they are. Click any page, assignment, discussion or quiz to read it here.</div>';
       return;
     }
     var html = currentHtml();
@@ -4089,7 +4171,7 @@
     var out = [];
     for (var n = 0; n <= 12; n++) {
       var k = counts[n] || 0;
-      out.push(tile('grade' + (finder.grade === n ? ' on' : ''), '<span class="tn">' + gradeLabel(n) + '</span><span class="ts">' + (k ? k + ' course' + (k === 1 ? '' : 's') : 'none yet') + '</span>', ' data-g="' + n + '"', !k));
+      out.push(tile('grade' + (finder.grade === n ? ' on' : ''), '<span class="tn">' + gradeLabel(n) + '</span>', ' data-g="' + n + '" aria-label="Grade ' + (n === 0 ? 'K' : n) + (k ? '' : ' (no courses yet)') + '"', !k));
     }
     $('t-grades').innerHTML = out.join('');
     $('t-grades').querySelectorAll('.tile').forEach(function (b) {
@@ -4098,10 +4180,11 @@
   }
   function renderSubjectTiles() {
     var subjects = {};
-    catalog.courses.forEach(function (c) { if (finder.grade === '' || gradeList(c.grade).indexOf(finder.grade) >= 0) { var s = c.subject || 'Other'; subjects[s] = (subjects[s] || 0) + 1; } });
-    var names = Object.keys(subjects).sort();
+    catalog.courses.forEach(function (c) { if (finder.grade === '' || gradeList(c.grade).indexOf(finder.grade) >= 0) { var s = subjectGroup(c); subjects[s] = (subjects[s] || 0) + 1; } });
+    var names = Object.keys(subjects).sort(function (a, b) { return (a === 'Electives') - (b === 'Electives') || a.localeCompare(b); });
     $('t-subjects').innerHTML = names.map(function (s) {
-      return tile('subject' + (finder.subject === s ? ' on' : ''), '<span class="tt">' + escHtml(s) + '</span><span class="ts">' + subjects[s] + ' course' + (subjects[s] === 1 ? '' : 's') + (finder.grade === '' ? '' : ' in grade ' + gradeLabel(finder.grade)) + '</span>', ' data-s="' + escHtml(s) + '"');
+      var t = THEMES[themeForSubject(s)] || THEMES.general;
+      return tile('subject' + (finder.subject === s ? ' on' : ''), '<span class="tt">' + escHtml(s) + '</span>', ' data-s="' + escHtml(s) + '" style="--d:' + t.dark + ';--b:' + t.bright + ';"');
     }).join('') || '<div class="hint">No courses for this grade yet.</div>';
     $('t-subjects').querySelectorAll('.tile').forEach(function (b) {
       b.addEventListener('click', function () { finder.subject = this.dataset.s; saveFinder(); go('course'); });
@@ -4215,8 +4298,11 @@
         cont.items.forEach(function (ci, i) {
           if (isRemoved(ci)) return;
           var g = graded.filter(function (it) { return it.gid === ci.ref; })[0];
+          var viewable = g || ci.type === 'WikiPage' || ci.type === 'ExternalUrl' || ci.type === 'Attachment';
           out.push('<li><span class="ct-n">' + (i + 1) + '</span><span class="pill grey">' + escHtml(TYPE_LABEL[ci.type] || ci.type) + '</span>' +
-            (g ? '<a href="#" class="prev-link ct-title" data-id="' + escHtml(g.id) + '">' + escHtml(ci.title) + '</a>' : '<span class="ct-title">' + escHtml(ci.title) + '</span>') + '</li>');
+            (g ? '<a href="#" class="prev-link ct-title" data-id="' + escHtml(g.id) + '">' + escHtml(ci.title) + '</a>'
+              : viewable ? '<a href="#" class="prev-entry ct-title" data-m="' + escHtml(m.id) + '" data-e="' + escHtml(ci.id) + '">' + escHtml(ci.title) + '</a>'
+              : '<span class="ct-title">' + escHtml(ci.title) + '</span>') + '</li>');
         });
         out.push('</ol>');
       } else if (items.length) {
@@ -4228,6 +4314,9 @@
     el.innerHTML = out.join('');
     el.querySelectorAll('.prev-link').forEach(function (a) {
       a.addEventListener('click', function (e) { e.preventDefault(); previewItem(itemById(this.dataset.id)); });
+    });
+    el.querySelectorAll('.prev-entry').forEach(function (a) {
+      a.addEventListener('click', function (e) { e.preventDefault(); previewEntry(entryById(this.dataset.m, this.dataset.e)); });
     });
     if (!kit.contents) loadContents().then(function () { if (J.screen === 'preview') renderContentsPreview(); });
   }
@@ -4691,8 +4780,9 @@
       res.gradeTiles = $('t-grades').querySelectorAll('.tile').length === 13;
       pick('#t-grades .tile[data-g="' + g + '"]');
       res.subjectScreen = J.screen === 'subject' && finder.grade === g;
-      pick('#t-subjects .tile[data-s="' + (c.subject || 'Other') + '"]');
-      res.courseScreen = J.screen === 'course' && finder.subject === (c.subject || 'Other');
+      res.subjectPlain = !$('t-subjects').querySelector('.ts') && !$('t-grades').querySelector('.ts');
+      pick('#t-subjects .tile[data-s="' + subjectGroup(c) + '"]');
+      res.courseScreen = J.screen === 'course' && finder.subject === subjectGroup(c);
       var ct = pick('#t-courses .tile[data-code="' + c.code + '"]');
       res.courseTile = !ct.disabled;
       res.modeScreen = J.screen === 'mode' && course === c;
@@ -4800,7 +4890,24 @@
           res[ty] = good; res.ok = res.ok && good;
         });
       };
-    })).then(function () { leaveItemPreview(); return res; });
+    })).then(function () {
+      // A lesson page out of the first content module, read straight from the cartridge.
+      return loadContents().then(function () {
+        var hit = null;
+        (kit.modules || []).some(function (m) {
+          var cont = contentsOf(m);
+          var ci = cont && cont.items.filter(function (x) { return x.type === 'WikiPage' && !isRemoved(x); })[0];
+          if (ci) hit = { entry: ci, module: m };
+          return !!ci;
+        });
+        if (!hit) { res.page = null; return; }
+        return previewEntry(hit).then(function (doc) {
+          var good = doc.length > 400 && doc.indexOf(escHtml(hit.entry.title)) >= 0 && doc.indexOf('Lesson page') >= 0
+            && $('preview').querySelector('iframe.itemframe') != null && !$('preview-home').hidden;
+          res.page = good; res.ok = res.ok && good;
+        });
+      });
+    }).then(function () { leaveItemPreview(); return res; });
   }
 
   // Printable course: one content module composed for real (lesson pages fetched

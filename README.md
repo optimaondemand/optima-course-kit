@@ -90,8 +90,9 @@ reports those items as "moved", not as differences.
 
 ## Item preview
 
-On the dates and publishing panels (and the preview screen) every graded item's title is a link. Clicking it fetches the kit once, reads
-that item's page out of the cartridge, and shows it in the preview pane: assignment
+On the dates and publishing panels every graded item's title is a link, and on the preview screen every
+module entry is: pages, links and files too. Clicking one fetches the kit once, reads
+that item's page out of the cartridge (pages by their manifest href), and shows it in the preview pane: a lesson page, assignment
 instructions, a discussion prompt, or a quiz's description and questions with their
 choices (never the answers). Canvas tokens in links are disabled because they resolve
 only on import; embedded lesson pages load from their live URLs. "Back to home page"
@@ -142,8 +143,8 @@ together.
 | Screen | What it does |
 |---|---|
 | Welcome | "Welcome to the Course Optimizer!" Two tiles: **Customize my course** (the full journey) or **Just fetch a course** (grade -> subject -> course -> part -> download, no configuration). Greets a returning teacher by name. |
-| Grade, subject, course | Tiles built from `catalog.json`: K-12 with counts (empty grades greyed), subjects with counts for that grade, then course tiles (Honors/Standard pills, code, "n of m kits ready"; no ready kit = greyed "Coming"). A folded **Search the full course list** keeps the old finder (search box, grade chips, subject filter, list). |
-| Preview or configure | **Preview the course** shows the home page in the pane, every module's items (click a graded item to read it) and the printable course; **Configure it for Canvas** continues. **Configure for Canvas** goes straight on. |
+| Grade, subject, course | Tiles built from `catalog.json`: K-12 as bare numerals (grades with no course greyed), then one brand-coloured tile per subject with no counts (the colour is the subject's home-page theme; Career Education and Critical Thinking share an **Electives** tile), then course tiles (Honors/Standard pills, code, "n of m kits ready"; no ready kit = greyed "Coming"). A folded **Search the full course list** keeps the old finder (search box, grade chips, subject filter, list). |
+| Preview or configure | **Preview the course** shows the home page in the pane, every module's items (click any page, assignment, discussion or quiz to read it) and the printable course; **Configure it for Canvas** continues. **Configure for Canvas** goes straight on. |
 | Whole semester or a module | One tile per kit (pending kits greyed), the Live/On-Demand switch when a course has kits per mode, and **Just a module** -> module tiles from every ready kit (multi-select within one kit) -> Continue. |
 | Tell us about you | Name, title, email, mode, term, section, meeting, Teams link. Saved to `localStorage` `optima-course-kit-teacher` and applied to every new kit's home page and syllabus. |
 | Yes/skip gates | Home page (theme, blurb, house, tagline, module cards), syllabus, dates, contents and publishing, gradebook. Skip = the panel never appears; the standard syllabus still ships unless it is switched off. Dates and publishing share one panel; each gate shows only its own controls (`#dates-panel.mode-dates` / `.mode-publish`). Every panel screen also has **Skip this step** in a line under its heading and beside Continue: the answer flips to skip and that panel goes back to the kit's defaults (`resetPanel`); if the teacher changed something there, the first click arms ("Discard my changes here and skip") and a second click within 6 s does it. The summary chips on Generate read the actual state (`panelChanged`), so "customized" means something changed. Continue/Skip stick to the bottom of the viewport while a long panel scrolls. |
