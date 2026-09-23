@@ -262,7 +262,7 @@
   .tiles { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px; margin-top:12px; }
   .tiles.two { grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); }
   .tiles.grades { grid-template-columns:repeat(auto-fill, minmax(92px, 1fr)); gap:10px; }
-  .tiles.subjects { grid-template-columns:repeat(auto-fill, minmax(210px, 1fr)); gap:14px; }
+  .tiles.subjects { grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:16px; }
   .tiles.courses, .tiles.kits, .tiles.mods { grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); }
   .tiles .grp { grid-column:1 / -1; font-size:12px; letter-spacing:.6px; text-transform:uppercase; color:var(--mute); font-weight:600; margin-top:6px; }
   .tile { font:inherit; text-align:left; background:#fff; color:var(--ink); border:2px solid var(--line); border-radius:10px; padding:16px 16px 14px; cursor:pointer; display:flex; flex-direction:column; gap:6px; min-height:74px; transition:border-color .12s, box-shadow .12s, transform .12s; }
@@ -289,14 +289,15 @@
   .tile.grade.on .tn { color:#fff; }
   .tile.grade:disabled { border-bottom-color:var(--line); background:#F7F8FC; }
   .tile.grade:disabled .tn { color:#C3CBDB; }
-  /* Subject: one brand colour per subject (the same palette the course home page uses),
-     white title, a soft disc of the lighter tone in the corner. */
-  .tile.subject { --d:#0E1C42; --b:#55C8E8; color:#fff; background:var(--d); border-color:var(--d); border-radius:14px; padding:22px 20px 20px; min-height:118px; justify-content:flex-end; position:relative; overflow:hidden; box-shadow:0 2px 6px rgba(14,28,66,.08); }
-  .tile.subject::before { content:""; position:absolute; width:150px; height:150px; border-radius:50%; right:-48px; top:-64px; background:var(--b); opacity:.28; transition:transform .18s, opacity .18s; }
-  .tile.subject .tt { font-size:19px; color:#fff; position:relative; }
-  .tile.subject:hover:not(:disabled), .tile.subject:focus-visible { border-color:var(--d); box-shadow:0 8px 22px rgba(14,28,66,.18); transform:translateY(-2px); }
-  .tile.subject:hover:not(:disabled)::before, .tile.subject:focus-visible::before { transform:scale(1.25); opacity:.4; }
-  .tile.subject.on { box-shadow:0 0 0 3px #fff, 0 0 0 5px var(--d); }
+  /* Subject: the 2026-27 course tile background for that subject and band (tiles/),
+     the subject name set in the tile's white field under the logo. */
+  .tile.subject { position:relative; overflow:hidden; aspect-ratio:16 / 9; min-height:0; padding:0; border-radius:14px; border-color:var(--line); background:#fff; box-shadow:0 2px 6px rgba(14,28,66,.08); justify-content:center; }
+  .tile.subject img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:right center; transition:transform .25s; }
+  .tile.subject .tt { position:relative; z-index:1; margin:14% 0 0 5.5%; max-width:46%; font-size:clamp(17px, 2.1vw, 24px); line-height:1.15; color:var(--navy); text-shadow:0 0 10px #fff, 0 0 4px #fff; }
+  .tile.subject:hover:not(:disabled), .tile.subject:focus-visible { border-color:var(--navy); box-shadow:0 8px 22px rgba(14,28,66,.18); transform:translateY(-2px); }
+  .tile.subject:hover:not(:disabled) img, .tile.subject:focus-visible img { transform:scale(1.03); }
+  .tile.subject.on { border-color:var(--navy); box-shadow:0 0 0 2px var(--cyan); }
+  @media (max-width: 640px) { .tiles.subjects { grid-template-columns:1fr; } }
   .tile .ttl { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
   .tile .tick { width:20px; height:20px; border-radius:50%; border:2px solid var(--line); flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; font-size:12px; color:#fff; }
   .tile.on .tick { background:var(--navy); border-color:var(--navy); }
@@ -4192,13 +4193,39 @@
       b.addEventListener('click', function () { finder.grade = +this.dataset.g; finder.subject = ''; saveFinder(); go('subject'); });
     });
   }
+  // The course tile background for a subject: middle-school art for grades 6-8, the
+  // upper-school art otherwise; a key only one band has falls through to the other.
+  function tileStyleForSubject(subject, grade) {
+    var s = String(subject || '').toLowerCase(), mid = grade !== '' && grade <= 8;
+    var key;
+    if (/computer|technology|coding|digital discoveries|stem/.test(s)) key = 'computer-science';
+    else if (/language arts|english|reading/.test(s)) key = mid ? 'ela' : 'english';
+    else if (/math|algebra|geometry|calculus|statistics/.test(s)) key = 'math';
+    else if (/science|biology|chemistry|physics|anatomy|marine/.test(s)) key = 'science';
+    else if (/econom/.test(s)) key = 'economics';
+    else if (/social studies|history|civics|government|sociology|geography|psychology/.test(s)) key = 'social-studies';
+    else if (/journalism/.test(s)) key = 'journalism';
+    else if (/humanities|philosophy/.test(s)) key = 'humanities';
+    else if (/latin|greek|classical/.test(s)) key = 'latin';
+    else if (/spanish/.test(s)) key = 'spanish';
+    else if (/french/.test(s)) key = 'french';
+    else if (/world language|language/.test(s)) key = mid ? 'spanish' : 'french';
+    else if (/music|band|chorus|orchestra/.test(s)) key = 'music';
+    else if (/health|physical|fitness|\bpe\b/.test(s)) key = mid ? 'pe' : 'health-pe';
+    else if (/driver/.test(s)) key = 'driver-ed';
+    else if (/art|studio|drawing|ceramics|photo/.test(s)) key = 'art';
+    else if (/elective|career|college|critical thinking|study skills|leadership|decision/.test(s)) key = 'college-career';
+    else key = 'homeroom';
+    var band = mid ? 'middle' : 'upper', other = mid ? 'upper' : 'middle';
+    return styleFor(band + '/' + key) || styleFor(other + '/' + key) || styleFor('upper/homeroom');
+  }
   function renderSubjectTiles() {
     var subjects = {};
     catalog.courses.forEach(function (c) { if (finder.grade === '' || gradeList(c.grade).indexOf(finder.grade) >= 0) { var s = subjectGroup(c); subjects[s] = (subjects[s] || 0) + 1; } });
     var names = Object.keys(subjects).sort(function (a, b) { return (a === 'Electives') - (b === 'Electives') || a.localeCompare(b); });
     $('t-subjects').innerHTML = names.map(function (s) {
-      var t = THEMES[themeForSubject(s)] || THEMES.general;
-      return tile('subject' + (finder.subject === s ? ' on' : ''), '<span class="tt">' + escHtml(s) + '</span>', ' data-s="' + escHtml(s) + '" style="--d:' + t.dark + ';--b:' + t.bright + ';"');
+      var st = tileStyleForSubject(s, finder.grade);
+      return tile('subject' + (finder.subject === s ? ' on' : ''), '<img src="' + escHtml(st.file) + '" alt="" loading="lazy"><span class="tt">' + escHtml(s) + '</span>', ' data-s="' + escHtml(s) + '"');
     }).join('') || '<div class="hint">No courses for this grade yet.</div>';
     $('t-subjects').querySelectorAll('.tile').forEach(function (b) {
       b.addEventListener('click', function () { finder.subject = this.dataset.s; saveFinder(); go('course'); });
@@ -4795,6 +4822,7 @@
       pick('#t-grades .tile[data-g="' + g + '"]');
       res.subjectScreen = J.screen === 'subject' && finder.grade === g;
       res.subjectPlain = !$('t-subjects').querySelector('.ts') && !$('t-grades').querySelector('.ts');
+      res.subjectArt = Array.prototype.every.call($('t-subjects').querySelectorAll('.tile'), function (b) { var im = b.querySelector('img'); return im && /^tiles\/(middle|upper)-[a-z-]+\.jpg$/.test(im.getAttribute('src')); });
       pick('#t-subjects .tile[data-s="' + subjectGroup(c) + '"]');
       res.courseScreen = J.screen === 'course' && finder.subject === subjectGroup(c);
       var rk = c.kits.filter(function (x) { return x.status === 'ready'; })[0], savedAdded = rk ? rk.added : null;
