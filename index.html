@@ -326,6 +326,10 @@
   #dates-panel.mode-publish table.sched th:nth-child(6), #dates-panel.mode-publish table.sched td:nth-child(6) { display:none; }
   #dates-panel.mode-publish table.sched { min-width:0; }
   .skiptop { display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:13.5px; color:var(--mute); margin:-2px 0 12px; }
+  /* Course tile screen: the tile drawn live, fields under it. */
+  #tile-prev { display:block; width:100%; max-width:760px; aspect-ratio:16 / 9; border-radius:12px; border:1px solid var(--line); box-shadow:0 6px 20px rgba(14,28,66,.14); background:#fff; }
+  .tilefields { max-width:760px; }
+  .tilefields .row { grid-template-columns:1fr 1fr; }
   /* Continue / Skip stay in view while a long panel scrolls. */
   .screen > .actions:last-child { position:sticky; bottom:0; z-index:2; background:#fff; margin:14px -26px -24px; padding:12px 26px 16px; border-top:1px solid var(--line); border-radius:0 0 8px 8px; }
   @media (max-width: 640px) { .screen { padding:18px 16px; } .hero h1 { font-size:26px; } .screen h2.q { font-size:21px; } .screen > .actions:last-child { margin:14px -16px -18px; padding:12px 16px 14px; } }
@@ -482,6 +486,36 @@
         <button type="button" class="tile big" data-q="syllabus" data-v="1"><span class="tt">Yes, review it</span><span class="ts">Edit any section, switch sections off, or add your own before it fills the Canvas Syllabus page.</span></button>
         <button type="button" class="tile big" data-q="syllabus" data-v="0"><span class="tt">Skip</span><span class="ts">The standard syllabus for this course, with your details and gradebook, goes in as is.</span></button>
       </div>
+    </section>
+
+    <section class="screen" data-screen="q-tile" hidden>
+      <h2 class="q">Do you want a course tile for your Canvas dashboard?</h2>
+      <div class="tiles two yn">
+        <button type="button" class="tile big" data-q="tile" data-v="1"><span class="tt">Yes, add my tile</span><span class="ts">Your name, the course and Live or On-Demand on this year&rsquo;s tile art. It goes in the file and becomes the course image when you import.</span></button>
+        <button type="button" class="tile big" data-q="tile" data-v="0"><span class="tt">Skip</span><span class="ts">Canvas keeps whatever course image it has.</span></button>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="tile" hidden>
+      <h2 class="q">Your course tile</h2>
+      <div class="skiptop">Said yes but want to move on? <button type="button" class="sm alt skip" data-q="tile">Skip this step</button> leaves the tile out of your file.</div>
+      <div class="step locked" id="stepT">
+        <canvas id="tile-prev" width="1920" height="1080" aria-label="Course tile preview"></canvas>
+        <div class="hint" id="tl-derived"></div>
+        <div class="tilefields">
+          <div class="row">
+            <div><label for="tl-style">Tile art</label><select id="tl-style"></select></div>
+            <div><label for="tl-period">Class period or section</label><input type="text" id="tl-period" placeholder="Period 3"></div>
+          </div>
+          <div class="row">
+            <div><label for="tl-days">Days (optional)</label><input type="text" id="tl-days" placeholder="Mon &amp; Wed"></div>
+            <div><label for="tl-time">Time (optional)</label><input type="text" id="tl-time" placeholder="10:00&ndash;10:50 AM ET"></div>
+          </div>
+        </div>
+        <div class="actions" style="margin-top:12px;"><button type="button" class="alt" id="tl-download">Download the tile (PNG)</button></div>
+        <div class="status" id="tl-status"></div>
+      </div>
+      <div class="actions"><button type="button" class="next">Continue</button><button type="button" class="alt skip" data-q="tile">Skip this step</button></div>
     </section>
 
     <section class="screen" data-screen="syllabus" hidden>
@@ -720,6 +754,7 @@
           <li>Content: <b>All content</b>. Leave dates unadjusted. Leave <b>Import existing quizzes as New Quizzes</b> <u>unchecked</u>: that option drops the module Intro and Outro surveys and hands you empty quizzes.</li>
           <li>Click <b>Import</b> and wait for the green check.</li>
           <li class="li-home">Open <b>Home</b>. Your page should be there with your name on it. If not: Pages &rarr; set it as Front Page &rarr; Home &rarr; Choose Home Page &rarr; Pages Front Page.</li>
+          <li id="li-tile" hidden>Your <b>Dashboard</b> card shows your course tile. If it does not: Settings &rarr; Course Details &rarr; Image &rarr; choose <b>course-tile.jpg</b> from the course files.</li>
           <li>Check <b>Modules</b> (count matches the kit), <b>Assignments</b> (group weights present) and <b>Syllabus</b> (your text is there), then <b>Publish</b> the course.</li>
         </ol>
         <div class="hint">Importing the same kit again later updates the course in place instead of duplicating it.</div>
@@ -907,6 +942,7 @@
     return { teacherName: '', teacherTitle: '', teacherEmail: '', mode: 'On-Demand', term: '', section: '', meeting: '',
              studyHall: '', blurb: '', house: '', tagline: '',
              theme: '', modStyle: 'journey',
+             tileOn: false, tileStyle: '', tilePeriod: null, tileDays: '', tileTime: '',
              modules: [], courseStart: '', dates: {}, itemOverrides: {}, moduleOverrides: {}, removed: {}, groups: null, weighted: null };
   }
   function exampleHome() {
@@ -3364,7 +3400,9 @@
           var mf = zip.file('imsmanifest.xml');
           return mf ? mf.async('string').then(function (mt) { zip.file('imsmanifest.xml', addSyllabusToManifest(mt)); }) : null;
         });
-        return sylTask.then(function () { return applyScheduleAndGradebook(zip); }).then(function () {
+        // The course tile: never in a module-only file; only when the teacher said yes.
+        var tileTask = (addon || !home.tileOn) ? Promise.resolve() : bakeTile(zip);
+        return sylTask.then(function () { return tileTask; }).then(function () { return applyScheduleAndGradebook(zip); }).then(function () {
           var note = zip.file('course_settings/canvas_export.txt');
           var stamp = (addon ? 'Module-only file (' + scopeLabel() + ') built in Course Kit' : 'Home page customized in Course Kit for ' + (home.teacherName || 'a teacher')) + ' on ' + new Date().toISOString().slice(0, 10) + '.\n';
           return (note ? note.async('string') : Promise.resolve('')).then(function (t) {
@@ -3887,6 +3925,85 @@
     ctx.fillText(label, px0 + pw / 2, py0 + ph / 2 + 4);
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
   }
+  // ---- the kit's own tile: drawn from the teacher's details, baked into the cartridge
+  // as web_resources/course-tile.png and named in course_settings.xml as the course
+  // image (image_identifier_ref -> the file's resource id), which Canvas sets on import.
+  var TILE_PATH = 'web_resources/course-tile.jpg', TILE_ID = 'gcoursetile';
+  function kitTile() {
+    var live = home.mode === 'Live';
+    var auto = tileStyleForSubject(course ? course.subject : '', course ? gradeSortKey(course) : '');
+    return {
+      style: styleFor(home.tileStyle) ? home.tileStyle : styleKey(auto),
+      title: course ? course.title : '', teacher: home.teacherName || '',
+      mode: live ? 'Live' : 'On-Demand',
+      period: live ? String(home.tilePeriod != null ? home.tilePeriod : (home.section || '')) : '',
+      days: home.tileDays || '', time: home.tileTime || ''
+    };
+  }
+  function drawKitTile(canvas) {
+    var d = kitTile(), st = styleFor(d.style);
+    return Promise.all([tileBg(st), tileFonts()]).then(function (r) { drawTile(canvas, d, r[0]); return d; });
+  }
+  function tilePng(canvas, jpeg) {
+    return new Promise(function (res, rej) {
+      canvas.toBlob(function (b) { if (b) res(b); else rej(new Error('could not render the tile')); }, jpeg ? 'image/jpeg' : 'image/png', jpeg ? 0.92 : undefined);
+    });
+  }
+  function bakeTile(zip) {
+    var canvas = document.createElement('canvas');
+    // JPEG: the art is photographic, so a PNG runs to 1.7 MB where the JPEG is ~300 KB.
+    return drawKitTile(canvas).then(function () { return tilePng(canvas, true); }).then(function (blob) {
+      zip.file(TILE_PATH, blob);
+      var mf = zip.file('imsmanifest.xml'), csName = (kit.settings && kit.settings.course_settings) || 'course_settings/course_settings.xml', cs = zip.file(csName);
+      var tasks = [];
+      if (mf) tasks.push(mf.async('string').then(function (t) {
+        if (t.indexOf('identifier="' + TILE_ID + '"') < 0) {
+          t = t.replace('</resources>', '    <resource identifier="' + TILE_ID + '" type="webcontent" href="' + TILE_PATH + '">\n      <file href="' + TILE_PATH + '"/>\n    </resource>\n  </resources>');
+        }
+        zip.file('imsmanifest.xml', t);
+      }));
+      if (cs) tasks.push(cs.async('string').then(function (t) {
+        t = t.replace(/\s*<image_url>[\s\S]*?<\/image_url>/g, '').replace(/\s*<image_url\s*\/>/g, '')
+             .replace(/\s*<image_identifier_ref>[\s\S]*?<\/image_identifier_ref>/g, '').replace(/\s*<image_identifier_ref\s*\/>/g, '');
+        var el = '\n  <image_identifier_ref>' + TILE_ID + '</image_identifier_ref>';
+        var dv = /<default_view>[\s\S]*?<\/default_view>/.exec(t);
+        if (dv) t = t.slice(0, dv.index + dv[0].length) + el + t.slice(dv.index + dv[0].length);
+        else t = t.replace(/\n?<\/course>/, el + '\n</course>');
+        zip.file(csName, t);
+      }));
+      return Promise.all(tasks);
+    });
+  }
+  function renderTilePanel() {
+    if (!kit || !course) return;
+    var sel = $('tl-style'), d = kitTile();
+    var lastBand = null, opts = [];
+    TILE_STYLES.forEach(function (s) {
+      if (s.band !== lastBand) { if (lastBand) opts.push('</optgroup>'); opts.push('<optgroup label="' + escHtml(s.band === 'Middle' ? 'Middle (6\u20138)' : 'Upper (9\u201312)') + '">'); lastBand = s.band; }
+      opts.push('<option value="' + escHtml(styleKey(s)) + '"' + (styleKey(s) === d.style ? ' selected' : '') + '>' + escHtml(s.subject) + '</option>');
+    });
+    if (lastBand) opts.push('</optgroup>');
+    sel.innerHTML = opts.join('');
+    $('tl-period').value = d.period; $('tl-period').disabled = d.mode !== 'Live';
+    $('tl-period').placeholder = d.mode === 'Live' ? 'Period 3' : 'On-Demand tiles carry no period';
+    $('tl-days').value = d.days; $('tl-time').value = d.time;
+    $('tl-derived').textContent = 'From your details: ' + (d.teacher || '[your name]') + ' \u00b7 ' + d.title + ' \u00b7 ' + (d.mode === 'Live' ? 'Live' : 'On-Demand') + ' section. Go back to Tell us about you to change them and they change here.';
+    drawKitTile($('tile-prev')).catch(function (e) { $('tl-status').textContent = 'Could not draw the tile: ' + e.message; });
+  }
+  function wireTilePanel() {
+    $('tl-style').addEventListener('change', function () { home.tileStyle = this.value; save(); renderTilePanel(); });
+    $('tl-period').addEventListener('input', function () { home.tilePeriod = this.value; save(); drawKitTile($('tile-prev')); });
+    $('tl-days').addEventListener('input', function () { home.tileDays = this.value; save(); drawKitTile($('tile-prev')); });
+    $('tl-time').addEventListener('input', function () { home.tileTime = this.value; save(); drawKitTile($('tile-prev')); });
+    $('tl-download').addEventListener('click', function () {
+      var canvas = document.createElement('canvas');
+      drawKitTile(canvas).then(function (d) { return tilePng(canvas).then(function (blob) {
+        var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = tileFilename(d); document.body.appendChild(a); a.click();
+        setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+        $('tl-status').textContent = 'Downloaded ' + a.download + '.';
+      }); }).catch(function (e) { $('tl-status').textContent = 'Could not draw the tile: ' + e.message; });
+    });
+  }
   function renderTiles() {
     fixTiles();
     $('tile-count').value = tiles.count;
@@ -4053,9 +4170,9 @@
   var TUTORIAL_VIDEO_URL = '';
   var J = { path: '', screen: 'welcome', mode: '', scope: '', want: {}, history: [], modSel: null };
   var PANE_SCREENS = { preview: 1, details: 1, home: 1, syllabus: 1, dates: 1, publish: 1, gradebook: 1, generate: 1 };
-  var NEEDS_KIT = { preview: 1, details: 1, home: 1, syllabus: 1, dates: 1, publish: 1, gradebook: 1, generate: 1, 'q-home': 1, 'q-syllabus': 1, 'q-dates': 1, 'q-publish': 1, 'q-gradebook': 1 };
+  var NEEDS_KIT = { preview: 1, details: 1, home: 1, tile: 1, syllabus: 1, dates: 1, publish: 1, gradebook: 1, generate: 1, 'q-home': 1, 'q-tile': 1, 'q-syllabus': 1, 'q-dates': 1, 'q-publish': 1, 'q-gradebook': 1 };
   var NEEDS_COURSE = { mode: 1, part: 1, modules: 1 };
-  var Q_OF = { home: 'q-home', syllabus: 'q-syllabus', dates: 'q-dates', publish: 'q-publish', gradebook: 'q-gradebook' };
+  var Q_OF = { home: 'q-home', tile: 'q-tile', syllabus: 'q-syllabus', dates: 'q-dates', publish: 'q-publish', gradebook: 'q-gradebook' };
 
   function loadProfile() { try { return JSON.parse(localStorage.getItem(PROFILE_STORE) || '{}') || {}; } catch (e) { return {}; } }
   function saveProfile() {
@@ -4108,8 +4225,8 @@
     // touches the home page or the syllabus, so those steps (and the details behind them) go.
     var addon = J.scope === 'modules';
     if (!addon) seq.push('details');
-    ['home', 'syllabus', 'dates', 'publish', 'gradebook'].forEach(function (q) {
-      if (addon && (q === 'home' || q === 'syllabus')) return;
+    ['home', 'tile', 'syllabus', 'dates', 'publish', 'gradebook'].forEach(function (q) {
+      if (addon && (q === 'home' || q === 'tile' || q === 'syllabus')) return;
       seq.push(Q_OF[q]);
       if (J.want[q] || J.screen === q) seq.push(q);
     });
@@ -4167,6 +4284,7 @@
     if (J.screen === 'preview') renderContentsPreview();
     if (J.screen === 'generate') renderGenerate();
     if (J.screen === 'home' || J.screen === 'details') fillForm();
+    if (J.screen === 'tile') renderTilePanel();
   }
   function renderTrail() {
     var seq = sequence(), i = seq.indexOf(J.screen), el = $('j-trail');
@@ -4371,6 +4489,7 @@
     if (addon && !fetchOnly) $('j-generate-hint').textContent = 'One file with ' + scopeLabel() + '. Import it into the course you already have: it adds the module and its assignments, quizzes and discussions, and leaves your home page, syllabus and other modules as they are.';
     $('dl').hidden = fetchOnly; $('copy').hidden = fetchOnly || addon;
     document.querySelectorAll('#step6 li.li-home').forEach(function (li) { li.hidden = addon; });
+    $('li-tile').hidden = addon || fetchOnly || !home.tileOn;
     $('dl-plain').hidden = !fetchOnly && !!home.onlyModules && home.onlyModules.length > 0;
     $('dl-plain').textContent = fetchOnly ? 'Download the course file (.imscc)' : 'Original kit, no customization';
     $('j-customize-instead').hidden = !fetchOnly;
@@ -4382,6 +4501,7 @@
       if (addon) chips.push('<span class="chipx off">Home page and syllabus: untouched</span>');
       else {
         chips.push(on('Home page', panelChanged('home'), 'suggested look'));
+        chips.push('<span class="chipx' + (home.tileOn ? '' : ' off') + '">Course tile: ' + (home.tileOn ? 'included' : 'none') + '</span>');
         var syl = home.syllabusOn === false ? 'left out' : (panelChanged('syllabus') ? 'customized' : 'standard');
         chips.push('<span class="chipx' + (syl === 'standard' ? ' off' : '') + '">Syllabus: ' + syl + '</span>');
       }
@@ -4407,6 +4527,7 @@
         || (!!String(home.tagline || '').trim() && home.tagline !== TT.tagline) || home.modStyle !== 'journey'
         || (home.modules || []).some(function (m, i) { var k = pubMods[i]; return !m.show || !k || m.title !== k.title; });
     }
+    if (q === 'tile') return !!home.tileOn && !!(home.tileStyle || home.tilePeriod != null || home.tileDays || home.tileTime);
     if (q === 'syllabus') {
       if (home.syllabusOn === false) return true;
       var strip = function (x) { var c = JSON.parse(JSON.stringify(x || {})); delete c._gradingAuto; return JSON.stringify(c); };
@@ -4426,6 +4547,8 @@
       applyTheme(themeForSubject(course.subject));
       home.modules = (kit.modules || []).filter(function (m) { return m.published; }).map(function (m) { return { gid: m.gid, title: m.title, show: true }; });
       fillForm(); renderStyle(); renderMods();
+    } else if (q === 'tile') {
+      home.tileOn = false; home.tileStyle = ''; home.tilePeriod = null; home.tileDays = ''; home.tileTime = '';
     } else if (q === 'syllabus') {
       home.syllabus = syllabusDefaults(); home.syllabusOn = true; renderSyllabus();
     } else if (q === 'dates') {
@@ -4459,6 +4582,7 @@
       b.addEventListener('click', function () {
         var q = this.dataset.q, yes = this.dataset.v === '1';
         J.want[q] = yes; saveJourney();
+        if (q === 'tile') { home.tileOn = yes; save(); }
         go(yes ? q : nextScreen(Q_OF[q]));
       });
     });
@@ -4483,6 +4607,7 @@
       });
     });
     $('j-another').addEventListener('click', function () { startOver('grade'); });
+    wireTilePanel();
     $('j-customize-instead').addEventListener('click', function () { J.path = 'customize'; J.mode = 'configure'; saveJourney(); go(nextScreen(J.scope === 'modules' ? 'modules' : 'part')); });
     $('pdf').addEventListener('click', function () { openPrintable('all', 'status').catch(function () { /* shown in status */ }); });
     renderGreeting();
@@ -4686,12 +4811,13 @@
     setPreviewShown(true);
 
     fillForm(); renderStyle(); renderMods(); renderSyllabus(); renderDates(); renderGradebook(); renderPreview();
+    home.tileOn = true; home.tileStyle = ''; home.tilePeriod = null;
     patchedKit('base64').then(function (r) {
       $('selftest-b64').textContent = r.data;
       var out = { ok: true, code: c.code, kit: k.id, frontPage: k.front_page, entries: r.entries,
         homeBytes: r.html.length, teacher: home.teacherName, moduleLinks: (r.html.match(/\$CANVAS_OBJECT_REFERENCE\$\/modules\//g) || []).length,
         nonAscii: /[^\x00-\x7f]/.test(r.html), filename: kitFilename() };
-      var checks = { datesApplied: false, weightingOn: false, pointsPatched: false, unpublished: false, batchDates: false, quizPoints: false, removed: false, metaItemState: false, syllabus: false };
+      var checks = { datesApplied: false, weightingOn: false, pointsPatched: false, unpublished: false, batchDates: false, quizPoints: false, removed: false, metaItemState: false, syllabus: false, tile: false };
       var verify = hasSchedule ? JSZip.loadAsync(r.data, { base64: true }) : Promise.resolve(null);
       return verify.then(function (zip2) {
         var reads = [];
@@ -4706,6 +4832,19 @@
         }));
         if (zip2 && kit.settings && kit.settings.course_settings) reads.push(zip2.file(kit.settings.course_settings).async('string').then(function (t) {
           checks.weightingOn = /<group_weighting_scheme>percent<\/group_weighting_scheme>/.test(t);
+        }));
+        // Course tile: a real PNG in the zip, a webcontent resource for it in the manifest,
+        // and course_settings.xml naming that resource as the course image.
+        if (zip2) reads.push(Promise.all([
+          zip2.file(TILE_PATH) ? zip2.file(TILE_PATH).async('uint8array') : Promise.resolve(null),
+          zip2.file('imsmanifest.xml').async('string'),
+          (function () { var n = (kit.settings && kit.settings.course_settings) || 'course_settings/course_settings.xml'; return zip2.file(n) ? zip2.file(n).async('string') : Promise.resolve(''); })()
+        ]).then(function (tt) {
+          var png = tt[0], man = tt[1], cs = tt[2];
+          out.tileBytes = png ? png.length : 0;
+          checks.tile = !!png && png.length > 20000 && png.length < 900000 && png[0] === 0xFF && png[1] === 0xD8
+            && man.indexOf('<resource identifier="' + TILE_ID + '" type="webcontent" href="' + TILE_PATH + '">') >= 0
+            && (cs.match(/<image_identifier_ref>/g) || []).length === 1 && cs.indexOf('<image_identifier_ref>' + TILE_ID + '</image_identifier_ref>') >= 0;
         }));
         // Syllabus: the file is in the zip and listed in the manifest, ASCII only, carries the
         // course title, the teacher from step 3, the gradebook's 100% group, and the form rendered.
@@ -4764,7 +4903,7 @@
         out.unpublished = checks.unpublished;
         out.batchDates = checks.batchDates; out.batchCount = batchItems.length;
         out.quizPoints = checks.quizPoints; out.quiz = quizItem ? quizItem.title : null;
-        out.syllabus = checks.syllabus; out.removedOk = checks.removed; out.metaItemState = checks.metaItemState; out.modulePublishAll = modulePublishAll; out.secondModule = secondModule ? secondModule.title : null;
+        out.syllabus = checks.syllabus; out.tile = checks.tile; out.removedOk = checks.removed; out.metaItemState = checks.metaItemState; out.modulePublishAll = modulePublishAll; out.secondModule = secondModule ? secondModule.title : null;
         out.previewToggle = previewToggle;
         out.finder = finderCheck; out.ok = out.ok && finderCheck.ok;
         // Art pack: a kit whose sidecar declares figures must show the second-file notice
@@ -4774,7 +4913,7 @@
         out.artPackNotice = out.artPackFigures ? (!apBox.hidden && apBox.textContent.indexOf(kit.art_pack.cartridge || '-art-pack.imscc') >= 0) : !!apBox.hidden;
         out.ok = out.ok && out.artPackNotice;
         out.theme = themeKey; out.themeOk = themeOk; out.classicClean = classicClean;
-        out.ok = out.ok && themeOk && classicClean && checks.syllabus;
+        out.ok = out.ok && themeOk && classicClean && checks.syllabus && checks.tile;
         if (hasSchedule) out.ok = out.ok && checks.datesApplied && checks.weightingOn && checks.pointsPatched && checks.unpublished
           && checks.batchDates && (!quizItem || checks.quizPoints)
           && (!removedGraded || checks.removed) && (!unpubItem || checks.metaItemState) && (!secondModule || modulePublishAll);
@@ -4887,7 +5026,7 @@
       J.want = {}; go('q-home', true);
       ['home', 'syllabus', 'dates', 'publish', 'gradebook'].forEach(function (q) { pick('.screen[data-screen="' + Q_OF[q] + '"] .tile[data-v="0"]'); });
       res.skipsToGenerate = J.screen === 'generate';
-      res.summaryChips = $('j-summary').querySelectorAll('.chipx').length === 7 && !$('dl').hidden && !$('copy').hidden;
+      res.summaryChips = $('j-summary').querySelectorAll('.chipx').length === 8 && !$('dl').hidden && !$('copy').hidden;
       J.want = {}; go('q-dates', true); pick('.screen[data-screen="q-dates"] .tile[data-v="1"]');
       var th7 = $('dates-panel').querySelector('table.sched th:nth-child(7)');
       res.datesOnly = J.screen === 'dates' && $('slot-dates').contains($('step4')) && $('dates-panel').className === 'mode-dates'
