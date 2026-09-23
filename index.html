@@ -274,6 +274,10 @@
   .tile .ts { font-size:13px; color:var(--mute); line-height:1.35; }
   .tile .tn { font-size:30px; font-weight:600; line-height:1; color:var(--navy); }
   .tile .pill { margin-left:0; align-self:flex-start; }
+  /* NEW: a kit that reached the store in the last three days. Sits in the tile's corner. */
+  .tile.course, .tile.kit { position:relative; }
+  .tile .newpill { position:absolute; top:10px; right:10px; margin:0; font-size:11px; font-weight:600; letter-spacing:.9px; padding:3px 9px; border-radius:10px; background:var(--gold); color:var(--navy); box-shadow:0 1px 3px rgba(14,28,66,.15); }
+  .tile.course .tt, .tile.kit .tt { padding-right:52px; }
   .tile.big { padding:22px 20px; min-height:120px; }
   .tile.big .tt { font-size:20px; }
   /* Grade: one numeral per tile, nothing else. Cyan rule below, navy fill on hover. */
@@ -2191,6 +2195,16 @@
   }
   var MODE_LABEL = { live: 'Live', od: 'On-Demand' };
   function readyCount(c) { return c.kits.filter(function (k) { return k.status === 'ready'; }).length; }
+  // A kit is new for three days after `added`, the day it first became ready in the
+  // store (make_catalog.py stamps it once and carries it forward across rebuilds).
+  var NEW_FOR_MS = 3 * 24 * 60 * 60 * 1000;
+  function isNewKit(k) {
+    if (!k || k.status !== 'ready' || !k.added) return false;
+    var t = Date.parse(k.added);
+    return !isNaN(t) && Date.now() - t >= 0 && Date.now() - t < NEW_FOR_MS;
+  }
+  function isNewCourse(c) { return (c.kits || []).some(isNewKit); }
+  function newPill() { return '<span class="pill newpill" title="Added in the last three days">NEW</span>'; }
   // Subjects as a teacher picks them. Career and college courses and critical
   // thinking are electives, so they share one tile whatever course.json calls them.
   function subjectGroup(c) {
@@ -2326,7 +2340,7 @@
         : (k.status === 'spec-only' ? 'Authored, not built yet' : 'Coming');
       var on = kit && kit.id === k.id && !(home.onlyModules && home.onlyModules.length);
       out.push(tile('kit' + (on ? ' on' : ''),
-        '<span class="tt">The whole ' + escHtml(k.label) + '</span>' + (m ? '<span class="pill grey">' + escHtml(MODE_LABEL[m].toUpperCase()) + '</span>' : '') +
+        (isNewKit(k) ? newPill() : '') + '<span class="tt">The whole ' + escHtml(k.label) + '</span>' + (m ? '<span class="pill grey">' + escHtml(MODE_LABEL[m].toUpperCase()) + '</span>' : '') +
         '<span class="ts">' + escHtml(s) + '</span>' + (ready ? '' : '<span class="pill grey">PENDING</span>'),
         ' data-part="kit" data-kit="' + escHtml(k.id) + '"', !ready));
     });
@@ -4199,7 +4213,7 @@
     $('t-courses').innerHTML = rows.map(function (c) {
       var ready = readyCount(c), lvl = courseLevel(c);
       return tile('course' + (course === c ? ' on' : ''),
-        '<span class="tt">' + escHtml(c.title) + '</span>' +
+        (isNewCourse(c) ? newPill() : '') + '<span class="tt">' + escHtml(c.title) + '</span>' +
         (lvl ? '<span class="pill' + (/honors/i.test(lvl) ? '' : ' grey') + '">' + escHtml(lvl.toUpperCase()) + '</span>' : '') +
         '<span class="ts">' + escHtml(gradeText(c.grade)) + ' · ' + escHtml(c.code) + '</span>' +
         '<span class="ts">' + (ready ? ready + ' of ' + c.kits.length + ' kit' + (c.kits.length === 1 ? '' : 's') + ' ready' : (c.kits.length ? 'Coming' : 'No kits listed')) + '</span>',
@@ -4783,6 +4797,12 @@
       res.subjectPlain = !$('t-subjects').querySelector('.ts') && !$('t-grades').querySelector('.ts');
       pick('#t-subjects .tile[data-s="' + subjectGroup(c) + '"]');
       res.courseScreen = J.screen === 'course' && finder.subject === subjectGroup(c);
+      var rk = c.kits.filter(function (x) { return x.status === 'ready'; })[0], savedAdded = rk ? rk.added : null;
+      if (rk) { rk.added = new Date(Date.now() - 60000).toISOString(); renderCourseTiles(); }
+      res.newPill = !rk || !!document.querySelector('#t-courses .tile[data-code="' + c.code + '"] .newpill');
+      if (rk) { rk.added = new Date(Date.now() - 4 * 86400000).toISOString(); renderCourseTiles(); }
+      res.newPillGone = !document.querySelector('#t-courses .tile[data-code="' + c.code + '"] .newpill');
+      if (rk) { rk.added = savedAdded; renderCourseTiles(); }
       var ct = pick('#t-courses .tile[data-code="' + c.code + '"]');
       res.courseTile = !ct.disabled;
       res.modeScreen = J.screen === 'mode' && course === c;
