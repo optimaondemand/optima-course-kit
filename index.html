@@ -332,6 +332,69 @@
   .tilefields .row { grid-template-columns:1fr 1fr; }
   /* Continue / Skip stay in view while a long panel scrolls. */
   .screen > .actions:last-child { position:sticky; bottom:0; z-index:2; background:#fff; margin:14px -26px -24px; padding:12px 26px 16px; border-top:1px solid var(--line); border-radius:0 0 8px 8px; }
+  /* One-page review (beta, behind ?review=1): dates, publishing and gradebook on one
+     course map, with a summary card per part. */
+  #kit-view > .col { min-width:0; } /* wide tables scroll in their own box, not the page */
+  .rv-cards { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-top:14px; }
+  @media (max-width: 820px) { .rv-cards { grid-template-columns:1fr; } }
+  .rv-card { border:2px solid var(--line); border-radius:10px; padding:12px 14px; display:flex; flex-direction:column; gap:6px; }
+  .rv-card.on { border-color:var(--navy); box-shadow:0 0 0 2px var(--cyan); }
+  .rv-card .rh { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .rv-card .rt { font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--mute); font-weight:500; }
+  .rv-card .rvv { font-size:16px; font-weight:500; line-height:1.35; }
+  .rv-card .rvs { font-size:12.5px; color:var(--mute); }
+  .rv-card .ra { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:auto; padding-top:4px; }
+  .rv-chip { font-size:11px; font-weight:500; border-radius:999px; padding:2px 9px; background:#EEF1F8; color:var(--mute); white-space:nowrap; }
+  .rv-chip.ch { background:#E3F4EA; color:#1E4620; }
+  .rv-chip.warn { background:#FFF1D6; color:#8A5200; }
+  .rv-edit { border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-top:12px; display:flex; flex-wrap:wrap; gap:10px 18px; align-items:flex-end; background:#F8FAFD; }
+  .rv-edit label { display:flex; flex-direction:column; gap:4px; font-size:12.5px; color:var(--mute); margin:0; }
+  .rv-edit label.inl { flex-direction:row; align-items:center; gap:8px; color:var(--ink); }
+  .rv-edit .hint { flex-basis:100%; margin:0; }
+  .rv-edit .hint.warn { color:#8A5200; }
+  .rv-edit input[type=number] { width:80px; }
+  .rv-groups { display:flex; flex-wrap:wrap; gap:10px 14px; flex-basis:100%; }
+  .rv-groups .g { display:flex; gap:6px; align-items:center; }
+  .rv-groups input[type=text] { width:230px; max-width:100%; }
+  .rv-also { display:flex; flex-wrap:wrap; gap:6px 18px; font-size:13px; color:var(--mute); margin:14px 0 0; padding:0; list-style:none; }
+  .rv-also b { color:var(--ink); font-weight:500; }
+  .rv-maph { display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin:22px 0 0; flex-wrap:wrap; }
+  .rv-maph h3 { margin:0; font-size:17px; font-weight:600; }
+  .rv-maph span { font-size:12.5px; color:var(--mute); }
+  table.rvmap { border-collapse:collapse; width:100%; min-width:720px; font-size:13px; }
+  table.rvmap th { text-align:left; font-weight:500; font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--mute); padding:9px 10px; border-bottom:1px solid var(--line); background:#F4F6FB; }
+  table.rvmap td { padding:7px 10px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  table.rvmap .num { text-align:right; font-variant-numeric:tabular-nums; }
+  table.rvmap .hot { background:rgba(85,200,232,.12); }
+  table.rvmap tr.m td { background:#F4F6FB; font-weight:500; }
+  table.rvmap tr.m .mr { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  table.rvmap tr.m .mr .grow { flex:1; min-width:180px; }
+  table.rvmap tr.m .tools { display:flex; align-items:center; gap:6px; font-weight:400; font-size:12.5px; color:var(--mute); }
+  table.rvmap tr.off td:not(.pc) { color:#8E9BB5; }
+  table.rvmap td.cl { padding:0 10px 10px; background:#F4F6FB; }
+  table.rvmap .ty { font-size:12px; color:var(--mute); }
+  table.rvmap button.cell, table.rvmap button.ttl { font:inherit; font-size:13px; background:none; border:0; padding:2px 4px; margin:-2px -4px; border-radius:4px; color:inherit; cursor:pointer; text-align:left; font-variant-numeric:tabular-nums; }
+  table.rvmap button.cell:hover { background:#EEF1F8; }
+  table.rvmap button.ttl:hover { text-decoration:underline; text-decoration-color:var(--cyan); }
+  table.rvmap button.cell.none { color:var(--mute); }
+  table.rvmap .ed::after { content:''; display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--gold); margin-left:6px; vertical-align:middle; }
+  table.rvmap input[type=datetime-local], table.rvmap input[type=number], table.rvmap select { font-size:12.5px; padding:3px 6px; margin:0; width:auto; }
+  table.rvmap input[type=number] { width:70px; text-align:right; }
+  table.rvmap select { max-width:200px; }
+  table.rvmap button.stp { font-size:13px; padding:0; width:28px; height:26px; border-radius:6px; background:#fff; color:var(--navy); border:1.5px solid var(--line); }
+  .rv-sched { display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; padding-top:10px; font-size:13px; }
+  .rv-sched label { display:inline-flex; align-items:center; gap:6px; margin:0; font-size:13px; color:var(--ink); }
+  .rv-sched input { margin:0; width:auto; font-size:13px; padding:4px 6px; }
+  .rv-sched input[type=number] { width:60px; }
+  .rv-sched .hint { flex-basis:100%; margin:0; }
+  .rv-sw { position:relative; display:inline-block; width:34px; height:20px; flex:none; vertical-align:middle; }
+  .rv-sw input { position:absolute; opacity:0; inset:0; margin:0; width:100%; height:100%; cursor:pointer; }
+  .rv-sw span { position:absolute; inset:0; background:#C3CDDF; border-radius:999px; transition:background .12s; pointer-events:none; }
+  .rv-sw span::after { content:''; position:absolute; width:14px; height:14px; top:3px; left:3px; background:#fff; border-radius:50%; transition:transform .12s; }
+  .rv-sw input:checked + span { background:#2E8B57; }
+  .rv-sw input:checked + span::after { transform:translateX(14px); }
+  .rv-sw input:focus-visible + span { outline:2px solid var(--cyan); outline-offset:2px; }
+  @media (prefers-reduced-motion: reduce) { .rv-sw span, .rv-sw span::after { transition:none; } }
   @media (max-width: 640px) { .screen { padding:18px 16px; } .hero h1 { font-size:26px; } .screen h2.q { font-size:21px; } .screen > .actions:last-child { margin:14px -16px -18px; padding:12px 16px 14px; } }
 </style>
 </head>
@@ -367,6 +430,7 @@
         <button type="button" class="tile big" data-path="fetch"><span class="tt">Just fetch a course</span><span class="ts">Download the course file exactly as the curriculum team built it, or read it first.</span></button>
       </div>
       <div class="hint center">Dashboard tiles for your Canvas courses have their own tool: <button type="button" class="link" id="j-tiles">Course tiles</button>.</div>
+      <div class="hint center" id="j-beta"></div>
     </section>
 
     <section class="screen" data-screen="grade" hidden>
@@ -731,6 +795,13 @@
       <div class="skiptop">Said yes but want to move on? <button type="button" class="sm alt skip" data-q="gradebook">Skip this step</button> keeps the kit’s defaults for this part.</div>
       <div class="step" id="step5"><div id="gradebook-panel"><div class="hint">Choose a kit first.</div></div></div>
       <div class="actions"><button type="button" class="next">Continue</button><button type="button" class="alt skip" data-q="gradebook">Skip this step</button></div>
+    </section>
+
+    <section class="screen" data-screen="review" hidden>
+      <h2 class="q">Review your course</h2>
+      <div class="hint">Your course is ready as the curriculum team built it. Change dates, publishing or the gradebook here, or go straight to your file.</div>
+      <div id="rv"></div>
+      <div class="actions"><button type="button" class="next">Continue to my file</button></div>
     </section>
 
     <section class="screen" data-screen="generate" hidden>
@@ -4170,9 +4241,16 @@
   var TUTORIAL_VIDEO_URL = '';
   var J = { path: '', screen: 'welcome', mode: '', scope: '', want: {}, history: [], modSel: null };
   var PANE_SCREENS = { preview: 1, details: 1, home: 1, syllabus: 1, dates: 1, publish: 1, gradebook: 1, generate: 1 };
-  var NEEDS_KIT = { preview: 1, details: 1, home: 1, tile: 1, syllabus: 1, dates: 1, publish: 1, gradebook: 1, generate: 1, 'q-home': 1, 'q-tile': 1, 'q-syllabus': 1, 'q-dates': 1, 'q-publish': 1, 'q-gradebook': 1 };
+  var NEEDS_KIT = { preview: 1, details: 1, home: 1, tile: 1, syllabus: 1, dates: 1, publish: 1, gradebook: 1, review: 1, generate: 1, 'q-home': 1, 'q-tile': 1, 'q-syllabus': 1, 'q-dates': 1, 'q-publish': 1, 'q-gradebook': 1 };
   var NEEDS_COURSE = { mode: 1, part: 1, modules: 1 };
   var Q_OF = { home: 'q-home', tile: 'q-tile', syllabus: 'q-syllabus', dates: 'q-dates', publish: 'q-publish', gradebook: 'q-gradebook' };
+  // The one-page review is a beta behind a switch: ?review=1 turns it on and ?review=0
+  // off (both remembered on this computer), or the link on the welcome screen.
+  // REVIEW_FORCE lets the self-test pin either flow.
+  var REVIEW_FORCE = null;
+  function reviewFlow() { return REVIEW_FORCE != null ? REVIEW_FORCE : !!uiPref().review; }
+  function setReviewFlow(on) { try { var u = uiPref(); u.review = !!on; localStorage.setItem(UI_STORE, JSON.stringify(u)); } catch (e) { /* ignore */ } }
+  (function () { var m = /[?&]review=([01])(?:&|$)/.exec(location.search); if (m) setReviewFlow(m[1] === '1'); })();
 
   function loadProfile() { try { return JSON.parse(localStorage.getItem(PROFILE_STORE) || '{}') || {}; } catch (e) { return {}; } }
   function saveProfile() {
@@ -4189,7 +4267,15 @@
     if (p.mode && h.mode === 'On-Demand') h.mode = p.mode;
     return h;
   }
+  function renderBeta() {
+    var el = $('j-beta'); if (!el) return;
+    el.innerHTML = reviewFlow()
+      ? 'You are trying the one-page review (beta): dates, publishing and gradebook on one screen. <button type="button" class="link" id="j-beta-btn">Use the classic steps</button>'
+      : 'New: <button type="button" class="link" id="j-beta-btn">try the one-page review</button> (beta), with dates, publishing and gradebook on one screen.';
+    $('j-beta-btn').addEventListener('click', function () { setReviewFlow(!reviewFlow()); renderBeta(); });
+  }
   function renderGreeting() {
+    renderBeta();
     var el = $('j-greet'); if (!el) return;
     var p = loadProfile();
     if (!p.teacherName) { el.hidden = true; el.innerHTML = ''; return; }
@@ -4212,6 +4298,9 @@
     if (NEEDS_KIT[s] && !kit) s = course ? 'part' : 'welcome';
     if (NEEDS_COURSE[s] && !course) s = 'welcome';
     if (s !== 'welcome' && !J.path) J.path = 'customize';
+    // a journey saved in the classic flow lands on the review when the beta is on, and back
+    if (reviewFlow() && /^(q-.*|dates|publish|gradebook)$/.test(s)) s = 'review';
+    if (!reviewFlow() && s === 'review') s = 'q-dates';
     J.screen = s;
   }
   // The screens a teacher will pass through, given the answers so far. Unanswered
@@ -4225,6 +4314,13 @@
     // touches the home page or the syllabus, so those steps (and the details behind them) go.
     var addon = J.scope === 'modules';
     if (!addon) seq.push('details');
+    // Review flow: one screen for dates, publishing and gradebook. Home page, tile and
+    // syllabus open from it and come back to it, so they only count while open.
+    if (reviewFlow()) {
+      ['home', 'tile', 'syllabus'].forEach(function (q) { if (!addon && J.screen === q) seq.push(q); });
+      seq.push('review', 'generate');
+      return seq;
+    }
     ['home', 'tile', 'syllabus', 'dates', 'publish', 'gradebook'].forEach(function (q) {
       if (addon && (q === 'home' || q === 'tile' || q === 'syllabus')) return;
       seq.push(Q_OF[q]);
@@ -4283,6 +4379,7 @@
     if (J.screen === 'modules') renderModuleTiles();
     if (J.screen === 'preview') renderContentsPreview();
     if (J.screen === 'generate') renderGenerate();
+    if (J.screen === 'review') renderReview();
     if (J.screen === 'home' || J.screen === 'details') fillForm();
     if (J.screen === 'tile') renderTilePanel();
   }
@@ -4515,6 +4612,309 @@
       ? '<div class="frame"><iframe src="' + escHtml(TUTORIAL_VIDEO_URL) + '" title="Implementation tutorial" allowfullscreen loading="lazy"></iframe></div>'
       : '<div class="soon">The tutorial video for importing your course file is coming soon. Until then, the steps above walk you through the import.</div>');
   }
+  // ------------------------------------------------------------ one-page review (beta)
+  // Dates, publishing and gradebook on one screen: a summary card per part (what the
+  // file will do, as built unless changed) over one course map. Change on a card turns
+  // on that part's column; every edit writes the same home.* state the classic panels
+  // use, so the summary chips, the cartridge and the syllabus grading follow unchanged.
+  var RV = { mode: '', oc: false, rm: {}, sched: {} };
+  var RV_Q = { dates: 'dates', publish: 'publish', grades: 'gradebook' };
+  var RV_FIELDS = ['unlock_at', 'due_at', 'lock_at'];
+  function isSurvey(it) { return it.type === 'quiz' && it.quiz_type === 'survey'; }
+  function rvTypeLabel(it) { return isSurvey(it) ? 'Survey' : it.type === 'assignment' ? 'Assignment' : it.type === 'quiz' ? 'Quiz' : 'Discussion'; }
+  // The review sets dates only: opens at 12:00 AM, due and closes at 11:59 PM, local time.
+  // A time shows only when a kit carries some other one.
+  function rvTimeOf(f) { return f === 'unlock_at' ? 'T00:00' : 'T23:59'; }
+  function rvFmt(local, f) {
+    if (!local) return '';
+    var d = new Date(local); if (isNaN(d.getTime())) return '';
+    var t = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + (t === (f === 'unlock_at' ? '12:00 AM' : '11:59 PM') ? '' : ', ' + t);
+  }
+  function rvDay(iso) { return new Date(iso + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }); }
+  function rvPts(n) { n = Math.round((Number(n) || 0) * 10) / 10; return String(n); }
+  function shiftLocal(local, days) {
+    var d = new Date(local); if (isNaN(d.getTime())) return local;
+    d.setDate(d.getDate() + days);
+    var p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function rvModules() { return (kit.modules || []).filter(moduleKept); }
+  function rvItems() {
+    var kept = {}; rvModules().forEach(function (m) { kept[m.id] = 1; });
+    return activeGraded().filter(function (it) { return kept[it.module]; });
+  }
+  function rvHasWeeks() { return rvItems().some(function (it) { return it.week != null; }); }
+  // A new start date moves the dates proposed from the old one; dates the teacher typed stay.
+  function rvSetStart(val) {
+    var old = home.courseStart;
+    (kit.graded_items || []).forEach(function (it) {
+      var rec = home.dates[it.id];
+      if (it.week == null || !rec || !old) return;
+      if (rec.due_at === addDaysUTC(old, 7 * it.week - 1) + 'T23:59') delete rec.due_at;
+    });
+    home.courseStart = val; proposeDates(); save();
+  }
+  function rvModuleHasDates(mid) {
+    return rvItems().some(function (it) { return it.module === mid && RV_FIELDS.some(function (f) { return !!effLocal(it, f); }); });
+  }
+  function rvWeekBtns(attr) {
+    return '<button type="button" class="sm alt" ' + attr + ' data-d="-7" aria-label="One week earlier">− 1 week</button> ' +
+      '<button type="button" class="sm alt" ' + attr + ' data-d="7" aria-label="One week later">+ 1 week</button>';
+  }
+  // mid 'all' moves every date in the file.
+  function rvShiftModule(mid, days) {
+    rvItems().forEach(function (it) {
+      if (mid !== 'all' && it.module !== mid) return;
+      RV_FIELDS.forEach(function (f) {
+        var v = effLocal(it, f); if (!v) return;
+        (home.dates[it.id] || (home.dates[it.id] = {}))[f] = shiftLocal(v, days);
+      });
+    });
+    save();
+  }
+  function rvCards() {
+    var items = rvItems(), mods = rvModules();
+    var dues = items.map(function (it) { return effLocal(it, 'due_at'); }).filter(Boolean).sort();
+    var graded = items.filter(function (it) { return !isSurvey(it); });
+    var pubMods = mods.filter(modulePublished).length;
+    var pubItems = items.filter(function (it) { return effItem(it).published; }).length;
+    var removed = Object.keys(home.removed || {}).length;
+    var pts = graded.reduce(function (s, it) { var e = effItem(it); return s + (e.published ? Number(e.points) || 0 : 0); }, 0);
+    var groups = home.groups || [];
+    var wsum = groups.reduce(function (s, g) { return s + (Number(g.weight) || 0); }, 0);
+    var gv, gs, gwarn = false;
+    if (!graded.length) { gv = 'Nothing graded'; gs = 'This part of the course has no graded items.'; }
+    else if (home.weighted) {
+      gv = groups.filter(function (g) { return Number(g.weight) > 0; }).map(function (g) { return g.title + ' ' + g.weight + '%'; }).join(' · ') || 'No weights set';
+      gwarn = wsum !== 100;
+      gs = gwarn ? 'Weights add up to ' + wsum + '%. Make them total 100%.' : 'Weighted by group · ' + rvPts(pts) + ' points published';
+    } else { gv = 'Total points, no group weights'; gs = rvPts(pts) + ' points published across ' + groups.length + ' group' + (groups.length === 1 ? '' : 's'); }
+    var cards = [
+      { k: 'dates', t: 'Dates', v: dues.length ? dues.length + ' of ' + items.length + ' items have due dates' : 'No dates set',
+        s: dues.length ? rvFmt(dues[0]) + ' – ' + rvFmt(dues[dues.length - 1]) + (home.courseStart ? ' · course starts ' + rvDay(home.courseStart) : '')
+          : (rvHasWeeks() ? 'Pick a start date and each item gets a due date for its week.' : 'Students see no due dates until you add them, here or in Canvas.') },
+      { k: 'publish', t: 'Publishing', v: pubMods + ' of ' + mods.length + ' modules published',
+        s: pubItems + ' of ' + items.length + ' items visible to students' + (removed ? ' · ' + removed + ' removed from this file' : '') },
+      { k: 'grades', t: 'Gradebook', v: gv, s: gs, warn: gwarn }
+    ];
+    return cards.map(function (c) {
+      var on = RV.mode === c.k, ch = panelChanged(RV_Q[c.k]);
+      var chip = c.warn ? '<span class="rv-chip warn">Check</span>' : ch ? '<span class="rv-chip ch">Changed</span>' : '<span class="rv-chip">As built</span>';
+      return '<div class="rv-card' + (on ? ' on' : '') + '"><div class="rh"><span class="rt">' + c.t + '</span>' + chip + '</div>' +
+        '<div class="rvv">' + escHtml(c.v) + '</div><div class="rvs">' + escHtml(c.s) + '</div>' +
+        '<div class="ra"><button type="button" class="sm' + (on ? '' : ' alt') + '" data-rv-mode="' + c.k + '">' + (on ? 'Done' : 'Change') + '</button>' +
+        (ch ? '<button type="button" class="link" data-rv-reset="' + c.k + '">Undo my changes</button>' : '') + '</div></div>';
+    }).join('');
+  }
+  function rvTotal() {
+    var sum = (home.groups || []).reduce(function (s, g) { return s + (Number(g.weight) || 0); }, 0);
+    return '<div class="status ' + (sum === 100 ? 'ok' : 'err') + '" id="rv-total" style="margin:0">Total ' + sum + '%' + (sum === 100 ? '' : ' (should be 100%)') + '</div>';
+  }
+  function rvEditor() {
+    if (RV.mode === 'dates') {
+      var hasWeeks = rvHasWeeks();
+      return '<div class="rv-edit">' +
+        (hasWeeks ? '<label for="rv-start">First day of the course<input type="date" id="rv-start" value="' + escHtml(home.courseStart || '') + '"></label>' : '') +
+        '<label class="inl"><input type="checkbox" id="rv-oc"' + (RV.oc ? ' checked' : '') + '> Also set open and close dates</label>' +
+        (rvItems().some(function (it) { return RV_FIELDS.some(function (f) { return !!effLocal(it, f); }); })
+          ? '<span class="inl" style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--mute)">Move every date ' + rvWeekBtns('data-rv-shift="all"') + '</span>' : '') +
+        '<button type="button" class="sm alt" data-rv-act="clear-dates">Clear all dates</button>' +
+        (hasWeeks ? '<div class="hint">Each item is due on the last day of its week, counted from this date. Click a date in the course map to change just that item, or move a whole module a week at a time.</div>'
+          : '<div class="hint warn">This course has no week numbers yet, so a start date cannot place its items. Use <b>Schedule this module</b> in the course map to space out a module’s due dates, or click one date to set just that item.</div>') +
+        '<div class="hint">Times are set for you: items open at 12:00 AM and are due and close at 11:59 PM on the day you pick, your local time.</div>' +
+        '</div>';
+    }
+    if (RV.mode === 'publish') {
+      return '<div class="rv-edit"><button type="button" class="sm alt" data-rv-act="pub-all">Publish everything</button><button type="button" class="sm alt" data-rv-act="unpub-all">Unpublish everything</button>' +
+        '<div class="hint">A module’s switch carries everything inside it. Unpublished items still import, hidden from students until you publish them in Canvas. To leave an item out of the file, open <b>Remove items</b> on its module.</div></div>';
+    }
+    if (RV.mode === 'grades') {
+      var gs = home.groups || [];
+      return '<div class="rv-edit"><label class="inl"><input type="checkbox" id="rv-weighted"' + (home.weighted ? ' checked' : '') + '> Weight the grade by group</label>' +
+        '<div class="rv-groups">' + gs.map(function (g, i) {
+          return '<div class="g"><input type="text" aria-label="Group name" data-rv-gt="' + i + '" value="' + escHtml(g.title) + '">' +
+            (home.weighted ? '<input type="number" min="0" max="100" step="1" aria-label="Weight for ' + escHtml(g.title) + ', percent" data-rv-gw="' + i + '" value="' + escHtml(g.weight) + '"> %' : '') + '</div>';
+        }).join('') + '</div>' +
+        '<button type="button" class="sm alt" data-rv-act="add-group">Add group</button>' + (home.weighted ? rvTotal() : '') +
+        '<div class="hint">Move an item to another group or change its points in the course map. A graded quiz total is split evenly across its questions. If you rename or add groups, a brand-new Canvas course also keeps its own empty Assignments group at 0%; delete that one in Canvas after import.</div></div>';
+    }
+    return '';
+  }
+  function rvAlso() {
+    if (moduleAddon()) return '<ul class="rv-also"><li>Module-only file: your home page and syllabus stay as they are.</li></ul>';
+    var syl = home.syllabusOn === false ? 'left out' : (panelChanged('syllabus') ? 'customized' : 'standard, with your details');
+    return '<ul class="rv-also"><li>Also in your file:</li>' +
+      '<li><b>Home page</b> ' + (panelChanged('home') ? 'customized' : 'suggested look') + ' · <button type="button" class="link" data-rv-open="home">Change</button></li>' +
+      '<li><b>Syllabus</b> ' + syl + ' · <button type="button" class="link" data-rv-open="syllabus">Change</button></li>' +
+      '<li><b>Course tile</b> ' + (home.tileOn ? 'included' : 'none') + ' · <button type="button" class="link" data-rv-open="tile">' + (home.tileOn ? 'Change' : 'Add') + '</button></li></ul>';
+  }
+  function rvRow(it, M, oc, gTitle, groups) {
+    var e = effItem(it), sv = isSurvey(it), d = home.dates[it.id] || {};
+    var dateCell = function (f) {
+      var v = effLocal(it, f);
+      if (M === 'dates') return '<td class="hot"><input type="date" data-rv-date="' + f + '" data-id="' + escHtml(it.id) + '" value="' + escHtml(v.slice(0, 10)) + '" aria-label="' + (f === 'due_at' ? 'Due' : f === 'unlock_at' ? 'Opens' : 'Closes') + '"></td>';
+      return '<td><button type="button" class="cell' + (v ? '' : ' none') + (d[f] ? ' ed' : '') + '" data-rv-go="dates">' + (v ? escHtml(rvFmt(v, f)) : 'Add date') + '</button></td>';
+    };
+    var ptsCell, grpCell;
+    if (sv) { ptsCell = '<td class="num ty">ungraded</td>'; grpCell = '<td class="ty">—</td>'; }
+    else if (M === 'grades') {
+      ptsCell = '<td class="num hot">' + (canEditPoints(it) ? '<input type="number" step="0.5" min="0" data-rv-pts="' + escHtml(it.id) + '" value="' + escHtml(fmtPoints(e.points)) + '" aria-label="Points"' + (it.type === 'quiz' ? ' title="Quiz total. Its questions share it evenly."' : '') + '>' : '<span title="Set by its questions">' + escHtml(fmtPoints(e.points)) + '</span>') + '</td>';
+      grpCell = '<td class="hot"><select data-rv-grp="' + escHtml(it.id) + '" aria-label="Group">' + groups.map(function (g) {
+        return '<option value="' + escHtml(g.id) + '"' + (g.id === e.group ? ' selected' : '') + '>' + escHtml(g.title) + '</option>';
+      }).join('') + '</select></td>';
+    } else {
+      var o = home.itemOverrides[it.id] || {};
+      var ptsEd = 'points' in o && Number(o.points) !== Number(it.points), grpEd = 'group' in o && o.group !== it.group;
+      ptsCell = '<td class="num"><button type="button" class="cell' + (ptsEd ? ' ed' : '') + '" data-rv-go="grades">' + escHtml(fmtPoints(e.points)) + '</button></td>';
+      grpCell = '<td><button type="button" class="cell' + (grpEd ? ' ed' : '') + '" data-rv-go="grades">' + escHtml(gTitle(e.group)) + '</button></td>';
+    }
+    return '<tr class="' + (e.published ? '' : 'off') + '"><td class="pc' + (M === 'publish' ? ' hot' : '') + '"><label class="rv-sw"><input type="checkbox" class="rv-pub" data-id="' + escHtml(it.id) + '"' + (e.published ? ' checked' : '') + ' aria-label="Publish ' + escHtml(it.title) + '"><span></span></label></td>' +
+      '<td><button type="button" class="ttl" data-rv-peek="' + escHtml(it.id) + '" title="Preview this item">' + escHtml(it.title) + '</button></td><td class="ty">' + rvTypeLabel(it) + '</td>' +
+      (oc ? dateCell('unlock_at') : '') + dateCell('due_at') + (oc ? dateCell('lock_at') : '') + ptsCell + grpCell + '</tr>';
+  }
+  // Schedule a module: graded items in module order, n per due date, every k days from
+  // the first. Surveys stay undated. The first date defaults to a week after the previous
+  // module's last due date, or the end of the course's first week.
+  function rvSchedDefault(m) {
+    var mods = rvModules(), i = mods.indexOf(m), items = rvItems(), last = '';
+    for (var j = i - 1; j >= 0 && !last; j--) {
+      items.filter(function (it) { return it.module === mods[j].id; }).forEach(function (it) { var v = effLocal(it, 'due_at'); if (v && v > last) last = v; });
+    }
+    if (last) return addDaysUTC(last.slice(0, 10), 7);
+    return home.courseStart ? addDaysUTC(home.courseStart, 6) : '';
+  }
+  function rvSchedRow(m) {
+    var id = escHtml(m.id);
+    return '<div class="rv-sched" data-m="' + id + '">' +
+      (RV.sched[m.id] === 'why' ? '<div class="hint warn">This module has no dates to move yet. Set its due dates here first, then move it a week at a time.</div>' : '') +
+      '<label>First due date <input type="date" class="sd" value="' + escHtml(rvSchedDefault(m)) + '"></label>' +
+      '<label><input type="number" class="sn" min="1" max="20" value="1"> item(s) due every</label>' +
+      '<label><input type="number" class="se" min="1" max="60" value="7"> days</label>' +
+      '<button type="button" class="sm" data-rv-sched-apply="' + id + '">Set due dates</button>' +
+      '<div class="hint">Graded items get due dates in module order, at 11:59 PM, replacing any due dates already set in this module. Surveys stay undated. Tip: 2 items every 7 days puts each VR activity and its written assignment in the same week.</div></div>';
+  }
+  function rvSchedule(mid, first, n, every) {
+    rvItems().filter(function (it) { return it.module === mid && !isSurvey(it); }).forEach(function (it, i) {
+      (home.dates[it.id] || (home.dates[it.id] = {})).due_at = addDaysUTC(first, Math.floor(i / n) * every) + 'T23:59';
+    });
+    save();
+  }
+  function rvMap() {
+    var M = RV.mode, hot = function (k) { return M === k ? ' hot' : ''; };
+    var groups = home.groups || [];
+    var gTitle = function (id) { var g = groups.filter(function (x) { return x.id === id; })[0]; return g ? g.title : '—'; };
+    var items = rvItems(), oc = M === 'dates' && RV.oc, cols = oc ? 8 : 6;
+    var out = ['<div class="dtable"><table class="rvmap"><thead><tr><th class="pc' + hot('publish') + '" style="width:70px">Visible</th><th>Item</th><th>Type</th>' +
+      (oc ? '<th class="hot">Opens</th>' : '') + '<th class="' + hot('dates') + '">Due</th>' + (oc ? '<th class="hot">Closes</th>' : '') +
+      '<th class="num' + hot('grades') + '">Points</th><th class="' + hot('grades') + '">Group</th></tr></thead><tbody>'];
+    rvModules().forEach(function (m) {
+      var mi = items.filter(function (it) { return it.module === m.id; });
+      var cont = kit.contents ? contentsOf(m) : null;
+      var mp = modulePublished(m), tools = '';
+      // A module with dates moves a week at a time; one without gets scheduled first.
+      var dated = M === 'dates' && mi.length && rvModuleHasDates(m.id);
+      if (M === 'dates' && mi.some(function (it) { return !isSurvey(it); })) {
+        tools = '<span class="tools">Move module ' + rvWeekBtns('data-rv-shift="' + escHtml(m.id) + '"') + ' · ' +
+          '<button type="button" class="link" data-rv-sched="' + escHtml(m.id) + '">' + (RV.sched[m.id] ? 'Cancel' : dated ? 'Reschedule…' : 'Schedule this module') + '</button></span>';
+      }
+      if (M === 'publish' && cont) tools = '<span class="tools"><button type="button" class="link" data-rv-rm="' + escHtml(m.id) + '">' + (RV.rm[m.id] ? 'Done removing' : 'Remove items…') + '</button></span>';
+      out.push('<tr class="m' + (mp ? '' : ' off') + '"><td class="pc' + hot('publish') + '"><label class="rv-sw"><input type="checkbox" class="rv-modpub" data-m="' + escHtml(m.id) + '"' + (mp ? ' checked' : '') + ' aria-label="Publish ' + escHtml(m.title) + '"><span></span></label></td>' +
+        '<td colspan="' + (cols - 1) + '"><div class="mr"><span class="grow">' + escHtml(m.title) + ' <span class="ty">· ' + (mi.length ? mi.length + ' graded' : 'nothing graded') + (mp ? '' : ' · hidden from students') + '</span></span>' + tools + '</div></td></tr>');
+      if (M === 'dates' && RV.sched[m.id]) out.push('<tr><td class="cl" colspan="' + cols + '">' + rvSchedRow(m) + '</td></tr>');
+      if (M === 'publish' && cont && RV.rm[m.id]) { openContents[m.id] = true; out.push('<tr><td class="cl" colspan="' + cols + '">' + contentsList(m, cont) + '</td></tr>'); }
+      mi.forEach(function (it) { out.push(rvRow(it, M, oc, gTitle, groups)); });
+    });
+    out.push('</tbody></table></div>');
+    if (!kit.contents) out.push('<div class="hint">' + (kit.contentsError ? 'The module contents could not be read (' + escHtml(kit.contentsError) + '); removing items is unavailable for this kit.' : 'Reading the module contents…') + '</div>');
+    return out.join('');
+  }
+  var RV_HINT = { '': 'Click a date, point value or group to change it. The switches publish or hide.', dates: 'Editing dates. The highlighted column is live.', publish: 'Editing publishing. A module’s switch carries everything inside it.', grades: 'Editing the gradebook. The highlighted columns are live.' };
+  function rvPaint(parts) {
+    if (!kit || !$('rv-cards')) { renderReview(); return; }
+    if (parts.indexOf('cards') >= 0) $('rv-cards').innerHTML = rvCards();
+    if (parts.indexOf('editor') >= 0) $('rv-editor').innerHTML = rvEditor();
+    if (parts.indexOf('also') >= 0) $('rv-also').innerHTML = rvAlso();
+    if (parts.indexOf('map') >= 0) { $('rv-map').innerHTML = rvMap(); $('rv-maphint').textContent = RV_HINT[RV.mode] || ''; }
+  }
+  function renderReview() {
+    var el = $('rv'); if (!el) return;
+    if (!kit) { el.innerHTML = '<div class="hint">Choose a course first.</div>'; return; }
+    ensureKitDefaults();
+    el.innerHTML = '<div class="rv-cards" id="rv-cards"></div><div id="rv-editor"></div><div id="rv-also"></div>' +
+      '<div class="rv-maph"><h3>Course map</h3><span id="rv-maphint"></span></div><div id="rv-map"></div>';
+    rvPaint(['cards', 'editor', 'also', 'map']);
+    if (!kit.contents && !kit.contentsError) {
+      var k = kit;
+      loadContents().then(function () { if (kit === k && J.screen === 'review') rvPaint(['cards', 'map']); });
+    }
+  }
+  function rvPeek(id) {
+    var it = itemById(id); if (!it) return;
+    $('kit-view').classList.remove('solo');
+    previewItem(it);
+  }
+  function closeReviewPeek() {
+    if (previewItemId) leaveItemPreview();
+    $('kit-view').classList.add('solo');
+  }
+  function wireReview() {
+    var el = $('rv');
+    el.addEventListener('click', function (e) {
+      var a = e.target.closest('a.prev-link');
+      if (a) { e.preventDefault(); rvPeek(a.dataset.id); return; }
+      var b = e.target.closest('button'); if (!b || !kit) return;
+      var ds = b.dataset;
+      if (ds.rvMode) { RV.mode = RV.mode === ds.rvMode ? '' : ds.rvMode; rvPaint(['cards', 'editor', 'map']); }
+      else if (ds.rvGo) { RV.mode = ds.rvGo; rvPaint(['cards', 'editor', 'map']); }
+      else if (ds.rvReset) { resetPanel(RV_Q[ds.rvReset]); if (ds.rvReset === 'dates') RV.oc = false; rvPaint(['cards', 'editor', 'also', 'map']); }
+      else if (ds.rvAct === 'clear-dates') { home.dates = {}; home.courseStart = ''; save(); rvPaint(['cards', 'editor', 'map']); }
+      else if (ds.rvAct === 'pub-all' || ds.rvAct === 'unpub-all') { setAllPublished(ds.rvAct === 'pub-all'); rvPaint(['cards', 'map']); }
+      else if (ds.rvAct === 'add-group') {
+        home.groups.push({ id: 'g' + randHex(32), title: 'New group', weight: 0, position: home.groups.length + 1 });
+        save(); syncSyllabusGrading(); rvPaint(['cards', 'editor', 'map']);
+      }
+      else if (ds.rvShift) {
+        // nothing dated yet: open the module's schedule row and say why, rather than doing nothing
+        if (ds.rvShift !== 'all' && !rvModuleHasDates(ds.rvShift)) { RV.sched[ds.rvShift] = 'why'; rvPaint(['map']); return; }
+        rvShiftModule(ds.rvShift, +ds.d); rvPaint(['cards', 'map']);
+      }
+      else if (ds.rvSched) { RV.sched[ds.rvSched] = !RV.sched[ds.rvSched]; rvPaint(['map']); }
+      else if (ds.rvSchedApply) {
+        var box = b.closest('.rv-sched'), first = box.querySelector('.sd').value;
+        if (!first) { box.querySelector('.sd').focus(); return; }
+        var n = Math.max(1, parseInt(box.querySelector('.sn').value, 10) || 1), every = Math.max(1, parseInt(box.querySelector('.se').value, 10) || 7);
+        rvSchedule(ds.rvSchedApply, first, n, every); RV.sched[ds.rvSchedApply] = false; rvPaint(['cards', 'editor', 'map']);
+      }
+      else if (ds.rvRm) { RV.rm[ds.rvRm] = !RV.rm[ds.rvRm]; rvPaint(['map']); }
+      else if (b.classList.contains('ct-remove')) { toggleRemoved(ds.i); rvPaint(['cards', 'map']); }
+      else if (ds.rvPeek) rvPeek(ds.rvPeek);
+      else if (ds.rvOpen) {
+        var q = ds.rvOpen;
+        if (q === 'tile' && !home.tileOn) { home.tileOn = true; save(); }
+        J.want[q] = true; saveJourney(); go(q);
+      }
+    });
+    el.addEventListener('change', function (e) {
+      var t = e.target, ds = t.dataset; if (!kit) return;
+      if (t.id === 'rv-start') { rvSetStart(t.value); rvPaint(['cards', 'map']); }
+      else if (t.id === 'rv-oc') { RV.oc = t.checked; rvPaint(['map']); }
+      else if (t.id === 'rv-weighted') { home.weighted = t.checked; save(); syncSyllabusGrading(); rvPaint(['cards', 'editor']); }
+      else if (ds.rvGt != null) { home.groups[+ds.rvGt].title = t.value; save(); syncSyllabusGrading(); rvPaint(['cards', 'map']); }
+      else if (ds.rvGw != null) {
+        home.groups[+ds.rvGw].weight = parseFloat(t.value) || 0; save(); syncSyllabusGrading(); rvPaint(['cards']);
+        if ($('rv-total')) $('rv-total').outerHTML = rvTotal();
+      }
+      else if (t.classList.contains('rv-modpub')) { setModulePublished(moduleById(ds.m), t.checked); rvPaint(['cards', 'map']); }
+      else if (t.classList.contains('rv-pub')) {
+        ensureOverride(itemById(ds.id)).published = t.checked; save(); syncSyllabusGrading();
+        t.closest('tr').className = t.checked ? '' : 'off'; rvPaint(['cards']);
+      }
+      else if (ds.rvDate) { (home.dates[ds.id] || (home.dates[ds.id] = {}))[ds.rvDate] = t.value ? t.value + rvTimeOf(ds.rvDate) : ''; save(); rvPaint(['cards', 'editor']); }
+      else if (ds.rvPts) { ensureOverride(itemById(ds.rvPts)).points = parseFloat(t.value) || 0; save(); syncSyllabusGrading(); rvPaint(['cards']); }
+      else if (ds.rvGrp) { ensureOverride(itemById(ds.rvGrp)).group = t.value; save(); syncSyllabusGrading(); rvPaint(['cards']); }
+    });
+  }
   // Skip on a panel screen: the answer becomes "skip" and that panel's choices go back to
   // the kit's defaults, so the file matches the summary. Real changes need a second click.
   // The same detectors drive the summary chips, so "customized" means something changed.
@@ -4530,7 +4930,12 @@
     if (q === 'tile') return !!home.tileOn && !!(home.tileStyle || home.tilePeriod != null || home.tileDays || home.tileTime);
     if (q === 'syllabus') {
       if (home.syllabusOn === false) return true;
-      var strip = function (x) { var c = JSON.parse(JSON.stringify(x || {})); delete c._gradingAuto; return JSON.stringify(c); };
+      // teacher, email, office and mode are copied in from "Tell us about you", not edits
+      var strip = function (x) {
+        var c = JSON.parse(JSON.stringify(x || {})); delete c._gradingAuto;
+        if (c.meta) ['teacher', 'email', 'office', 'mode'].forEach(function (f) { delete c.meta[f]; });
+        return JSON.stringify(c);
+      };
       return strip(home.syllabus) !== strip(syllabusDefaults());
     }
     if (q === 'dates') return !!home.courseStart || Object.keys(home.dates || {}).some(function (id) { var d = home.dates[id] || {}; return !!(d.due_at || d.unlock_at || d.lock_at); });
@@ -4601,6 +5006,7 @@
         }
         setAll(false);
         resetPanel(q); J.want[q] = false;
+        if (reviewFlow()) { saveJourney(); go('review'); return; }
         // leave by way of the question, so Back returns there and the panel drops out of the trail
         J.screen = Q_OF[q]; saveJourney();
         go(nextScreen());
@@ -4610,6 +5016,7 @@
     wireTilePanel();
     $('j-customize-instead').addEventListener('click', function () { J.path = 'customize'; J.mode = 'configure'; saveJourney(); go(nextScreen(J.scope === 'modules' ? 'modules' : 'part')); });
     $('pdf').addEventListener('click', function () { openPrintable('all', 'status').catch(function () { /* shown in status */ }); });
+    wireReview();
     renderGreeting();
   }
 
@@ -4619,8 +5026,10 @@
     wireTiles();
     wireSyllabus();
     if (location.hash === '#tiles') setTab('tiles'); else if (uiPref().tab === 'tiles') setTab('tiles');
-    $('hide-preview').addEventListener('click', function () { setPreviewShown(false); });
-    $('preview-home').addEventListener('click', leaveItemPreview);
+    // On the review screen the preview pane only opens for an item, so closing it puts
+    // the course map back to full width instead of hiding the pane everywhere.
+    $('hide-preview').addEventListener('click', function () { if (J.screen === 'review') { closeReviewPeek(); return; } setPreviewShown(false); });
+    $('preview-home').addEventListener('click', function () { if (J.screen === 'review') { closeReviewPeek(); return; } leaveItemPreview(); });
     $('show-preview').addEventListener('click', function () { setPreviewShown(true); });
     if (uiPref().previewHidden) setPreviewShown(false);
     loadFinder();
@@ -4686,6 +5095,7 @@
   // build the patched zip, and write the result into the DOM so a headless
   // browser can read it back and verify the cartridge for real.
   function selftest(code) {
+    REVIEW_FORCE = false; // the classic flow, whatever this computer remembers; the review flow is checked at the end
     var kitId = null;
     if (code && code.indexOf(':') > 0) { kitId = code.slice(code.indexOf(':') + 1); code = code.slice(0, code.indexOf(':')); }
     var c = code ? findCourse(code) : null;
@@ -5050,9 +5460,25 @@
       J.path = 'fetch'; go('generate', true);
       res.fetchScreen = $('dl').hidden && !$('dl-plain').hidden && !$('j-customize-instead').hidden;
       J.path = 'customize'; go('generate', true); var dlShown = !$('dl').hidden && $('j-customize-instead').hidden;
+      // Review flow (beta): details leads straight to one review screen, whose switches
+      // write the same publishing state, and whose Undo puts it back.
+      REVIEW_FORCE = true; J.want = {}; go('details', true);
+      var seqR = sequence();
+      res.reviewSeq = seqR.indexOf('review') === seqR.indexOf('details') + 1 && seqR.indexOf('q-dates') < 0 && seqR[seqR.length - 1] === 'generate' && nextScreen('details') === 'review';
+      resetPanel('publish'); // earlier checks leave items unpublished
+      go('review', true);
+      var modSw = $('rv').querySelector('input.rv-modpub:checked');
+      var cardsOk = $('rv').querySelectorAll('.rv-card').length === 3 && !panelChanged('publish');
+      if (modSw) modSw.click();
+      var changed = !modSw || panelChanged('publish');
+      var undo = $('rv').querySelector('[data-rv-reset="publish"]'); if (undo) undo.click();
+      var markCell = $('rv').querySelector('button.cell[data-rv-go="dates"]'); if (markCell) markCell.click();
+      res.reviewScreen = cardsOk && changed && (!modSw || (!!undo && !panelChanged('publish'))) && (!markCell || !!$('rv').querySelector('input[data-rv-date]'));
+      RV.mode = ''; REVIEW_FORCE = false;
       J.want = { home: true, syllabus: true, dates: true, publish: true, gradebook: true }; go('details', true);
+      REVIEW_FORCE = null;
       res.restored = dlShown && res.restoredScope;
-      res.ok = ['gradeTiles', 'subjectScreen', 'courseScreen', 'courseTile', 'modeScreen', 'partScreen', 'modulesScreen', 'continueLabel', 'afterModules', 'scopeFlow', 'scopeGenerate', 'homeCards', 'printScope', 'filename',
+      res.ok = ['reviewSeq', 'reviewScreen','gradeTiles', 'subjectScreen', 'courseScreen', 'courseTile', 'modeScreen', 'partScreen', 'modulesScreen', 'continueLabel', 'afterModules', 'scopeFlow', 'scopeGenerate', 'homeCards', 'printScope', 'filename',
         'metaOnlyTarget', 'orgOnlyTarget', 'otherGone', 'keptStays', 'addonClean', 'restoredScope', 'skipsToGenerate', 'summaryChips', 'datesOnly', 'panelSkip', 'publishOnly', 'profile', 'fetchScreen', 'restored'].every(function (kk) { return res[kk] === true; });
       return res;
     }).catch(function (e) { res.error = String(e && e.message || e); return res; });
