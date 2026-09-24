@@ -335,6 +335,13 @@
   /* One-page review (beta, behind ?review=1): dates, publishing and gradebook on one
      course map, with a summary card per part. */
   #kit-view > .col { min-width:0; } /* wide tables scroll in their own box, not the page */
+  /* The review's course map gets most of a large screen; a peeked item still takes the right column. */
+  .wrap.wide.solo { max-width:1560px; }
+  .wrap.wide:not(.solo) { max-width:1800px; }
+  table.rvmap td:nth-child(2) { min-width:220px; }
+  table.rvmap input[type=date] { width:150px; }
+  .rv-bulk { display:inline-flex; flex-wrap:wrap; align-items:center; gap:6px; font-size:12.5px; color:var(--mute); }
+  .rv-bulk input, .rv-bulk select { margin:0; width:auto; font-size:13px; padding:4px 6px; }
   .rv-cards { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-top:14px; }
   @media (max-width: 820px) { .rv-cards { grid-template-columns:1fr; } }
   .rv-card { border:2px solid var(--line); border-radius:10px; padding:12px 14px; display:flex; flex-direction:column; gap:6px; }
@@ -4362,6 +4369,7 @@
     $('jnav').hidden = J.screen === 'welcome';
     var wrap = $('kit-view');
     wrap.classList.toggle('solo', !PANE_SCREENS[J.screen]);
+    wrap.classList.toggle('wide', J.screen === 'review');
     syncPreviewButton();
     renderTrail();
     var panel = $('dates-panel');
@@ -4711,6 +4719,22 @@
     var sum = (home.groups || []).reduce(function (s, g) { return s + (Number(g.weight) || 0); }, 0);
     return '<div class="status ' + (sum === 100 ? 'ok' : 'err') + '" id="rv-total" style="margin:0">Total ' + sum + '%' + (sum === 100 ? '' : ' (should be 100%)') + '</div>';
   }
+  // One close date for every graded item, or one module's. Pages have no close date in
+  // Canvas, so this covers assignments, quizzes and discussions.
+  function rvCloseAll() {
+    var mods = rvModules().filter(function (m) { return rvItems().some(function (it) { return it.module === m.id; }); });
+    var early = rvItems().filter(function (it) { var l = effLocal(it, 'lock_at'), d = effLocal(it, 'due_at'); return l && d && l < d; }).length;
+    return '<div class="rv-bulk" style="flex-basis:100%"><label for="rv-close-all" style="flex-direction:row;color:var(--ink);font-size:13px">Close everything on</label>' +
+      '<input type="date" id="rv-close-all" value="' + escHtml(RV.closeVal || '') + '">' +
+      (mods.length > 1 ? '<select id="rv-close-scope" aria-label="Which modules"><option value="all">in every module</option>' + mods.map(function (m) {
+        return '<option value="' + escHtml(m.id) + '"' + (RV.closeScope === m.id ? ' selected' : '') + '>in ' + escHtml(m.title) + '</option>';
+      }).join('') + '</select>' : '') +
+      '<button type="button" class="sm" data-rv-act="close-all">Set close dates</button>' +
+      (RV.closeMsg ? '<span class="status ok" style="margin:0">' + escHtml(RV.closeMsg) + '</span>' : '') +
+      '<span style="flex-basis:100%">Every assignment, quiz and discussion closes at 11:59 PM that day; after that, students can no longer submit. Reading pages have no close date in Canvas.</span>' +
+      (early ? '<span class="status err" style="margin:0;flex-basis:100%">' + early + ' item' + (early === 1 ? ' closes' : 's close') + ' before ' + (early === 1 ? 'it is' : 'they are') + ' due. Check the Closes column.</span>' : '') +
+      '</div>';
+  }
   function rvEditor() {
     if (RV.mode === 'dates') {
       var hasWeeks = rvHasWeeks();
@@ -4720,6 +4744,7 @@
         (rvItems().some(function (it) { return RV_FIELDS.some(function (f) { return !!effLocal(it, f); }); })
           ? '<span class="inl" style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--mute)">Move every date ' + rvWeekBtns('data-rv-shift="all"') + '</span>' : '') +
         '<button type="button" class="sm alt" data-rv-act="clear-dates">Clear all dates</button>' +
+        rvCloseAll() +
         (hasWeeks ? '<div class="hint">Each item is due on the last day of its week, counted from this date. Click a date in the course map to change just that item, or move a whole module a week at a time.</div>'
           : '<div class="hint warn">This course has no week numbers yet, so a start date cannot place its items. Use <b>Schedule this module</b> in the course map to space out a module’s due dates, or click one date to set just that item.</div>') +
         '<div class="hint">Times are set for you: items open at 12:00 AM and are due and close at 11:59 PM on the day you pick, your local time.</div>' +
@@ -4865,10 +4890,20 @@
       if (a) { e.preventDefault(); rvPeek(a.dataset.id); return; }
       var b = e.target.closest('button'); if (!b || !kit) return;
       var ds = b.dataset;
-      if (ds.rvMode) { RV.mode = RV.mode === ds.rvMode ? '' : ds.rvMode; rvPaint(['cards', 'editor', 'map']); }
+      if (ds.rvMode) { RV.closeMsg = ''; RV.mode = RV.mode === ds.rvMode ? '' : ds.rvMode; rvPaint(['cards', 'editor', 'map']); }
       else if (ds.rvGo) { RV.mode = ds.rvGo; rvPaint(['cards', 'editor', 'map']); }
-      else if (ds.rvReset) { resetPanel(RV_Q[ds.rvReset]); if (ds.rvReset === 'dates') RV.oc = false; rvPaint(['cards', 'editor', 'also', 'map']); }
-      else if (ds.rvAct === 'clear-dates') { home.dates = {}; home.courseStart = ''; save(); rvPaint(['cards', 'editor', 'map']); }
+      else if (ds.rvReset) { resetPanel(RV_Q[ds.rvReset]); if (ds.rvReset === 'dates') { RV.oc = false; RV.closeVal = ''; RV.closeMsg = ''; } rvPaint(['cards', 'editor', 'also', 'map']); }
+      else if (ds.rvAct === 'clear-dates') { home.dates = {}; home.courseStart = ''; RV.closeMsg = ''; save(); rvPaint(['cards', 'editor', 'map']); }
+      else if (ds.rvAct === 'close-all') {
+        var cv = $('rv-close-all').value, scope = $('rv-close-scope') ? $('rv-close-scope').value : 'all';
+        if (!cv) { $('rv-close-all').focus(); return; }
+        var hit = rvItems().filter(function (it) { return scope === 'all' || it.module === scope; });
+        hit.forEach(function (it) { (home.dates[it.id] || (home.dates[it.id] = {})).lock_at = cv + 'T23:59'; });
+        save();
+        RV.closeVal = cv; RV.closeScope = scope; RV.oc = true;
+        RV.closeMsg = hit.length + ' item' + (hit.length === 1 ? '' : 's') + ' close ' + rvDay(cv) + '.';
+        rvPaint(['cards', 'editor', 'map']);
+      }
       else if (ds.rvAct === 'pub-all' || ds.rvAct === 'unpub-all') { setAllPublished(ds.rvAct === 'pub-all'); rvPaint(['cards', 'map']); }
       else if (ds.rvAct === 'add-group') {
         home.groups.push({ id: 'g' + randHex(32), title: 'New group', weight: 0, position: home.groups.length + 1 });
