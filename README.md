@@ -142,13 +142,13 @@ together.
 
 | Screen | What it does |
 |---|---|
-| Welcome | "Welcome to the Course Optimizer!" Two tiles: **Customize my course** (the full journey) or **Just fetch a course** (grade -> subject -> course -> part -> download, no configuration). Greets a returning teacher by name. |
-| Grade, subject, course | Tiles built from `catalog.json`: K-12 as bare numerals (grades with no course greyed), then one tile per subject with no counts, each on the 2026-27 course tile background for that subject and band from `tiles/` (Career Education and Critical Thinking share an **Electives** tile on the College & Career art), then course tiles (Honors/Standard pills, code, "n of m kits ready"; no ready kit = greyed "Coming"; a gold **NEW** pill in the corner for three days after a kit first reaches the store, from the catalog's `added` date, on the kit tile too). A folded **Search the full course list** keeps the old finder (search box, grade chips, subject filter, list). |
+| Welcome | "Welcome to the Course Optimizer!" Three tiles: **Customize my course** (the full journey), **Use my own course** (the teacher's own Canvas export; see below) or **Just fetch a course** (grade -> subject -> course -> part -> download, no configuration). Greets a returning teacher by name. |
+| Grade, subject, course | Tiles built from `catalog.json`: K-12 as bare numerals (grades with no course greyed), then one tile per subject with no counts, each on the 2026-27 course tile background for that subject and band from `tiles/` (Career Education and Critical Thinking share an **Electives** tile on the College & Career art), then course tiles (**I teach one subject across grades** under the grade numerals skips the grade: every subject, then that subject's courses for every grade under grade headings; a course screen reached by grade offers "Show <subject> for every grade"; Honors/Standard pills, code, "n of m kits ready"; no ready kit = greyed "Coming"; a gold **NEW** pill in the corner for three days after a kit first reaches the store, from the catalog's `added` date, on the kit tile too). A folded **Search the full course list** keeps the old finder (search box, grade chips, subject filter, list). |
 | Course tile | After the home page question: **Do you want a course tile for your Canvas dashboard?** Yes draws the 2026-27 tile for the subject and band with the teacher's name, the course title and the LIVE or ON-DEMAND pill (Live sections also carry the section as the period line; days and time optional). The PNG goes into the file as `web_resources/course-tile.jpg`, listed in the manifest, and `course_settings.xml` names it in `image_identifier_ref`, so Canvas sets it as the course image on import. Also downloadable on its own. Never in a module-only file. |
 | Preview or configure | **Preview the course** shows the home page in the pane, every module's items (click any page, assignment, discussion or quiz to read it) and the printable course; **Configure it for Canvas** continues. **Configure for Canvas** goes straight on. |
 | Whole semester or a module | One tile per kit (pending kits greyed), the Live/On-Demand switch when a course has kits per mode, and **Just a module** -> module tiles from every ready kit (multi-select within one kit) -> Continue. |
 | Tell us about you | Name, title, email, mode, term, section, meeting, Teams link. Saved to `localStorage` `optima-course-kit-teacher` and applied to every new kit's home page and syllabus. |
-| Yes/skip gates | Home page (theme, blurb, house, tagline, module cards), syllabus, dates, contents and publishing, gradebook. Skip = the panel never appears; the standard syllabus still ships unless it is switched off. Dates and publishing share one panel; each gate shows only its own controls (`#dates-panel.mode-dates` / `.mode-publish`). Every panel screen also has **Skip this step** in a line under its heading and beside Continue: the answer flips to skip and that panel goes back to the kit's defaults (`resetPanel`); if the teacher changed something there, the first click arms ("Discard my changes here and skip") and a second click within 6 s does it. The summary chips on Generate read the actual state (`panelChanged`), so "customized" means something changed. Continue/Skip stick to the bottom of the viewport while a long panel scrolls. |
+| Yes/skip gates | Home page (theme, blurb, house, tagline, module cards), syllabus, dates, contents and publishing, gradebook. Skip = the panel never appears; the standard syllabus still ships unless it is switched off. Dates and publishing share one panel; each gate shows only its own controls (`#dates-panel.mode-dates` / `.mode-publish`), also when the teacher said yes to both (2026-09-30: the publish screen used to repeat the date columns then). Every panel screen also has **Skip this step** in a line under its heading and beside Continue: the answer flips to skip and that panel goes back to the kit's defaults (`resetPanel`); if the teacher changed something there, the first click arms ("Discard my changes here and skip") and a second click within 6 s does it. The summary chips on Generate read the actual state (`panelChanged`), so "customized" means something changed. Continue/Skip stick to the bottom of the viewport while a long panel scrolls. |
 | Generate | Summary chips (course, scope, what was customized), **Generate my course file (.imscc)**, **Download PDF** (the printable course), copy home page HTML, original kit; the import checklist; the tutorial video (`TUTORIAL_VIDEO_URL`, a "coming soon" card while empty); **Configure another course** (keeps the teacher's details, clears the course). |
 
 Back and Start over sit above every screen with a dot trail ("Step n of N", computed from
@@ -202,6 +202,46 @@ it needs no change. **Mid-year changes:** come back, edit, **Copy syllabus HTML*
 paste into Syllabus, Edit, HTML editor in the live course; the tile keeps working.
 The self-test asserts the file is in the zip and the manifest, is ASCII only, and carries
 the course title, the step-3 teacher and the gradebook's weights.
+
+## The teacher's own course (Use my own course)
+
+The **upload** screen takes a Canvas course export (`.imscc`, Settings -> Export Course
+Content -> Course) by file picker or drop. The file is read in the browser with JSZip and
+never leaves the computer. `readUploadedCourse()` builds the same kit object a store
+sidecar gives: modules from `module_meta.xml` (module id = its identifier), graded items
+from every `*/assignment_settings.xml`, every `*/assessment_meta.xml` (surveys included, as
+the sidecars do) and every root `*.xml` `topicMeta` with a nested assignment (graded
+discussions), with points, group, published state and dates read from the files; groups
+from `assignment_groups.xml`; weighting from `group_weighting_scheme`; the front page from
+the wiki page carrying `front_page` true. Subject and grade (prefilled when the export's
+`course_code` matches a catalog course) drive the theme, the tile and the syllabus band.
+The journey is welcome -> upload -> details -> the usual gates -> generate. A reload asks for
+the file again (it is not stored); the teacher's answers are saved under an `upload-<hash>`
+kit id, so choosing the same file again brings them back.
+
+On build (`patchUpload`) only what the teacher asked for changes. Home page: only when the
+home gate was answered yes or the panel was changed (`uploadWantsHome`); a page titled
+"Course Home" is reused, otherwise a new `wiki_content/course-home.html` is added with a
+manifest resource, the old front page loses its `front_page` flag and stays in Pages, and
+`default_view` becomes `wiki`. Syllabus: only when the syllabus gate was yes or changed
+(`uploadWantsSyllabus`); otherwise the course's own Syllabus page is untouched. Tile, dates,
+publishing, removals and gradebook use the same patchers as store kits. Uploaded quiz point
+totals are view-only (`points_locked`): spreading a new total evenly would flatten the
+teacher's own question weights. Graded items not in any module import as they are and are
+counted on the upload card.
+
+Gate: `#uploadtest=CODE:KIT-ID` reads a store cartridge as if it were the teacher's file
+and compares every graded item with the sidecar (type, points, published, group, dates,
+module), then builds twice: with home page + syllabus + one due date (exactly one front
+page, teacher name on it, in the manifest, default_view wiki, syllabus in file and manifest,
+due date in the item XML), and with nothing asked for (every wiki page, `syllabus.html` and
+`course_settings.xml` byte-identical to the teacher's file). `#uploadtest=<url of an .imscc>`
+runs the same on a real Canvas export. 2026-09-30: all 27 ready store kits read back with
+0 sidecar differences except 0101300-s2 (its 16 ungraded surveys name a group in the XML
+that the sidecar leaves null); 6 real Canvas exports (Civics, Sociology and 7th ELA S2 with no front
+page, Chemistry, Calculus, English 4 section 121AL with 5 items outside modules)
+built and passed `verify_cartridge.py` apart from files missing from the teacher's own
+export. **Not yet imported into Canvas.**
 
 ## Dates, publishing and contents (two gates, one panel)
 

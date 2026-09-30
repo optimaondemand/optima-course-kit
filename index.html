@@ -261,6 +261,20 @@
   .hint.center { text-align:center; margin-top:16px; }
   .tiles { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px; margin-top:12px; }
   .tiles.two { grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); }
+  .tiles.three { grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); }
+  .tile.allgrades { margin-top:14px; width:100%; flex-direction:row; align-items:center; justify-content:space-between; gap:12px; padding:16px 20px; }
+  .tile.allgrades .ts { margin:0; }
+  .cgrp { grid-column:1 / -1; font-size:13px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--mute); margin:10px 0 -2px; }
+  .up-drop { display:block; border:2px dashed var(--line); border-radius:12px; padding:28px 20px; text-align:center; cursor:pointer; margin-top:14px; background:#fff; }
+  .up-drop:hover, .up-drop.over { border-color:var(--cyan); background:#F4FAFD; }
+  .up-drop input { position:absolute; width:1px; height:1px; opacity:0; }
+  .up-drop .tt { display:block; font-size:18px; font-weight:600; }
+  .up-drop .ts { display:block; font-size:13px; color:var(--mute); margin-top:6px; }
+  .up-row { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-top:14px; }
+  .up-row label { display:block; font-size:13px; font-weight:600; }
+  .up-row select { width:100%; margin-top:4px; }
+  #up-card .card { margin-top:14px; }
+  #up-card ul { margin:8px 0 0; padding-left:20px; font-size:14px; }
   .tiles.grades { grid-template-columns:repeat(auto-fill, minmax(92px, 1fr)); gap:10px; }
   .tiles.subjects { grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:16px; }
   .tiles.courses, .tiles.kits, .tiles.mods { grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); }
@@ -432,8 +446,9 @@
         <p class="hint" id="j-greet" hidden></p>
         <div id="j-error"></div>
       </div>
-      <div class="tiles two" id="t-path">
+      <div class="tiles three" id="t-path">
         <button type="button" class="tile big" data-path="customize"><span class="tt">Customize my course</span><span class="ts">Your name on the home page, your syllabus, dates, publishing and gradebook. Only the parts you want; skip the rest.</span></button>
+        <button type="button" class="tile big" data-path="upload"><span class="tt">Use my own course</span><span class="ts">Start from your own Canvas course export (.imscc). Set its home page, syllabus, dates, publishing and gradebook, and get your own content back.</span></button>
         <button type="button" class="tile big" data-path="fetch"><span class="tt">Just fetch a course</span><span class="ts">Download the course file exactly as the curriculum team built it, or read it first.</span></button>
       </div>
       <div class="hint center">Dashboard tiles for your Canvas courses have their own tool: <button type="button" class="link" id="j-tiles">Course tiles</button>.</div>
@@ -443,6 +458,21 @@
     <section class="screen" data-screen="grade" hidden>
       <h2 class="q">What grade do you teach?</h2>
       <div class="tiles grades" id="t-grades"></div>
+      <button type="button" class="tile allgrades" id="t-allgrades"><span class="tt">I teach one subject across grades</span><span class="ts">See every course in your subject, all grades together</span></button>
+    </section>
+
+    <section class="screen" data-screen="upload" hidden>
+      <h2 class="q">Choose your Canvas course file</h2>
+      <div class="hint">In Canvas, open your course, then <b>Settings &rarr; Export Course Content &rarr; Course &rarr; Create Export</b>, and download the <b>.imscc</b> file when it is ready. Choose that file here. It is read on this computer and never uploaded anywhere.</div>
+      <label class="up-drop" id="up-drop"><input type="file" id="up-file" accept=".imscc,.zip"><span class="tt" id="up-drop-t">Choose your .imscc file</span><span class="ts">or drop it here</span></label>
+      <div class="up-row">
+        <label for="up-subject">Subject<select id="up-subject"></select></label>
+        <label for="up-grade">Grade<select id="up-grade"></select></label>
+      </div>
+      <div class="hint">Subject and grade pick the home page colours, the course tile and the syllabus grade band.</div>
+      <div class="status" id="up-status"></div>
+      <div id="up-card"></div>
+      <div class="actions"><button type="button" id="up-go" disabled>Continue</button></div>
     </section>
 
     <section class="screen" data-screen="subject" hidden>
@@ -453,6 +483,7 @@
     <section class="screen" data-screen="course" hidden>
       <h2 class="q">Select your course</h2>
       <div class="hint" id="t-courses-hint"></div>
+      <div class="hint" id="t-courses-all"></div>
       <div class="tiles courses" id="t-courses"></div>
       <div class="step" id="step1">
         <details class="browse" id="browse">
@@ -2018,9 +2049,9 @@
     s.meta.title = course.title || '';
     s.meta.band = gradeBand(course.grade);
     s.meta.grade = gradeText(course.grade);
-    s.meta.badge1 = kit.label || '';
+    s.meta.badge1 = kit.upload ? (course.term || '') : (kit.label || '');
     s.meta.badge2 = gradeText(course.grade);
-    s.meta.code = course.code + (kit.label ? ' \u00b7 ' + kit.label : '');
+    s.meta.code = kit.upload ? (course.code || '') : course.code + (kit.label ? ' \u00b7 ' + kit.label : '');
     Syl.setAiBand(s, s.meta.band);
     var c = sylCatalogue && sylCatalogue[course.code];
     if (c && c.desc) s.desc.text = c.desc;
@@ -2189,6 +2220,7 @@
   function applyCatalog(c) {
     var d = catalogDiff(catalog, c);
     catalog = c;
+    if (course && course.upload) { refreshTiles(); return d; }
     if (course) course = findCourse(course.code);
     if (kit && course) {
       var row = course.kits.filter(function (k) { return k.id === kit.id; })[0];
@@ -2661,6 +2693,7 @@
   // editable too: the total is split evenly across its questions when the
   // cartridge is patched (see patchQtiPoints). Ungraded surveys have no points.
   function canEditPoints(it) {
+    if (it.points_locked) return false;
     return !!it.points_editable || (it.type === 'quiz' && it.quiz_type !== 'survey');
   }
   function itemsInScope(scope) {
@@ -3012,6 +3045,7 @@
   function loadKitZip() {
     if (!kit) return Promise.reject(new Error('choose a kit first'));
     if (kitZipCache[kit.id]) return kitZipCache[kit.id];
+    if (kit.upload) return (kitZipCache[kit.id] = JSZip.loadAsync(kit.blob));
     kitZipCache[kit.id] = fetch(BASE + kit.file).then(function (r) {
       if (!r.ok) throw new Error('could not fetch ' + kit.file + ' (' + r.status + ')');
       return r.arrayBuffer();
@@ -3457,6 +3491,7 @@
   function patchedKit(type) {
     if (!kit || !course) return Promise.reject(new Error('choose a kit first'));
     var html = currentHtml();
+    if (kit.upload) return loadContents().then(function () { return JSZip.loadAsync(kit.blob); }).then(function (zip) { return patchUpload(zip, html, type); });
     return loadContents().then(function () { return fetch(BASE + kit.file, { cache: 'no-store' }); }).then(function (r) {
       if (!r.ok) throw new Error('could not fetch ' + kit.file + ' (' + r.status + ')');
       return r.arrayBuffer();
@@ -4247,6 +4282,7 @@
   // Stream or SharePoint embed). Empty = a "coming soon" card under the checklist.
   var TUTORIAL_VIDEO_URL = '';
   var J = { path: '', screen: 'welcome', mode: '', scope: '', want: {}, history: [], modSel: null };
+  function uploadPath() { return J.path === 'upload'; }
   var PANE_SCREENS = { preview: 1, details: 1, home: 1, syllabus: 1, dates: 1, publish: 1, gradebook: 1, generate: 1 };
   var NEEDS_KIT = { preview: 1, details: 1, home: 1, tile: 1, syllabus: 1, dates: 1, publish: 1, gradebook: 1, review: 1, generate: 1, 'q-home': 1, 'q-tile': 1, 'q-syllabus': 1, 'q-dates': 1, 'q-publish': 1, 'q-gradebook': 1 };
   var NEEDS_COURSE = { mode: 1, part: 1, modules: 1 };
@@ -4296,12 +4332,14 @@
   }
   function loadJourney() {
     var j = uiPref().journey || {};
-    J.path = j.path === 'fetch' ? 'fetch' : (j.path === 'customize' ? 'customize' : '');
+    J.path = j.path === 'fetch' ? 'fetch' : (j.path === 'customize' ? 'customize' : (j.path === 'upload' ? 'upload' : ''));
     J.mode = j.mode === 'preview' || j.mode === 'configure' ? j.mode : '';
     J.scope = j.scope === 'modules' ? 'modules' : (j.scope === 'all' ? 'all' : '');
     J.want = (j.want && typeof j.want === 'object') ? j.want : {};
     var s = typeof j.screen === 'string' && document.querySelector('.screen[data-screen="' + j.screen + '"]') ? j.screen : 'welcome';
     // A reload keeps the course but not the kit, so kit screens fall back to the choice before them.
+    // A teacher's own file is never stored, so a reload asks for it again.
+    if (J.path === 'upload' && (NEEDS_KIT[s] || NEEDS_COURSE[s]) && !kit) s = 'upload';
     if (NEEDS_KIT[s] && !kit) s = course ? 'part' : 'welcome';
     if (NEEDS_COURSE[s] && !course) s = 'welcome';
     if (s !== 'welcome' && !J.path) J.path = 'customize';
@@ -4313,9 +4351,9 @@
   // The screens a teacher will pass through, given the answers so far. Unanswered
   // questions count as one screen (the question itself).
   function sequence() {
-    var seq = ['welcome', 'grade', 'subject', 'course', 'mode', 'part'];
-    if (J.scope === 'modules' || J.screen === 'modules') seq.push('modules');
-    if (J.mode === 'preview' || J.screen === 'preview') seq.push('preview');
+    var seq = uploadPath() ? ['welcome', 'upload'] : ['welcome', 'grade', 'subject', 'course', 'mode', 'part'];
+    if (!uploadPath() && (J.scope === 'modules' || J.screen === 'modules')) seq.push('modules');
+    if (!uploadPath() && (J.mode === 'preview' || J.screen === 'preview')) seq.push('preview');
     if (J.path === 'fetch') { seq.push('generate'); return seq; }
     // A module-only file is an add-on to a course the teacher already has: it never
     // touches the home page or the syllabus, so those steps (and the details behind them) go.
@@ -4358,7 +4396,8 @@
     if (previewItemId) leaveItemPreview();
     $('code').value = '';
     renderCourse(); renderPreview();
-    go(toScreen || 'grade', true);
+    if (toScreen === 'welcome') J.path = '';
+    go(toScreen || (uploadPath() ? 'upload' : 'grade'), true);
   }
   function syncPreviewButton() {
     var solo = !PANE_SCREENS[J.screen] || $('kit-view').hidden;
@@ -4376,8 +4415,8 @@
     if (J.screen === 'dates' || J.screen === 'publish') {
       $('slot-' + (J.screen === 'dates' ? 'dates' : 'publish')).appendChild($('step4'));
       $('step4').hidden = false;
-      var both = J.want.dates && J.want.publish;
-      panel.className = both ? '' : (J.screen === 'dates' ? 'mode-dates' : 'mode-publish');
+      // Each gate shows its own controls only, even when the teacher said yes to both.
+      panel.className = J.screen === 'dates' ? 'mode-dates' : 'mode-publish';
     } else { $('step4').hidden = true; panel.className = ''; }
     if (J.screen === 'welcome') renderGreeting();
     if (J.screen === 'grade') renderGradeTiles();
@@ -4387,6 +4426,7 @@
     if (J.screen === 'modules') renderModuleTiles();
     if (J.screen === 'preview') renderContentsPreview();
     if (J.screen === 'generate') renderGenerate();
+    if (J.screen === 'upload') renderUpload();
     if (J.screen === 'review') renderReview();
     if (J.screen === 'home' || J.screen === 'details') fillForm();
     if (J.screen === 'tile') renderTilePanel();
@@ -4415,6 +4455,7 @@
     $('t-grades').querySelectorAll('.tile').forEach(function (b) {
       b.addEventListener('click', function () { finder.grade = +this.dataset.g; finder.subject = ''; saveFinder(); go('subject'); });
     });
+    $('t-allgrades').classList.toggle('on', finder.grade === '' && !!finder.subject);
   }
   // The course tile background for a subject: middle-school art for grades 6-8, the
   // upper-school art otherwise; a key only one band has falls through to the other.
@@ -4459,10 +4500,24 @@
     rows.sort(function (a, b) {
       return gradeSortKey(a) - gradeSortKey(b) || courseFamily(a).localeCompare(courseFamily(b)) || courseLevel(a).localeCompare(courseLevel(b)) || a.code.localeCompare(b.code);
     });
-    $('t-courses-hint').textContent = (finder.subject || 'All subjects') + (finder.grade === '' ? '' : ', grade ' + gradeLabel(finder.grade)) + ' · ' + rows.length + ' course' + (rows.length === 1 ? '' : 's') + '. Honors and Standard have their own tiles.';
+    var allGrades = finder.grade === '';
+    $('t-courses-hint').textContent = (finder.subject || 'All subjects') + (allGrades ? ', every grade' : ', grade ' + gradeLabel(finder.grade)) + ' · ' + rows.length + ' course' + (rows.length === 1 ? '' : 's') + '. Honors and Standard have their own tiles.';
+    // One subject across every grade (a music teacher sees all music courses), or back to one grade.
+    var other = finder.subject ? catalog.courses.filter(function (c) { return subjectGroup(c) === finder.subject; }).length : 0;
+    var sw = $('t-courses-all');
+    if (!allGrades && finder.subject && other > rows.length) sw.innerHTML = '<button type="button" class="link" id="t-courses-every">Show ' + escHtml(finder.subject) + ' for every grade (' + other + ' courses)</button>';
+    else if (allGrades && finder.subject && J.history.indexOf('grade') >= 0 && finder.lastGrade !== undefined && finder.lastGrade !== '') sw.innerHTML = '<button type="button" class="link" id="t-courses-one">Only grade ' + escHtml(gradeLabel(finder.lastGrade)) + '</button>';
+    else sw.innerHTML = '';
+    var every = $('t-courses-every'), one = $('t-courses-one');
+    if (every) every.addEventListener('click', function () { finder.lastGrade = finder.grade; finder.grade = ''; saveFinder(); renderCourseTiles(); });
+    if (one) one.addEventListener('click', function () { finder.grade = finder.lastGrade; saveFinder(); renderCourseTiles(); });
+    var lastBand = null;
     $('t-courses').innerHTML = rows.map(function (c) {
       var ready = readyCount(c), lvl = courseLevel(c);
-      return tile('course' + (course === c ? ' on' : ''),
+      // Across every grade the tiles group under a grade heading.
+      var band = allGrades ? gradeText(c.grade) || 'Other' : null, head = '';
+      if (band && band !== lastBand) { head = '<div class="cgrp">' + escHtml(band) + '</div>'; lastBand = band; }
+      return head + tile('course' + (course === c ? ' on' : ''),
         (isNewCourse(c) ? newPill() : '') + '<span class="tt">' + escHtml(c.title) + '</span>' +
         (lvl ? '<span class="pill' + (/honors/i.test(lvl) ? '' : ' grey') + '">' + escHtml(lvl.toUpperCase()) + '</span>' : '') +
         '<span class="ts">' + escHtml(gradeText(c.grade)) + ' · ' + escHtml(c.code) + '</span>' +
@@ -4595,7 +4650,8 @@
     $('dl').hidden = fetchOnly; $('copy').hidden = fetchOnly || addon;
     document.querySelectorAll('#step6 li.li-home').forEach(function (li) { li.hidden = addon; });
     $('li-tile').hidden = addon || fetchOnly || !home.tileOn;
-    $('dl-plain').hidden = !fetchOnly && !!home.onlyModules && home.onlyModules.length > 0;
+    $('dl-plain').hidden = (!fetchOnly && !!home.onlyModules && home.onlyModules.length > 0) || !!(kit && kit.upload);
+    if (kit && kit.upload) $('j-generate-hint').textContent = 'One file with your own course in it. ' + (uploadWantsHome() ? 'An Optima home page is set as the front page (your old home page stays as a page). ' : 'Your home page stays as it is. ') + (uploadWantsSyllabus() ? 'Your syllabus fills the Syllabus page.' : 'Your Syllabus page stays as it is.');
     $('dl-plain').textContent = fetchOnly ? 'Download the course file (.imscc)' : 'Original kit, no customization';
     $('j-customize-instead').hidden = !fetchOnly;
     var chips = [];
@@ -4605,9 +4661,9 @@
       var on = function (label, yes, offText) { return '<span class="chipx' + (yes ? '' : ' off') + '">' + label + ': ' + (yes ? 'customized' : offText) + '</span>'; };
       if (addon) chips.push('<span class="chipx off">Home page and syllabus: untouched</span>');
       else {
-        chips.push(on('Home page', panelChanged('home'), 'suggested look'));
+        chips.push(kit && kit.upload ? on('Home page', uploadWantsHome(), 'yours, unchanged') : on('Home page', panelChanged('home'), 'suggested look'));
         chips.push('<span class="chipx' + (home.tileOn ? '' : ' off') + '">Course tile: ' + (home.tileOn ? 'included' : 'none') + '</span>');
-        var syl = home.syllabusOn === false ? 'left out' : (panelChanged('syllabus') ? 'customized' : 'standard');
+        var syl = kit && kit.upload ? (uploadWantsSyllabus() ? 'customized' : 'yours, unchanged') : home.syllabusOn === false ? 'left out' : (panelChanged('syllabus') ? 'customized' : 'standard');
         chips.push('<span class="chipx' + (syl === 'standard' ? ' off' : '') + '">Syllabus: ' + syl + '</span>');
       }
       chips.push(on('Dates', panelChanged('dates'), 'none set'));
@@ -4620,6 +4676,250 @@
       ? '<div class="frame"><iframe src="' + escHtml(TUTORIAL_VIDEO_URL) + '" title="Implementation tutorial" allowfullscreen loading="lazy"></iframe></div>'
       : '<div class="soon">The tutorial video for importing your course file is coming soon. Until then, the steps above walk you through the import.</div>');
   }
+  // ------------------------------------------------------------ a teacher's own course (.imscc)
+  // A Canvas course export chosen from the teacher's computer. It never leaves the
+  // browser. readUploadedCourse builds the same kit object a store sidecar gives
+  // (modules, graded items, groups, settings, front page), so every panel works on it
+  // unchanged; only the zip comes from the file. On build, the home page and syllabus
+  // are touched only when the teacher asked for them; everything else is theirs.
+  var UPLOAD_WARN_BYTES = 1.5 * 1073741824;
+  var upload = { file: null, course: null, kit: null, busy: false };
+  function firstTag(text, tag) {
+    var m = new RegExp('<' + tag + '>([\\s\\S]*?)<\\/' + tag + '>').exec(text || '');
+    return m ? unescapeXml(m[1]).trim() : null;
+  }
+  // the text of a quiz/topic file outside its nested <assignment>, and that block
+  function outsideAssignment(text) {
+    var s = splitAssignmentBlock(text);
+    return s ? { top: s.pre + s.post, asg: s.body } : { top: text, asg: '' };
+  }
+  function hashHex(s) {
+    var out = '';
+    for (var k = 0; k < 4; k++) {
+      var h = (0x811c9dc5 ^ Math.imul(k + 1, 0x9e3779b1)) >>> 0;
+      for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+      out += ('0000000' + h.toString(16)).slice(-8);
+    }
+    return out;
+  }
+  function readUploadedCourse(file, opts) {
+    opts = opts || {};
+    return JSZip.loadAsync(file).catch(function () {
+      throw new Error('This file could not be opened as a course export. In Canvas choose Settings, Export Course Content, Course, then download the .imscc file.');
+    }).then(function (zip) {
+      if (!zip.file('imsmanifest.xml')) throw new Error('This file has no imsmanifest.xml, so it is not a Canvas course export (.imscc).');
+      var names = Object.keys(zip.files).filter(function (n) { return !zip.files[n].dir; });
+      var pick = function (re) { return names.filter(function (n) { return re.test(n); }); };
+      var asgFiles = pick(/^[^\/]+\/assignment_settings\.xml$/), quizFiles = pick(/^[^\/]+\/assessment_meta\.xml$/);
+      var rootXml = pick(/^[^\/]+\.xml$/).filter(function (n) { return n !== 'imsmanifest.xml'; });
+      var wikiFiles = pick(/^wiki_content\/[^\/]+\.html$/);
+      var one = function (n) { var f = zip.file(n); return f ? f.async('string') : Promise.resolve(null); };
+      var all = function (list) { return Promise.all(list.map(one)); };
+      return Promise.all([one('course_settings/course_settings.xml'), one('course_settings/module_meta.xml'), one('course_settings/assignment_groups.xml'),
+        all(asgFiles), all(quizFiles), all(rootXml), all(wikiFiles), one('course_settings/syllabus.html')]).then(function (r) {
+        var cs = r[0] || '', mm = r[1], ag = r[2] || '';
+        var contents = mm ? readModuleMeta(mm) : [];
+        var modOf = {};
+        contents.forEach(function (m) { m.items.forEach(function (ci) { if (ci.ref && !modOf[ci.ref]) modOf[ci.ref] = m.gid; }); });
+        var modules = contents.map(function (m) { return { id: m.gid, title: m.title, gid: m.gid, published: m.state !== 'unpublished', items: m.items.length, xml: 'course_settings/module_meta.xml' }; });
+        var groups = [];
+        ag.split(/<assignmentGroup\b/).slice(1).forEach(function (b, i) {
+          var id = /identifier="([^"]+)"/.exec(b);
+          groups.push({ id: id ? id[1] : '', title: firstTag(b, 'title') || 'Assignments', weight: parseFloat(firstTag(b, 'group_weight') || '0') || 0, position: parseInt(firstTag(b, 'position') || String(i + 1), 10) });
+        });
+        var num = function (s) { var n = parseFloat(s); return isNaN(n) ? null : n; };
+        var graded = [];
+        var dates = function (t) { return { due_at: firstTag(t, 'due_at') || null, unlock_at: firstTag(t, 'unlock_at') || null, lock_at: firstTag(t, 'lock_at') || null }; };
+        asgFiles.forEach(function (n, i) {
+          var t = r[3][i] || '', id = /<assignment\b[^>]*\bidentifier="([^"]+)"/.exec(t);
+          if (!id) return;
+          graded.push(Object.assign({ id: id[1], type: 'assignment', title: firstTag(t, 'title') || '', gid: id[1], xml: n, module: modOf[id[1]] || null, week: null, kind: null,
+            points: num(firstTag(t, 'points_possible')), points_editable: true, graded: true, group: firstTag(t, 'assignment_group_identifierref'),
+            published: firstTag(t, 'workflow_state') === 'published' }, dates(t)));
+        });
+        quizFiles.forEach(function (n, i) {
+          var t = r[4][i] || '', id = /<quiz\b[^>]*\bidentifier="([^"]+)"/.exec(t);
+          if (!id) return;
+          var p = outsideAssignment(t), qt = firstTag(p.top, 'quiz_type') || 'assignment';
+          var avail = firstTag(p.top, 'available');
+          graded.push(Object.assign({ id: id[1], type: 'quiz', title: firstTag(p.top, 'title') || '', gid: id[1], xml: n, module: modOf[id[1]] || null, week: null, kind: null,
+            points: num(firstTag(p.top, 'points_possible')) != null ? num(firstTag(p.top, 'points_possible')) : num(firstTag(p.asg, 'points_possible')),
+            points_editable: false, points_locked: true, quiz_type: qt, graded: true,
+            group: firstTag(p.top, 'assignment_group_identifierref') || firstTag(p.asg, 'assignment_group_identifierref'),
+            published: avail != null ? avail === 'true' : firstTag(p.asg, 'workflow_state') === 'published' }, dates(p.top)));
+        });
+        rootXml.forEach(function (n, i) {
+          var t = r[5][i] || '';
+          if (t.indexOf('<topicMeta') < 0) return;
+          var tid = firstTag(t, 'topic_id'), p = outsideAssignment(t);
+          if (!tid || !p.asg) return; // an ungraded discussion has no gradebook column
+          graded.push(Object.assign({ id: tid, type: 'discussion', title: firstTag(p.top, 'title') || '', gid: tid, xml: n, module: modOf[tid] || null, week: null, kind: null,
+            points: num(firstTag(p.asg, 'points_possible')), points_editable: true, graded: true, group: firstTag(p.asg, 'assignment_group_identifierref'),
+            published: firstTag(p.top, 'workflow_state') !== 'unpublished' }, dates(p.asg)));
+        });
+        var wiki = wikiFiles.map(function (n, i) {
+          var t = r[6][i] || '', head = t.slice(0, t.indexOf('<body') >= 0 ? t.indexOf('<body') : 3000);
+          var tm = /<title>([\s\S]*?)<\/title>/.exec(head);
+          return { name: n, title: tm ? unescapeXml(tm[1]).trim() : '', front: /<meta name="front_page" content="true"\s*\/?>/.test(head) };
+        });
+        var front = wiki.filter(function (w) { return w.front; })[0] || null;
+        var courseId = /<course\b[^>]*\bidentifier="([^"]+)"/.exec(cs);
+        var title = firstTag(cs, 'title') || file.name.replace(/\.(imscc|zip)$/i, '');
+        var code = firstTag(cs, 'course_code') || '';
+        var match = catalog && code ? findCourse(code) : null;
+        var nItems = contents.reduce(function (s, m) { return s + m.items.length; }, 0);
+        var counts = { pages: wikiFiles.length, assignments: graded.filter(function (g) { return g.type === 'assignment'; }).length,
+          quizzes: quizFiles.length, discussions: rootXml.filter(function (n, i) { return (r[5][i] || '').indexOf('<topicMeta') >= 0; }).length,
+          files: pick(/^web_resources\//).length, modules: modules.length, items: nItems };
+        var k = { id: 'upload-' + hashHex(file.name + ':' + file.size + ':' + title).slice(0, 12), label: 'Optimized', file: file.name, upload: true, blob: file,
+          status: 'ready', bytes: file.size, items: nItems, counts: counts, modules: modules, groups: groups, graded_items: graded,
+          weighted: firstTag(cs, 'group_weighting_scheme') === 'percent', front_page: front ? front.name : null, wiki: wiki, contents: contents,
+          course_ident: courseId ? courseId[1] : '', has_syllabus: !!r[7] && !!String(bodyOf(r[7])).trim(),
+          loose: graded.filter(function (g) { return !g.module; }).length,
+          settings: { course_settings: r[0] != null ? 'course_settings/course_settings.xml' : null, assignment_groups: r[2] != null ? 'course_settings/assignment_groups.xml' : null,
+            module_meta: mm != null ? 'course_settings/module_meta.xml' : null } };
+        var c = { code: code, title: title, grade: opts.grade != null && opts.grade !== '' ? opts.grade : (match ? match.grade : ''),
+          subject: opts.subject || (match ? match.subject : ''), kits: [k], upload: true, catalogMatch: match ? match.code : '' };
+        return { course: c, kit: k };
+      });
+    });
+  }
+  // The home page and syllabus go in only when the teacher asked for them.
+  function uploadWantsHome() { return !!(kit && kit.upload) && (!!J.want.home || panelChanged('home')); }
+  function uploadWantsSyllabus() { return !!(kit && kit.upload) && home.syllabusOn !== false && (!!J.want.syllabus || panelChanged('syllabus')); }
+  function uploadHomeTarget(k) {
+    var named = function (w) { return /^course home$/i.test(w.title); };
+    var t = k.wiki.filter(function (w) { return w.front && named(w); })[0] || k.wiki.filter(named)[0];
+    if (t) return { path: t.name, create: false };
+    var path = 'wiki_content/course-home.html', n = 2;
+    var taken = {}; k.wiki.forEach(function (w) { taken[w.name] = true; });
+    while (taken[path]) path = 'wiki_content/course-home-' + (n++) + '.html';
+    return { path: path, create: true };
+  }
+  function patchUpload(zip, html, type) {
+    var k = kit, tasks = [];
+    if (uploadWantsHome()) {
+      // An Optima home page becomes the front page. A page already called "Course Home"
+      // is reused (Canvas page titles are unique); otherwise a new page is added and the
+      // old front page stays in Pages as an ordinary page.
+      var tgt = uploadHomeTarget(k), gid = 'g' + hashHex('optima-home:' + (k.course_ident || course.code || course.title));
+      tasks.push(function () {
+        if (tgt.create) {
+          zip.file(tgt.path, '<html>\n<head>\n<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>\n<title>Course Home</title>\n<meta name="identifier" content="' + gid + '"/>\n<meta name="editing_roles" content="teachers"/>\n<meta name="workflow_state" content="active"/>\n<meta name="front_page" content="true"/>\n</head>\n<body>\n' + html + '\n</body>\n</html>\n');
+          return zip.file('imsmanifest.xml').async('string').then(function (mt) {
+            var res = '    <resource identifier="' + gid + '" type="webcontent" href="' + tgt.path + '">\n      <file href="' + tgt.path + '"/>\n    </resource>\n  ';
+            var at = mt.lastIndexOf('</resources>');
+            if (at < 0) throw new Error('the course file has no resource list');
+            zip.file('imsmanifest.xml', mt.slice(0, at) + res + mt.slice(at));
+          });
+        }
+        return zip.file(tgt.path).async('string').then(function (doc) {
+          var i = doc.indexOf('<body'), j = doc.lastIndexOf('</body>');
+          if (i < 0 || j < 0) throw new Error('the page ' + tgt.path + ' has no <body>');
+          i = doc.indexOf('>', i) + 1;
+          var headPart = doc.slice(0, i);
+          if (!/<meta name="front_page" content="true"/.test(headPart)) headPart = headPart.replace(/<\/head>/, '<meta name="front_page" content="true"/>\n</head>');
+          zip.file(tgt.path, headPart + '\n' + html + '\n' + doc.slice(j));
+        });
+      });
+      k.wiki.forEach(function (w) {
+        if (!w.front || w.name === tgt.path) return;
+        tasks.push(function () {
+          return zip.file(w.name).async('string').then(function (doc) { zip.file(w.name, doc.replace(/\s*<meta name="front_page" content="true"\s*\/?>/, '')); });
+        });
+      });
+      if (k.settings.course_settings) tasks.push(function () {
+        return zip.file(k.settings.course_settings).async('string').then(function (t) {
+          zip.file(k.settings.course_settings, setEl(t, 'default_view', 'wiki', TITLE_ANCHOR));
+        });
+      });
+    }
+    if (uploadWantsSyllabus()) tasks.push(function () {
+      zip.file('course_settings/syllabus.html', syllabusDoc());
+      return zip.file('imsmanifest.xml').async('string').then(function (mt) { zip.file('imsmanifest.xml', addSyllabusToManifest(mt)); });
+    });
+    if (home.tileOn) tasks.push(function () { return bakeTile(zip); });
+    tasks.push(function () { return applyScheduleAndGradebook(zip); });
+    tasks.push(function () {
+      var note = zip.file('course_settings/canvas_export.txt');
+      var stamp = 'Customized in the Course Optimizer for ' + (home.teacherName || 'a teacher') + ' on ' + new Date().toISOString().slice(0, 10) + '.\n';
+      return (note ? note.async('string') : Promise.resolve('')).then(function (t) { zip.file('course_settings/canvas_export.txt', t + stamp); });
+    });
+    return chain(tasks).then(function () {
+      return zip.generateAsync({ type: type || 'blob', compression: 'DEFLATE' }).then(function (out) {
+        return { data: out, entries: Object.keys(zip.files).filter(function (n) { return !zip.files[n].dir; }).length, html: html };
+      });
+    });
+  }
+  function subjectOptions() {
+    var seen = {};
+    (catalog ? catalog.courses : []).forEach(function (c) { if (c.subject) seen[c.subject] = true; });
+    return Object.keys(seen).sort();
+  }
+  function renderUpload() {
+    var subj = $('up-subject'), gr = $('up-grade');
+    var cur = upload.course;
+    if (!subj.options.length) {
+      subj.innerHTML = '<option value="">Choose a subject</option>' + subjectOptions().map(function (s) { return '<option>' + escHtml(s) + '</option>'; }).join('') + '<option value="Other">Other</option>';
+      var g = ['<option value="">Choose a grade</option>'];
+      for (var n = 0; n <= 12; n++) g.push('<option value="' + n + '">' + (n === 0 ? 'Kindergarten' : 'Grade ' + n) + '</option>');
+      gr.innerHTML = g.join('');
+    }
+    if (cur) { subj.value = cur.subject && subjectOptions().indexOf(cur.subject) >= 0 ? cur.subject : (cur.subject ? 'Other' : ''); gr.value = gradeList(cur.grade)[0] != null ? String(gradeList(cur.grade)[0]) : ''; }
+    var card = $('up-card');
+    if (!cur) { card.innerHTML = ''; $('up-go').disabled = true; $('up-drop-t').textContent = 'Choose your .imscc file'; return; }
+    var k = upload.kit, c = k.counts;
+    $('up-drop-t').textContent = upload.file ? upload.file.name : 'Choose your .imscc file';
+    var notes = [];
+    notes.push(c.modules + ' module' + (c.modules === 1 ? '' : 's') + ', ' + c.items + ' module items, ' + c.pages + ' pages');
+    notes.push(k.graded_items.length + ' graded items: ' + c.assignments + ' assignments, ' + k.graded_items.filter(function (g) { return g.type === 'quiz'; }).length + ' graded quizzes, ' + k.graded_items.filter(function (g) { return g.type === 'discussion'; }).length + ' graded discussions');
+    notes.push(k.front_page ? 'Home page: ' + escHtml((k.wiki.filter(function (w) { return w.name === k.front_page; })[0] || {}).title || 'set') + '. It stays unless you ask for an Optima home page.' : 'No home page is set yet. Say yes to the home page step to add one.');
+    if (!c.modules) notes.push('This course has no modules, so publishing and dates work per item only.');
+    if (k.loose) notes.push(k.loose + ' graded item' + (k.loose === 1 ? ' is' : 's are') + ' not in a module; ' + (k.loose === 1 ? 'it imports' : 'they import') + ' exactly as ' + (k.loose === 1 ? 'it is' : 'they are') + '.');
+    if (k.graded_items.some(function (g) { return g.type === 'quiz'; })) notes.push('Quiz point totals stay as you built them; change them in Canvas if you need to.');
+    card.innerHTML = '<div class="card"><div class="t">' + escHtml(cur.title) + (cur.code ? ' <span class="pill grey">' + escHtml(cur.code) + '</span>' : '') + '</div><ul>' + notes.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul></div>';
+    $('up-go').disabled = !cur.subject;
+    $('up-go').textContent = cur.subject ? 'Continue with this course' : 'Choose a subject to continue';
+  }
+  function upStatus(msg, cls) { var el = $('up-status'); el.textContent = msg || ''; el.className = 'status ' + (cls || ''); }
+  function takeUploadFile(file) {
+    if (!file || upload.busy) return Promise.resolve(null);
+    if (!/\.(imscc|zip)$/i.test(file.name)) { upStatus('Choose the .imscc file Canvas gave you (a course export).', 'err'); return Promise.resolve(null); }
+    if (file.size > UPLOAD_WARN_BYTES) upStatus('This file is ' + (file.size / 1073741824).toFixed(1) + ' GB. Reading it may take a while or run out of memory; a course export without large video files works best.');
+    else upStatus('Reading ' + file.name + '…');
+    upload.busy = true;
+    var keep = { subject: $('up-subject').value && $('up-subject').value !== 'Other' ? $('up-subject').value : '', grade: $('up-grade').value !== '' ? $('up-grade').value : '' };
+    return readUploadedCourse(file, keep).then(function (r) {
+      upload.busy = false; upload.file = file; upload.course = r.course; upload.kit = r.kit;
+      upStatus('');
+      renderUpload();
+      return r;
+    }).catch(function (e) { upload.busy = false; upload.course = null; upload.kit = null; renderUpload(); upStatus(String(e && e.message || e), 'err'); return null; });
+  }
+  function useUpload() {
+    if (!upload.course) return Promise.resolve();
+    var c = upload.course, k = upload.kit;
+    delete kitZipCache[k.id];
+    course = c; J.scope = 'all'; J.mode = 'configure'; J.modSel = null;
+    return selectKit(k).then(function () {
+      if (home.onlyModules) { home.onlyModules = null; save(); }
+      // the course's own subject picks the theme on a first visit
+      if (!loadSaved(k.id)) applyTheme(themeForSubject(c.subject));
+      refreshKitPanels(); saveJourney();
+      go(nextScreen('upload'));
+    });
+  }
+  function wireUpload() {
+    var inp = $('up-file'), drop = $('up-drop');
+    inp.addEventListener('change', function () { takeUploadFile(inp.files && inp.files[0]); });
+    ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
+    ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function () { drop.classList.remove('over'); }); });
+    drop.addEventListener('drop', function (e) { e.preventDefault(); var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; takeUploadFile(f); });
+    $('up-subject').addEventListener('change', function () { if (upload.course) { upload.course.subject = this.value === 'Other' ? 'Other' : this.value; renderUpload(); } });
+    $('up-grade').addEventListener('change', function () { if (upload.course) { upload.course.grade = this.value; renderUpload(); } });
+    $('up-go').addEventListener('click', function () { useUpload(); });
+  }
+
   // ------------------------------------------------------------ one-page review (beta)
   // Dates, publishing and gradebook on one screen: a summary card per part (what the
   // file will do, as built unless changed) over one course map. Change on a card turns
@@ -5007,8 +5307,14 @@
   }
   function wireJourney() {
     $('t-path').querySelectorAll('.tile').forEach(function (b) {
-      b.addEventListener('click', function () { J.path = this.dataset.path; J.want = {}; J.mode = ''; saveJourney(); go('grade'); });
+      b.addEventListener('click', function () {
+        var p = this.dataset.path;
+        if (course && course.upload && p !== 'upload') { course = null; kit = null; }
+        J.path = p; J.want = {}; J.mode = p === 'upload' ? 'configure' : ''; saveJourney(); go(p === 'upload' ? 'upload' : 'grade');
+      });
     });
+    $('t-allgrades').addEventListener('click', function () { finder.lastGrade = finder.grade; finder.grade = ''; finder.subject = ''; saveFinder(); go('subject'); });
+    wireUpload();
     $('j-tiles').addEventListener('click', function () { setTab('tiles'); });
     $('j-back').addEventListener('click', back);
     $('j-restart').addEventListener('click', function () { startOver('welcome'); });
@@ -5651,12 +5957,110 @@
     }).catch(function (e) { setTab('kit'); return { ok: false, error: String(e && e.message || e) }; });
   }
 
+  // #uploadtest=CODE:KIT (a store cartridge treated as the teacher's own file, read
+  // back against its sidecar) or #uploadtest=<url of an .imscc>. Builds the file
+  // twice: with an Optima home page, a syllabus and one date; then with nothing asked
+  // for, which must leave the home page, syllabus and front page flags as they were.
+  function uploadtest(spec) {
+    REVIEW_FORCE = false;
+    var src, side = null, name;
+    var m = /^([^:\/]+):(.+)$/.exec(spec);
+    if (m && !/^https?$/.test(m[1])) {
+      var c0 = findCourse(m[1]), k0 = c0 && c0.kits.filter(function (k) { return k.id === m[2]; })[0];
+      if (!k0) { $('selftest-out').textContent = JSON.stringify({ ok: false, error: 'no kit ' + spec }); return; }
+      name = k0.file.split('/').pop();
+      src = loadKitDetail(k0).then(function () { side = k0; return fetch(BASE + k0.file, { cache: 'no-store' }); });
+    } else { name = spec.split('/').pop(); src = fetch(spec, { cache: 'no-store' }); }
+    var out = { ok: false, spec: spec };
+    src.then(function (r) { if (!r.ok) throw new Error('fetch ' + r.status); return r.blob(); }).then(function (b) {
+      var file = new File([b], name);
+      $('up-subject').innerHTML = ''; renderUpload();
+      return takeUploadFile(file);
+    }).then(function (r) {
+      if (!r) throw new Error('reader: ' + $('up-status').textContent);
+      var k = r.kit;
+      out.read = { title: r.course.title, code: r.course.code, modules: k.modules.length, graded: k.graded_items.length, groups: k.groups.length, front: k.front_page, loose: k.loose,
+        types: k.graded_items.reduce(function (s, g) { s[g.type] = (s[g.type] || 0) + 1; return s; }, {}), weighted: k.weighted };
+      if (side) {
+        var byGid = {}; k.graded_items.forEach(function (g) { byGid[g.gid] = g; });
+        var modGid = {}; (side.modules || []).forEach(function (mm) { modGid[mm.id] = mm.gid; });
+        var diffs = [];
+        side.graded_items.forEach(function (s) {
+          var g = byGid[s.gid];
+          if (!g) { diffs.push('missing ' + s.type + ' ' + s.title); return; }
+          ['type', 'published', 'group', 'due_at', 'unlock_at', 'lock_at'].forEach(function (f) { if ((s[f] || null) !== (g[f] || null)) diffs.push(s.title + ' ' + f + ': ' + s[f] + ' vs ' + g[f]); });
+          if (Number(s.points) !== Number(g.points) && !(s.type === 'quiz' && !s.points)) diffs.push(s.title + ' points: ' + s.points + ' vs ' + g.points);
+          if ((modGid[s.module] || null) !== (g.module || null)) diffs.push(s.title + ' module');
+        });
+        if (k.graded_items.length !== side.graded_items.length) diffs.push('count ' + side.graded_items.length + ' vs ' + k.graded_items.length);
+        if ((side.modules || []).length !== k.modules.length) diffs.push('modules ' + side.modules.length + ' vs ' + k.modules.length);
+        if ((side.groups || []).length !== k.groups.length) diffs.push('groups');
+        if (side.front_page !== k.front_page) diffs.push('front ' + side.front_page + ' vs ' + k.front_page);
+        out.sidecarDiffs = diffs.slice(0, 20); out.sidecarMatch = !diffs.length;
+      }
+      $('up-subject').value = r.course.subject || 'English'; upload.course.subject = $('up-subject').value;
+      J.path = 'upload';
+      return useUpload().then(function () { return k; });
+    }).then(function (k) {
+      out.flow = { screen: J.screen, seq: sequence().join(','), noCatalogScreens: sequence().indexOf('grade') < 0 && sequence().indexOf('part') < 0 };
+      var first = activeGraded()[0];
+      home.teacherName = 'Ms. Rivera'; home.teacherEmail = 'arivera@optimaed.com';
+      J.want = { home: true, syllabus: true, dates: true };
+      if (first) home.dates[first.id] = { due_at: '2026-10-15T23:59' };
+      var wantUtc = first ? desiredUtc('2026-10-15T23:59') : null;
+      return JSZip.loadAsync(k.blob).then(function (orig) {
+        return patchedKit('base64').then(function (res) { return JSZip.loadAsync(res.data, { base64: true }).then(function (z) { return { z: z, res: res, orig: orig }; }); });
+      }).then(function (A) {
+        var z = A.z, names = Object.keys(z.files).filter(function (n) { return /^wiki_content\/[^\/]+\.html$/.test(n); });
+        return Promise.all(names.map(function (n) { return z.file(n).async('string'); })).then(function (docs) {
+          var fronts = names.filter(function (n, i) { return /<meta name="front_page" content="true"/.test(docs[i]); });
+          var fdoc = fronts.length ? docs[names.indexOf(fronts[0])] : '';
+          return Promise.all([z.file('imsmanifest.xml').async('string'), z.file('course_settings/course_settings.xml').async('string'),
+            z.file('course_settings/syllabus.html') ? z.file('course_settings/syllabus.html').async('string') : '', first ? z.file(first.xml).async('string') : '']).then(function (x) {
+            out.withAll = { entries: A.res.entries, fronts: fronts, teacherOnFront: fdoc.indexOf('Ms. Rivera') >= 0, inManifest: fronts.length === 1 && x[0].indexOf('href="' + fronts[0] + '"') >= 0,
+              wikiView: /<default_view>wiki<\/default_view>/.test(x[1]), syllabus: x[2].indexOf('Ms. Rivera') >= 0 && x[0].indexOf('course_settings/syllabus.html') >= 0,
+              due: !first || x[3].indexOf('<due_at>' + wantUtc + '</due_at>') >= 0, noFacilitator: !/facilitator/i.test(fdoc + x[2]) };
+            $('selftest-b64').textContent = A.res.data;
+          });
+        }).then(function () {
+          // nothing asked for: home page, syllabus and front flags exactly as the teacher's file had them
+          J.want = {}; home.dates = {}; home.syllabusOn = true;
+          resetPanel('home'); resetPanel('syllabus');
+          return patchedKit('base64').then(function (res) { return JSZip.loadAsync(res.data, { base64: true }); }).then(function (z2) {
+            var check = ['course_settings/syllabus.html', 'course_settings/course_settings.xml'].concat(Object.keys(A.orig.files).filter(function (n) { return /^wiki_content\//.test(n) && !A.orig.files[n].dir; }));
+            return Promise.all(check.map(function (n) {
+              var a = A.orig.file(n), b = z2.file(n);
+              if (!a || !b) return Promise.resolve(!a && !b);
+              return Promise.all([a.async('string'), b.async('string')]).then(function (p) { return p[0] === p[1]; });
+            })).then(function (same) {
+              out.untouched = { same: same.every(Boolean), changed: check.filter(function (n, i) { return !same[i]; }).slice(0, 5),
+                entries: Object.keys(z2.files).filter(function (n) { return !z2.files[n].dir; }).length,
+                origEntries: Object.keys(A.orig.files).filter(function (n) { return !A.orig.files[n].dir; }).length };
+            });
+          });
+        });
+      });
+    }).then(function () {
+      var w = out.withAll, u = out.untouched;
+      out.ok = (out.sidecarMatch !== false) && out.flow.noCatalogScreens && w.fronts.length === 1 && w.teacherOnFront && w.inManifest && w.wikiView && w.syllabus && w.due && w.noFacilitator
+        && u.same && u.entries === u.origEntries;
+      $('selftest-out').textContent = JSON.stringify(out);
+      document.title = 'Optima Course Kit [selftest done]';
+    }).catch(function (e) {
+      out.error = String(e && e.message || e);
+      $('selftest-out').textContent = JSON.stringify(out);
+      document.title = 'Optima Course Kit [selftest failed]';
+    });
+  }
+
   loadCatalog().then(function (c) {
     catalog = c; wire(); wireCatalogRefresh();
     var m = /^#selftest(?:=(.+))?$/.exec(location.hash || '');
     if (m) selftest(m[1] ? decodeURIComponent(m[1]) : null);
     var pm = /^#printtest=(.+)$/.exec(location.hash || '');
     if (pm) printtest(decodeURIComponent(pm[1]));
+    var um = /^#uploadtest=(.+)$/.exec(location.hash || '');
+    if (um) uploadtest(decodeURIComponent(um[1]));
   }).catch(function (e) {
     $('j-error').innerHTML = '<div class="card"><div class="t">Could not load the kit catalog</div><div class="m">' + escHtml(e.message) + '. Open this page over http (GitHub Pages or a local server), not as a file.</div></div>';
   });
