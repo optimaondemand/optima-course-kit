@@ -196,9 +196,6 @@
   .batchrow label { margin:6px 0 3px; }
   .batchrow input[type=datetime-local] { font-size:13px; padding:5px 7px; min-width:0; width:100%; }
   .batchrow .actions { margin-top:8px; }
-  .gb-gpts { display:flex; align-items:center; gap:6px; }
-  table.sched .gb-gpts input[type=number], table.sched input.gb-gweight { width:84px; min-width:0; }
-  .gb-gpts .hint { margin:0; white-space:nowrap; }
   .batchrow select, .batchrow input[type=text], .batchrow input[type=number] { font-size:13px; padding:5px 7px; min-width:0; width:100%; }
   @media (max-width: 560px) { .batchrow .bt-fields { grid-template-columns:1fr; } }
   details.contents { margin-top:10px; border:1px dashed var(--line); border-radius:8px; padding:8px 12px; }
@@ -2918,18 +2915,16 @@
     var out = [];
     out.push('<div class="hint">Set how much each part of the grade counts. If you rename or add groups, a brand-new Canvas course also keeps its own empty Assignments group at 0%; delete that one in Canvas after import.</div>');
     out.push('<label style="display:flex;align-items:center;gap:8px;margin-top:10px;"><input type="checkbox" id="gb-weighted"' + (home.weighted ? ' checked' : '') + '> Weight by group</label>');
-    out.push('<div class="dtable"><table class="sched"><thead><tr><th>Group</th><th>Weight %</th><th>Points for every item</th></tr></thead><tbody>');
+    out.push('<div class="dtable"><table class="sched"><thead><tr><th>Group</th><th>Weight %</th></tr></thead><tbody>');
     home.groups.forEach(function (g, i) {
-      var n = groupItems(g.id).length;
       out.push('<tr><td><input type="text" data-gi="' + i + '" class="gb-gtitle" value="' + escHtml(g.title) + '"></td>' +
-        '<td><input type="number" min="0" max="100" step="1" data-gi="' + i + '" class="gb-gweight" value="' + escHtml(g.weight) + '"></td>' +
-        '<td><div class="gb-gpts"><input type="number" min="0" step="0.5" id="gb-gpts-' + i + '" placeholder="Points" aria-label="Points for every item in ' + escHtml(g.title) + '"' + (n ? '' : ' disabled') + '>' +
-        '<button type="button" class="sm alt gb-gpts-apply" data-gi="' + i + '"' + (n ? '' : ' disabled') + '>Apply</button>' +
-        '<span class="hint">' + n + ' item' + (n === 1 ? '' : 's') + '</span></div></td></tr>');
+        '<td><input type="number" min="0" max="100" step="1" data-gi="' + i + '" class="gb-gweight" value="' + escHtml(g.weight) + '"></td></tr>');
     });
     out.push('</tbody></table></div>');
     out.push('<div class="actions"><button type="button" class="alt" id="gb-addgroup">Add group</button></div>');
     out.push('<div class="status" id="gb-summary"></div>');
+    out.push('<label style="display:flex;align-items:center;gap:8px;margin-top:14px;"><input type="checkbox" id="gb-missingzero"' + (home.missingZero ? ' checked' : '') + '> Give a 0 to missing work</label>');
+    out.push('<div class="hint">Optional. Canvas scores a published assignment, quiz or discussion 0 once its due date passes with nothing turned in, whatever it is worth. Unpublished items and items with no due date are not scored. When a student turns the work in, the 0 comes off and you grade it as usual.</div>');
     out.push('<div class="hint" style="margin-top:14px;">A graded quiz total is split evenly across its questions when you change it. Publishing has its own step.</div>');
     out.push('<div class="hint">To set many items at once, fill in a batch row and apply it. A blank group or points field leaves that setting alone.</div>');
     out.push(gbBatchRow('all', 'Every graded item in this kit', 'Apply to matching items'));
@@ -2959,19 +2954,12 @@
   }
   function wireGradebook() {
     $('gb-weighted').addEventListener('change', function () { home.weighted = this.checked; save(); renderGbSummary(); });
+    $('gb-missingzero').addEventListener('change', function () { home.missingZero = this.checked; save(); });
     document.querySelectorAll('.gb-gtitle').forEach(function (inp) {
       inp.addEventListener('change', function () { home.groups[+this.dataset.gi].title = this.value; save(); renderGradebook(); });
     });
     document.querySelectorAll('.gb-gweight').forEach(function (inp) {
       inp.addEventListener('change', function () { home.groups[+this.dataset.gi].weight = parseFloat(this.value) || 0; save(); renderGradebook(); });
-    });
-    document.querySelectorAll('.gb-gpts-apply').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var inp = $('gb-gpts-' + this.dataset.gi), pts = parseFloat(inp && inp.value);
-        if (isNaN(pts) || pts < 0) return;
-        setGroupPoints(home.groups[+this.dataset.gi].id, pts);
-        save(); renderGradebook();
-      });
     });
     $('gb-addgroup').addEventListener('click', function () {
       home.groups.push({ id: 'g' + randHex(32), title: 'New group', weight: 0, position: home.groups.length + 1 });
@@ -2984,18 +2972,6 @@
       inp.addEventListener('input', function () { ensureOverride(itemById(this.dataset.id)).points = parseFloat(this.value) || 0; save(); renderGbSummary(); });
     });
     wireGbBatchRows();
-  }
-  // Every graded item currently in a group (after moves and removals); surveys and
-  // items whose total is set by their questions are left out.
-  function groupItems(gid) {
-    return activeGraded().filter(function (it) {
-      return !(it.type === 'quiz' && it.quiz_type === 'survey') && canEditPoints(it) && effItem(it).group === gid;
-    });
-  }
-  function setGroupPoints(gid, pts) {
-    var items = groupItems(gid);
-    items.forEach(function (it) { ensureOverride(it).points = pts; });
-    return items;
   }
   // ------------------------------------------------------------ gradebook batch rows
   // Same shape as the date batch rows: a kit-wide row and one per module. The type
@@ -3876,6 +3852,34 @@
     return re.test(text) ? text.replace(re, '') : text;
   }
   function chain(tasks) { return tasks.reduce(function (p, fn) { return p.then(fn); }, Promise.resolve()); }
+  // Missing work scored 0 = Canvas's missing submission policy at a 100% deduction,
+  // in course_settings/late_policy.xml (shape copied from a real Canvas export). An
+  // existing policy keeps its late-submission settings; only the missing fields change.
+  var LATE_POLICY = 'course_settings/late_policy.xml';
+  function applyMissingZero(zip) {
+    var f = zip.file(LATE_POLICY);
+    return (f ? f.async('string') : Promise.resolve(null)).then(function (text) {
+      if (text && /<missing_submission_deduction>/.test(text)) {
+        text = text.replace(/<missing_submission_deduction_enabled>[^<]*<\/missing_submission_deduction_enabled>/, '<missing_submission_deduction_enabled>true</missing_submission_deduction_enabled>')
+          .replace(/<missing_submission_deduction>[^<]*<\/missing_submission_deduction>/, '<missing_submission_deduction>100.0</missing_submission_deduction>');
+      } else {
+        text = '<?xml version="1.0" encoding="UTF-8"?>\n<late_policy identifier="g' + randHex(32) + '" xmlns="http://canvas.instructure.com/xsd/cccv1p0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://canvas.instructure.com/xsd/cccv1p0 https://canvas.instructure.com/xsd/cccv1p0.xsd">\n' +
+          '  <missing_submission_deduction_enabled>true</missing_submission_deduction_enabled>\n  <missing_submission_deduction>100.0</missing_submission_deduction>\n' +
+          '  <late_submission_deduction_enabled>false</late_submission_deduction_enabled>\n  <late_submission_deduction>0.0</late_submission_deduction>\n' +
+          '  <late_submission_interval>day</late_submission_interval>\n  <late_submission_minimum_percent_enabled>false</late_submission_minimum_percent_enabled>\n' +
+          '  <late_submission_minimum_percent>0.0</late_submission_minimum_percent>\n</late_policy>\n';
+      }
+      zip.file(LATE_POLICY, text);
+      var mf = zip.file('imsmanifest.xml');
+      if (!mf) return;
+      return mf.async('string').then(function (man) {
+        if (man.indexOf('<file href="' + LATE_POLICY + '"/>') >= 0) return;
+        // Listed with the other course settings files, in the canvas_export.txt resource.
+        var re = /(<resource [^>]*href="course_settings\/canvas_export\.txt"[^>]*>)/;
+        if (re.test(man)) zip.file('imsmanifest.xml', man.replace(re, '$1\n      <file href="' + LATE_POLICY + '"/>'));
+      });
+    });
+  }
   function applyScheduleAndGradebook(zip) {
     var tasks = [];
     // Only a graded item's resource leaves the cartridge; a removed page keeps its
@@ -3936,6 +3940,7 @@
         return f.async('string').then(function (text) { zip.file(kit.settings.assignment_groups, patchGroupsXml(text)); });
       });
     }
+    if (home.missingZero) tasks.push(function () { return applyMissingZero(zip); });
     if (kit.settings && kit.settings.course_settings && !!home.weighted !== !!kit.weighted) {
       tasks.push(function () {
         var f = zip.file(kit.settings.course_settings);
@@ -5405,7 +5410,7 @@
     if (q === 'dates') return !!home.courseStart || Object.keys(home.dates || {}).some(function (id) { var d = home.dates[id] || {}; return !!(d.due_at || d.unlock_at || d.lock_at); });
     if (q === 'publish') return Object.keys(home.moduleOverrides || {}).length > 0 || Object.keys(home.removed || {}).length > 0
       || (kit.graded_items || []).some(function (it) { var o = home.itemOverrides[it.id]; return !!o && o.published !== it.published; });
-    if (q === 'gradebook') return groupsChanged() || !!home.weighted !== !!kit.weighted
+    if (q === 'gradebook') return groupsChanged() || !!home.weighted !== !!kit.weighted || !!home.missingZero
       || (kit.graded_items || []).some(function (it) { var o = home.itemOverrides[it.id]; return !!o && (o.group !== it.group || Number(o.points) !== Number(it.points)); });
     return false;
   }
@@ -5428,7 +5433,7 @@
       renderDates(); renderGradebook();
     } else if (q === 'gradebook') {
       home.groups = (kit.groups || []).map(function (g) { return { id: g.id, title: g.title, weight: g.weight, position: g.position }; });
-      home.weighted = !!kit.weighted;
+      home.weighted = !!kit.weighted; home.missingZero = false;
       (kit.graded_items || []).forEach(function (it) { var o = home.itemOverrides[it.id]; if (o) { o.group = it.group; o.points = it.points; } });
       renderGradebook(); renderDates();
     }
@@ -5615,7 +5620,7 @@
     // the assertions below by reading the patched cartridge back after building it.
     var dueItem = null, pointsItem = null, unpubItem = null, quizItem = null, batchItems = [];
     var removedGraded = null, removedPage = null, secondModule = null, modulePublishAll = false;
-    var gbBatch = [], gbBatchGroup = '', gbControl = null, gbBatchState = false, gbBatchZip = false, gbGroupPts = null;
+    var gbBatch = [], gbBatchGroup = '', gbControl = null, gbBatchState = false, gbBatchZip = false;
     var byGidAll = {}; (kit.graded_items || []).forEach(function (it) { byGidAll[it.gid] = it; });
     var metaName = (kit.settings && kit.settings.module_meta) || 'course_settings/module_meta.xml';
     var BATCH_DUE = '2026-10-09T23:59';
@@ -5662,18 +5667,8 @@
         setModulePublished(secondModule, true);
         modulePublishAll = allOff && modulePublished(secondModule) && inM2().every(function (it) { return effItem(it).published; });
       }
-      // Points for a whole group: every editable item in it gets the value, nothing
-      // outside it changes; run on a copy of the overrides and put them back.
-      if (home.groups && home.groups.length) {
-        var snap = JSON.stringify(home.itemOverrides);
-        var g0id = (home.groups.filter(function (g) { return groupItems(g.id).length; })[0] || home.groups[0]).id;
-        var outside = activeGraded().filter(function (it) { return effItem(it).group !== g0id; });
-        var outsidePts = outside.map(function (it) { return effItem(it).points; });
-        var hit = setGroupPoints(g0id, 9);
-        gbGroupPts = { items: hit.length, ok: hit.length > 0 && hit.every(function (it) { return effItem(it).points === 9; })
-          && outside.every(function (it, i) { return effItem(it).points === outsidePts[i]; }) };
-        home.itemOverrides = JSON.parse(snap);
-      }
+      // Missing work scored 0: the late policy file lands in the cartridge.
+      home.missingZero = true;
       // Gradebook batch row on the second module: filter by type + title, move the
       // matches to another group at 7 points; the rest of the module stays as built.
       if (secondModule) {
@@ -5725,7 +5720,7 @@
       var out = { ok: true, code: c.code, kit: k.id, frontPage: k.front_page, entries: r.entries,
         homeBytes: r.html.length, teacher: home.teacherName, moduleLinks: (r.html.match(/\$CANVAS_OBJECT_REFERENCE\$\/modules\//g) || []).length,
         nonAscii: /[^\x00-\x7f]/.test(r.html), filename: kitFilename() };
-      var checks = { datesApplied: false, weightingOn: false, pointsPatched: false, unpublished: false, batchDates: false, quizPoints: false, removed: false, metaItemState: false, syllabus: false, tile: false };
+      var checks = { missingZero: false, datesApplied: false, weightingOn: false, pointsPatched: false, unpublished: false, batchDates: false, quizPoints: false, removed: false, metaItemState: false, syllabus: false, tile: false };
       var verify = hasSchedule ? JSZip.loadAsync(r.data, { base64: true }) : Promise.resolve(null);
       return verify.then(function (zip2) {
         var reads = [];
@@ -5787,6 +5782,11 @@
             checks.metaItemState = /<workflow_state>unpublished<\/workflow_state>/.test(blk);
           }
         }));
+        if (zip2) reads.push(Promise.all([zip2.file(LATE_POLICY) ? zip2.file(LATE_POLICY).async('string') : Promise.resolve(''), zip2.file('imsmanifest.xml').async('string')]).then(function (lp) {
+          checks.missingZero = !hasSchedule || (/<missing_submission_deduction_enabled>true<\/missing_submission_deduction_enabled>/.test(lp[0])
+            && /<missing_submission_deduction>100(\.0)?<\/missing_submission_deduction>/.test(lp[0])
+            && lp[1].indexOf('<file href="' + LATE_POLICY + '"/>') >= 0);
+        }));
         if (zip2 && gbBatch.length) reads.push(Promise.all(gbBatch.map(function (it) { return zip2.file(it.xml).async('string'); })).then(function (texts) {
           gbBatchZip = texts.every(function (t) { return /<points_possible>7(\.0)?<\/points_possible>/.test(t) && (!gbBatchGroup || t.indexOf('<assignment_group_identifierref>' + gbBatchGroup + '</assignment_group_identifierref>') >= 0); });
         }));
@@ -5818,7 +5818,7 @@
         out.previewToggle = previewToggle;
         out.gbBatch = { items: gbBatch.map(function (it) { return it.title; }), state: gbBatchState, zip: gbBatchZip, control: gbControl ? gbControl.title : null };
         if (gbBatch.length) out.ok = out.ok && gbBatchState && gbBatchZip;
-        out.gbGroupPts = gbGroupPts; if (gbGroupPts) out.ok = out.ok && gbGroupPts.ok;
+        out.missingZero = checks.missingZero; if (hasSchedule) out.ok = out.ok && checks.missingZero;
         out.finder = finderCheck; out.ok = out.ok && finderCheck.ok;
         // Art pack: a kit whose sidecar declares figures must show the second-file notice
         // naming its art pack; a kit without figures must keep the notice hidden.
