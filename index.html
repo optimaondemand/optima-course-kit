@@ -196,6 +196,7 @@
   .batchrow label { margin:6px 0 3px; }
   .batchrow input[type=datetime-local] { font-size:13px; padding:5px 7px; min-width:0; width:100%; }
   .batchrow .actions { margin-top:8px; }
+  .batchrow select, .batchrow input[type=text], .batchrow input[type=number] { font-size:13px; padding:5px 7px; min-width:0; width:100%; }
   @media (max-width: 560px) { .batchrow .bt-fields { grid-template-columns:1fr; } }
   details.contents { margin-top:10px; border:1px dashed var(--line); border-radius:8px; padding:8px 12px; }
   details.contents summary { font-size:13.5px; color:var(--navy); margin-top:0; }
@@ -2923,6 +2924,8 @@
     out.push('<div class="actions"><button type="button" class="alt" id="gb-addgroup">Add group</button></div>');
     out.push('<div class="status" id="gb-summary"></div>');
     out.push('<div class="hint" style="margin-top:14px;">A graded quiz total is split evenly across its questions when you change it. Publishing has its own step.</div>');
+    out.push('<div class="hint">To set many items at once, fill in a batch row and apply it. A blank group or points field leaves that setting alone.</div>');
+    out.push(gbBatchRow('all', 'Every graded item in this kit', 'Apply to matching items'));
     var graded = activeGraded();
     (kit.modules || []).forEach(function (m) {
       if (!moduleKept(m)) return;
@@ -2930,6 +2933,7 @@
       if (!items.length) return;
       out.push('<details class="modblock" open>');
       out.push('<summary>' + escHtml(m.title) + (modulePublished(m) ? '' : ' <span class="pill grey">UNPUBLISHED</span>') + '</summary>');
+      out.push(gbBatchRow(m.id, 'Every graded item in this module', 'Apply to this module'));
       out.push('<div class="dtable"><table class="sched"><thead><tr><th>Item</th><th>Group</th><th>Points</th></tr></thead><tbody>');
       items.forEach(function (it) {
         var eff = effItem(it);
@@ -2964,6 +2968,90 @@
     document.querySelectorAll('.gb-points').forEach(function (inp) {
       inp.addEventListener('input', function () { ensureOverride(itemById(this.dataset.id)).points = parseFloat(this.value) || 0; save(); renderGbSummary(); });
     });
+    wireGbBatchRows();
+  }
+  // ------------------------------------------------------------ gradebook batch rows
+  // Same shape as the date batch rows: a kit-wide row and one per module. The type
+  // and title fields narrow the match; a blank group or points field is left alone.
+  // Surveys are never touched, and points skip items whose total is set by questions.
+  var GB_TYPES = [['', 'Any type'], ['assignment', 'Assignments'], ['quiz', 'Quizzes'], ['discussion', 'Discussions']];
+  function gbBatchItems(scope, f) {
+    var q = (f.title || '').trim().toLowerCase();
+    return itemsInScope(scope).filter(function (it) {
+      if (it.type === 'quiz' && it.quiz_type === 'survey') return false;
+      if (f.type && it.type !== f.type) return false;
+      return !q || String(it.title || '').toLowerCase().indexOf(q) >= 0;
+    });
+  }
+  function applyGbBatch(scope, f) {
+    var pts = f.points === '' || f.points == null ? null : parseFloat(f.points);
+    var items = gbBatchItems(scope, f);
+    items.forEach(function (it) {
+      if (f.group) ensureOverride(it).group = f.group;
+      if (pts != null && !isNaN(pts) && pts >= 0 && canEditPoints(it)) ensureOverride(it).points = pts;
+    });
+    save();
+    return items;
+  }
+  // Back to the kit's own group and points for the matching items; publishing stays.
+  function resetGbBatch(scope, f) {
+    gbBatchItems(scope, f).forEach(function (it) {
+      var o = home.itemOverrides[it.id]; if (!o) return;
+      o.group = it.group; o.points = it.points;
+    });
+    save();
+  }
+  function gbBatchRow(scope, label, applyLabel) {
+    var id = function (f) { return 'gbb-' + f + '-' + scope; };
+    var s = escHtml(scope);
+    return '<div class="batchrow gb-batch" data-scope="' + s + '">' +
+      '<div class="bl">' + escHtml(label) + '</div>' +
+      '<div class="bt-fields">' +
+      '<div><label for="' + id('type') + '">Item type</label><select id="' + id('type') + '" class="gbb-f" data-scope="' + s + '">' +
+        GB_TYPES.map(function (t) { return '<option value="' + t[0] + '">' + t[1] + '</option>'; }).join('') + '</select></div>' +
+      '<div><label for="' + id('title') + '">Title contains</label><input type="text" id="' + id('title') + '" class="gbb-f" data-scope="' + s + '" placeholder="e.g. Check-up"></div>' +
+      '<div></div>' +
+      '<div><label for="' + id('group') + '">Move to group</label><select id="' + id('group') + '"><option value="">Leave as is</option>' +
+        home.groups.map(function (g) { return '<option value="' + escHtml(g.id) + '">' + escHtml(g.title) + '</option>'; }).join('') + '</select></div>' +
+      '<div><label for="' + id('points') + '">Set points to</label><input type="number" step="0.5" min="0" id="' + id('points') + '" placeholder="Leave as is"></div>' +
+      '</div>' +
+      '<div class="actions"><button type="button" class="sm gbb-apply" data-scope="' + s + '">' + escHtml(applyLabel) + '</button>' +
+      '<button type="button" class="sm alt gbb-reset" data-scope="' + s + '">Reset these to the kit</button>' +
+      '<span class="hint gbb-count" id="' + id('count') + '" style="margin:0 0 0 6px;"></span></div>' +
+      '</div>';
+  }
+  function gbBatchFields(scope) {
+    var v = function (f) { var el = document.getElementById('gbb-' + f + '-' + scope); return el ? el.value : ''; };
+    return { type: v('type'), title: v('title'), group: v('group'), points: v('points') };
+  }
+  function gbBatchCount(scope) {
+    var el = document.getElementById('gbb-count-' + scope); if (!el) return;
+    var n = gbBatchItems(scope, gbBatchFields(scope)).length;
+    el.textContent = n + ' matching item' + (n === 1 ? '' : 's');
+  }
+  function wireGbBatchRows() {
+    document.querySelectorAll('.gb-batch').forEach(function (row) { gbBatchCount(row.dataset.scope); });
+    document.querySelectorAll('.gbb-f').forEach(function (el) {
+      el.addEventListener('input', function () { gbBatchCount(this.dataset.scope); });
+      el.addEventListener('change', function () { gbBatchCount(this.dataset.scope); });
+    });
+    document.querySelectorAll('.gbb-apply').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var f = gbBatchFields(this.dataset.scope);
+        if (!f.group && f.points === '') return;
+        applyGbBatch(this.dataset.scope, f);
+        rerenderKeeping(this.dataset.scope, f);
+      });
+    });
+    document.querySelectorAll('.gbb-reset').forEach(function (btn) {
+      btn.addEventListener('click', function () { var f = gbBatchFields(this.dataset.scope); resetGbBatch(this.dataset.scope, f); rerenderKeeping(this.dataset.scope, f); });
+    });
+  }
+  // Re-render, then put the row's filter back so the teacher can see what matched.
+  function rerenderKeeping(scope, f) {
+    renderGradebook();
+    ['type', 'title'].forEach(function (k) { var el = document.getElementById('gbb-' + k + '-' + scope); if (el) el.value = f[k]; });
+    gbBatchCount(scope);
   }
   function renderGbSummary() {
     syncSyllabusGrading();
@@ -5500,6 +5588,7 @@
     // the assertions below by reading the patched cartridge back after building it.
     var dueItem = null, pointsItem = null, unpubItem = null, quizItem = null, batchItems = [];
     var removedGraded = null, removedPage = null, secondModule = null, modulePublishAll = false;
+    var gbBatch = [], gbBatchGroup = '', gbControl = null, gbBatchState = false, gbBatchZip = false;
     var byGidAll = {}; (kit.graded_items || []).forEach(function (it) { byGidAll[it.gid] = it; });
     var metaName = (kit.settings && kit.settings.module_meta) || 'course_settings/module_meta.xml';
     var BATCH_DUE = '2026-10-09T23:59';
@@ -5545,6 +5634,21 @@
         var allOff = !modulePublished(secondModule) && inM2().every(function (it) { return !effItem(it).published; });
         setModulePublished(secondModule, true);
         modulePublishAll = allOff && modulePublished(secondModule) && inM2().every(function (it) { return effItem(it).published; });
+      }
+      // Gradebook batch row on the second module: filter by type + title, move the
+      // matches to another group at 7 points; the rest of the module stays as built.
+      if (secondModule) {
+        var keepG = {}; [dueItem, pointsItem, unpubItem, quizItem].forEach(function (it) { if (it) keepG[it.id] = true; });
+        var cand = activeGraded().filter(function (it) { return it.module === secondModule.id && !keepG[it.id] && canEditPoints(it) && !(it.type === 'quiz' && it.quiz_type === 'survey'); })[0];
+        if (cand) {
+          var toGroup = (home.groups || []).filter(function (g) { return g.id !== cand.group; })[0];
+          var gf = { type: cand.type, title: cand.title.slice(0, 12).toUpperCase(), group: toGroup ? toGroup.id : '', points: '7' };
+          gbBatch = applyGbBatch(secondModule.id, gf).filter(function (it) { return !keepG[it.id]; });
+          gbBatchGroup = gf.group;
+          gbControl = activeGraded().filter(function (it) { return it.module === secondModule.id && it.type !== cand.type && !keepG[it.id]; })[0] || null;
+          gbBatchState = gbBatch.length > 0 && gbBatch.every(function (it) { return it.type === cand.type && Number(effItem(it).points) === 7 && (!gf.group || effItem(it).group === gf.group); })
+            && (!gbControl || (effItem(gbControl).points === gbControl.points && effItem(gbControl).group === (gbControl.group || null)));
+        }
       }
     }
     // Themes: the catalog subject picks one; its banner must be a hosted URL (never
@@ -5644,6 +5748,9 @@
             checks.metaItemState = /<workflow_state>unpublished<\/workflow_state>/.test(blk);
           }
         }));
+        if (zip2 && gbBatch.length) reads.push(Promise.all(gbBatch.map(function (it) { return zip2.file(it.xml).async('string'); })).then(function (texts) {
+          gbBatchZip = texts.every(function (t) { return /<points_possible>7(\.0)?<\/points_possible>/.test(t) && (!gbBatchGroup || t.indexOf('<assignment_group_identifierref>' + gbBatchGroup + '</assignment_group_identifierref>') >= 0); });
+        }));
         if (zip2 && batchItems.length) reads.push(Promise.all(batchItems.map(function (it) { return zip2.file(it.xml).async('string'); })).then(function (texts) {
           var want = '<due_at>' + desiredUtc(BATCH_DUE) + '</due_at>';
           checks.batchDates = texts.every(function (t) { return t.indexOf(want) >= 0; });
@@ -5670,6 +5777,8 @@
         out.quizPoints = checks.quizPoints; out.quiz = quizItem ? quizItem.title : null;
         out.syllabus = checks.syllabus; out.tile = checks.tile; out.removedOk = checks.removed; out.metaItemState = checks.metaItemState; out.modulePublishAll = modulePublishAll; out.secondModule = secondModule ? secondModule.title : null;
         out.previewToggle = previewToggle;
+        out.gbBatch = { items: gbBatch.map(function (it) { return it.title; }), state: gbBatchState, zip: gbBatchZip, control: gbControl ? gbControl.title : null };
+        if (gbBatch.length) out.ok = out.ok && gbBatchState && gbBatchZip;
         out.finder = finderCheck; out.ok = out.ok && finderCheck.ok;
         // Art pack: a kit whose sidecar declares figures must show the second-file notice
         // naming its art pack; a kit without figures must keep the notice hidden.
