@@ -308,6 +308,7 @@
   .tile.subject { position:relative; overflow:hidden; aspect-ratio:16 / 9; min-height:0; padding:0; border-radius:14px; border-color:var(--line); background:#fff; box-shadow:0 2px 6px rgba(14,28,66,.08); justify-content:center; }
   .tile.subject img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:right center; transition:transform .25s; }
   .tile.subject .tt { position:relative; z-index:1; margin:14% 0 0 5.5%; max-width:46%; font-size:clamp(17px, 2.1vw, 24px); line-height:1.15; color:var(--navy); text-shadow:0 0 10px #fff, 0 0 4px #fff; }
+  .tile.subject .tm { position:relative; z-index:1; margin:6px 0 0 5.5%; max-width:46%; align-self:flex-start; font-size:13px; line-height:1.3; color:var(--navy); background:rgba(255,255,255,.94); padding:3px 8px; border-radius:6px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
   .tile.subject:hover:not(:disabled), .tile.subject:focus-visible { border-color:var(--navy); box-shadow:0 8px 22px rgba(14,28,66,.18); transform:translateY(-2px); }
   .tile.subject:hover:not(:disabled) img, .tile.subject:focus-visible img { transform:scale(1.03); }
   .tile.subject.on { border-color:var(--navy); box-shadow:0 0 0 2px var(--cyan); }
@@ -441,30 +442,31 @@
 
     <section class="screen" data-screen="welcome">
       <div class="hero">
-        <h1>Welcome to the Course Optimizer!</h1>
-        <p class="lead">Let&rsquo;s fetch your curriculum and customize it for you.</p>
+        <h1>Course Optimizer</h1>
+        <p class="lead">Prepare a course for import into Canvas, from the Optima curriculum store or from a Canvas export.</p>
         <p class="hint" id="j-greet" hidden></p>
         <div id="j-error"></div>
       </div>
       <div class="tiles three" id="t-path">
-        <button type="button" class="tile big" data-path="customize"><span class="tt">Customize my course</span><span class="ts">Your name on the home page, your syllabus, dates, publishing and gradebook. Only the parts you want; skip the rest.</span></button>
-        <button type="button" class="tile big" data-path="upload"><span class="tt">Use my own course</span><span class="ts">Start from your own Canvas course export (.imscc). Set its home page, syllabus, dates, publishing and gradebook, and get your own content back.</span></button>
-        <button type="button" class="tile big" data-path="fetch"><span class="tt">Just fetch a course</span><span class="ts">Download the course file exactly as the curriculum team built it, or read it first.</span></button>
+        <button type="button" class="tile big" data-path="customize"><span class="tt">Customize an Optima course</span><span class="ts">Select a course from the store, then set the home page, syllabus, dates, publishing and gradebook. Every step is optional.</span></button>
+        <button type="button" class="tile big" data-path="upload"><span class="tt">Customize a Canvas export</span><span class="ts">Start from a course exported from Canvas (.imscc). The same settings apply; the course content stays as exported.</span></button>
+        <button type="button" class="tile big" data-path="fetch"><span class="tt">Download an Optima course</span><span class="ts">The course file as the curriculum team built it, with no changes. Preview available.</span></button>
       </div>
-      <div class="hint center">Dashboard tiles for your Canvas courses have their own tool: <button type="button" class="link" id="j-tiles">Course tiles</button>.</div>
+      <div class="hint center">Dashboard tiles for several sections at once: <button type="button" class="link" id="j-tiles">Course tiles</button>.</div>
       <div class="hint center" id="j-beta"></div>
     </section>
 
     <section class="screen" data-screen="grade" hidden>
-      <h2 class="q">What grade do you teach?</h2>
+      <h2 class="q">Select a grade</h2>
+      <div class="hint">Dimmed grades have no courses in the store yet.</div>
       <div class="tiles grades" id="t-grades"></div>
-      <button type="button" class="tile allgrades" id="t-allgrades"><span class="tt">I teach one subject across grades</span><span class="ts">See every course in your subject, all grades together</span></button>
+      <button type="button" class="tile allgrades" id="t-allgrades"><span class="tt">All grades, by subject</span><span class="ts">Every course in one subject, K&ndash;12, grouped by grade</span></button>
     </section>
 
     <section class="screen" data-screen="upload" hidden>
-      <h2 class="q">Choose your Canvas course file</h2>
-      <div class="hint">In Canvas, open your course, then <b>Settings &rarr; Export Course Content &rarr; Course &rarr; Create Export</b>, and download the <b>.imscc</b> file when it is ready. Choose that file here. It is read on this computer and never uploaded anywhere.</div>
-      <label class="up-drop" id="up-drop"><input type="file" id="up-file" accept=".imscc,.zip"><span class="tt" id="up-drop-t">Choose your .imscc file</span><span class="ts">or drop it here</span></label>
+      <h2 class="q">Select a Canvas export file</h2>
+      <div class="hint">To export from Canvas: <b>Settings &rarr; Export Course Content &rarr; Course &rarr; Create Export</b>, then download the <b>.imscc</b> file. The file is read on this computer and is not uploaded.</div>
+      <label class="up-drop" id="up-drop"><input type="file" id="up-file" accept=".imscc,.zip"><span class="tt" id="up-drop-t">Select an .imscc file</span><span class="ts">or drop it here</span></label>
       <div class="up-row">
         <label for="up-subject">Subject<select id="up-subject"></select></label>
         <label for="up-grade">Grade<select id="up-grade"></select></label>
@@ -476,12 +478,13 @@
     </section>
 
     <section class="screen" data-screen="subject" hidden>
-      <h2 class="q">What subject do you teach?</h2>
+      <h2 class="q">Select a subject</h2>
+      <div class="hint" id="t-subjects-hint"></div>
       <div class="tiles subjects" id="t-subjects"></div>
     </section>
 
     <section class="screen" data-screen="course" hidden>
-      <h2 class="q">Select your course</h2>
+      <h2 class="q">Select a course</h2>
       <div class="hint" id="t-courses-hint"></div>
       <div class="hint" id="t-courses-all"></div>
       <div class="tiles courses" id="t-courses"></div>
@@ -490,7 +493,7 @@
           <summary id="browse-label">Search the full course list</summary>
           <label for="code">Course name or CPALMS code</label>
           <input type="text" id="code" placeholder="e.g. English 1 or 1001310" autocomplete="off">
-          <div class="hint">Type the seven-digit code from your course assignment, or part of the course name, then click your course in the list. Honors and standard versions have their own codes.</div>
+          <div class="hint">Enter the seven-digit course code or part of the course name, then select the course in the list. Honors and Standard versions have separate codes.</div>
           <div class="chips" id="grade-chips" role="group" aria-label="Grade"></div>
           <div class="row2"><select id="subject-filter" aria-label="Subject"><option value="">All subjects</option></select><span class="hint" id="finder-count"></span></div>
           <div class="clist" id="course-list" role="listbox" aria-label="Courses"></div>
@@ -501,27 +504,27 @@
 
     <section class="screen" data-screen="mode" hidden>
       <div id="course-card"></div>
-      <h2 class="q">Do you want to preview the course or configure it for Canvas?</h2>
+      <h2 class="q">Preview or configure</h2>
       <div class="tiles two" id="t-mode">
-        <button type="button" class="tile big" data-mode="preview"><span class="tt">Preview the course</span><span class="ts">Read it the way students will, module by module, and save the whole thing as a PDF.</span></button>
-        <button type="button" class="tile big" data-mode="configure"><span class="tt">Configure for Canvas</span><span class="ts">Set it up for your section and download one file to import.</span></button>
+        <button type="button" class="tile big" data-mode="preview"><span class="tt">Preview the course</span><span class="ts">Read the course as students see it, module by module. Save it as a PDF.</span></button>
+        <button type="button" class="tile big" data-mode="configure"><span class="tt">Configure for Canvas</span><span class="ts">Set it up for one section and download a single file to import.</span></button>
       </div>
     </section>
 
     <section class="screen" data-screen="part" hidden>
-      <h2 class="q">Do you want the whole semester or just a module?</h2>
+      <h2 class="q">Select the scope</h2>
       <div class="step" id="step2"><div id="kits"><div class="hint">Find a course first.</div></div></div>
     </section>
 
     <section class="screen" data-screen="modules" hidden>
-      <h2 class="q">Which module do you need?</h2>
-      <div class="hint">Pick one or more from the same semester. Everything else stays out of your file.</div>
+      <h2 class="q">Select modules</h2>
+      <div class="hint">One or more from the same semester. Other modules are left out of the file.</div>
       <div id="t-modules"><div class="hint">Loading the module list&hellip;</div></div>
       <div class="actions"><button type="button" id="j-modules-go" disabled>Continue</button></div>
     </section>
 
     <section class="screen" data-screen="preview" hidden>
-      <h2 class="q">Preview your course</h2>
+      <h2 class="q">Course preview</h2>
       <div class="hint">The course home page is on the right. Click any page, assignment, discussion or quiz below to read it there.</div>
       <div id="j-contents"></div>
       <div class="printrow">
@@ -537,7 +540,7 @@
     </section>
 
     <section class="screen" data-screen="details" hidden>
-      <h2 class="q">Tell us about you</h2>
+      <h2 class="q">Teacher details</h2>
       <div class="hint">These go on your course home page and syllabus. They are remembered on this computer for your next course.</div>
       <div class="step" id="step3">
         <div class="row">
@@ -559,16 +562,16 @@
     </section>
 
     <section class="screen" data-screen="q-home" hidden>
-      <h2 class="q">Do you want to customize your home page?</h2>
+      <h2 class="q">Home page</h2>
       <div class="tiles two yn">
-        <button type="button" class="tile big" data-q="home" data-v="1"><span class="tt">Yes, customize it</span><span class="ts">Choose a look, write a few lines about yourself, pick your house and edit the module cards.</span></button>
-        <button type="button" class="tile big" data-q="home" data-v="0"><span class="tt">Skip</span><span class="ts">Use the look suggested for this subject, with your details from the last step.</span></button>
+        <button type="button" class="tile big" data-q="home" data-v="1"><span class="tt">Customize the home page</span><span class="ts">Theme, a short introduction, house, tagline and module cards.</span></button>
+        <button type="button" class="tile big" data-q="home" data-v="0"><span class="tt">Skip this step</span><span class="ts">Optima courses use the suggested theme for the subject with the teacher details. A Canvas export keeps its own home page.</span></button>
       </div>
     </section>
 
     <section class="screen" data-screen="home" hidden>
-      <h2 class="q">Customize your home page</h2>
-      <div class="skiptop">Said yes but want to move on? <button type="button" class="sm alt skip" data-q="home">Skip this step</button> keeps the kit’s defaults for this part.</div>
+      <h2 class="q">Home page</h2>
+      <div class="skiptop"><button type="button" class="sm alt skip" data-q="home">Skip this step</button> Restores the defaults for this part.</div>
       <div class="step" id="step3b">
         <div id="style-panel"><div class="hint">Choose a kit first.</div></div>
         <label for="f-blurb">A few lines about you, optional</label><textarea id="f-blurb" placeholder="What you teach, what you love about it, one thing students should ask you about."></textarea>
@@ -591,16 +594,16 @@
     </section>
 
     <section class="screen" data-screen="q-tile" hidden>
-      <h2 class="q">Do you want a course tile for your Canvas dashboard?</h2>
+      <h2 class="q">Course tile</h2>
       <div class="tiles two yn">
-        <button type="button" class="tile big" data-q="tile" data-v="1"><span class="tt">Yes, add my tile</span><span class="ts">Your name, the course and Live or On-Demand on this year&rsquo;s tile art. It goes in the file and becomes the course image when you import.</span></button>
-        <button type="button" class="tile big" data-q="tile" data-v="0"><span class="tt">Skip</span><span class="ts">Canvas keeps whatever course image it has.</span></button>
+        <button type="button" class="tile big" data-q="tile" data-v="1"><span class="tt">Add a course tile</span><span class="ts">Your name, the course and Live or On-Demand on this year&rsquo;s tile art. It goes in the file and becomes the course image when you import.</span></button>
+        <button type="button" class="tile big" data-q="tile" data-v="0"><span class="tt">Skip this step</span><span class="ts">Canvas keeps whatever course image it has.</span></button>
       </div>
     </section>
 
     <section class="screen" data-screen="tile" hidden>
-      <h2 class="q">Your course tile</h2>
-      <div class="skiptop">Said yes but want to move on? <button type="button" class="sm alt skip" data-q="tile">Skip this step</button> leaves the tile out of your file.</div>
+      <h2 class="q">Course tile</h2>
+      <div class="skiptop"><button type="button" class="sm alt skip" data-q="tile">Skip this step</button> Leaves the tile out of the file.</div>
       <div class="step locked" id="stepT">
         <canvas id="tile-prev" width="1920" height="1080" aria-label="Course tile preview"></canvas>
         <div class="hint" id="tl-derived"></div>
@@ -621,8 +624,8 @@
     </section>
 
     <section class="screen" data-screen="syllabus" hidden>
-      <h2 class="q">Your syllabus</h2>
-      <div class="skiptop">Said yes but want to move on? <button type="button" class="sm alt skip" data-q="syllabus">Skip this step</button> keeps the kit’s defaults for this part.</div>
+      <h2 class="q">Syllabus</h2>
+      <div class="skiptop"><button type="button" class="sm alt skip" data-q="syllabus">Skip this step</button> Restores the defaults for this part.</div>
     <div class="step locked" id="stepS">
       <div class="hint">The kit fills your course's Canvas <b>Syllabus</b> page with this. Your name, email, class meeting and Live/On-Demand mode come from the details you gave earlier; the course title, code and description come from the course. Every section below can be edited or switched off, and you can add your own. Mid-year changes: come back here, edit, and use <b>Copy syllabus HTML</b>, then in your live course open Syllabus, Edit, the HTML editor, and paste over what is there. The home page's Syllabus tile keeps working either way.</div>
       <label style="display:flex;align-items:center;gap:8px;margin-top:10px;"><input type="checkbox" id="syl-on" checked> Put this syllabus on the Canvas Syllabus page in my kit</label>
@@ -789,31 +792,31 @@
     </section>
 
     <section class="screen" data-screen="q-dates" hidden>
-      <h2 class="q">Do you want to set up open, due and close dates now?</h2>
+      <h2 class="q">Dates</h2>
       <div class="tiles two yn">
-        <button type="button" class="tile big" data-q="dates" data-v="1"><span class="tt">Yes, set dates</span><span class="ts">Pick a course start date and every graded item gets a proposed due date you can edit, one at a time or by module.</span></button>
-        <button type="button" class="tile big" data-q="dates" data-v="0"><span class="tt">Skip</span><span class="ts">Import without dates and set them in Canvas later.</span></button>
+        <button type="button" class="tile big" data-q="dates" data-v="1"><span class="tt">Set open, due and close dates</span><span class="ts">Pick a course start date and every graded item gets a proposed due date you can edit, one at a time or by module.</span></button>
+        <button type="button" class="tile big" data-q="dates" data-v="0"><span class="tt">Skip this step</span><span class="ts">Import without dates and set them in Canvas later.</span></button>
       </div>
     </section>
 
     <section class="screen" data-screen="dates" hidden>
       <h2 class="q">Open, due and close dates</h2>
-      <div class="skiptop">Said yes but want to move on? <button type="button" class="sm alt skip" data-q="dates">Skip this step</button> keeps the kit’s defaults for this part.</div>
+      <div class="skiptop"><button type="button" class="sm alt skip" data-q="dates">Skip this step</button> Restores the defaults for this part.</div>
       <div class="slot" id="slot-dates"></div>
       <div class="actions"><button type="button" class="next">Continue</button><button type="button" class="alt skip" data-q="dates">Skip this step</button></div>
     </section>
 
     <section class="screen" data-screen="q-publish" hidden>
-      <h2 class="q">Do you want to review the contents and what is published?</h2>
+      <h2 class="q">Contents and publishing</h2>
       <div class="tiles two yn">
-        <button type="button" class="tile big" data-q="publish" data-v="1"><span class="tt">Yes, review it</span><span class="ts">Publish or unpublish modules and items, and remove anything you will not use from this import.</span></button>
-        <button type="button" class="tile big" data-q="publish" data-v="0"><span class="tt">Skip</span><span class="ts">Import everything as the curriculum team built it.</span></button>
+        <button type="button" class="tile big" data-q="publish" data-v="1"><span class="tt">Review contents and publishing</span><span class="ts">Publish or unpublish modules and items, and remove items from this import.</span></button>
+        <button type="button" class="tile big" data-q="publish" data-v="0"><span class="tt">Skip this step</span><span class="ts">Import everything as built.</span></button>
       </div>
     </section>
 
     <section class="screen" data-screen="publish" hidden>
       <h2 class="q">Contents and publishing</h2>
-      <div class="skiptop">Said yes but want to move on? <button type="button" class="sm alt skip" data-q="publish">Skip this step</button> keeps the kit’s defaults for this part.</div>
+      <div class="skiptop"><button type="button" class="sm alt skip" data-q="publish">Skip this step</button> Restores the defaults for this part.</div>
       <div class="slot" id="slot-publish"></div>
       <div class="actions"><button type="button" class="next">Continue</button><button type="button" class="alt skip" data-q="publish">Skip this step</button></div>
     </section>
@@ -821,41 +824,41 @@
     <div id="step4" hidden><div id="dates-panel"><div class="hint">Choose a kit first.</div></div></div>
 
     <section class="screen" data-screen="q-gradebook" hidden>
-      <h2 class="q">Do you want to configure the gradebook?</h2>
+      <h2 class="q">Gradebook</h2>
       <div class="tiles two yn">
-        <button type="button" class="tile big" data-q="gradebook" data-v="1"><span class="tt">Yes, configure it</span><span class="ts">Set group weights, move items between groups and change point values.</span></button>
-        <button type="button" class="tile big" data-q="gradebook" data-v="0"><span class="tt">Skip</span><span class="ts">Keep the groups, weights and points as built.</span></button>
+        <button type="button" class="tile big" data-q="gradebook" data-v="1"><span class="tt">Configure the gradebook</span><span class="ts">Set group weights, move items between groups and change point values.</span></button>
+        <button type="button" class="tile big" data-q="gradebook" data-v="0"><span class="tt">Skip this step</span><span class="ts">Keep the groups, weights and points as built.</span></button>
       </div>
     </section>
 
     <section class="screen" data-screen="gradebook" hidden>
-      <h2 class="q">Set up your gradebook</h2>
-      <div class="skiptop">Said yes but want to move on? <button type="button" class="sm alt skip" data-q="gradebook">Skip this step</button> keeps the kit’s defaults for this part.</div>
+      <h2 class="q">Gradebook</h2>
+      <div class="skiptop"><button type="button" class="sm alt skip" data-q="gradebook">Skip this step</button> Restores the defaults for this part.</div>
       <div class="step" id="step5"><div id="gradebook-panel"><div class="hint">Choose a kit first.</div></div></div>
       <div class="actions"><button type="button" class="next">Continue</button><button type="button" class="alt skip" data-q="gradebook">Skip this step</button></div>
     </section>
 
     <section class="screen" data-screen="review" hidden>
-      <h2 class="q">Review your course</h2>
-      <div class="hint">Your course is ready as the curriculum team built it. Change dates, publishing or the gradebook here, or go straight to your file.</div>
+      <h2 class="q">Review</h2>
+      <div class="hint">The course is ready as built. Change dates, publishing or the gradebook here, or continue to the file.</div>
       <div id="rv"></div>
-      <div class="actions"><button type="button" class="next">Continue to my file</button></div>
+      <div class="actions"><button type="button" class="next">Continue to the file</button></div>
     </section>
 
     <section class="screen" data-screen="generate" hidden>
-      <h2 class="q" id="j-generate-title">Generate my course file</h2>
+      <h2 class="q" id="j-generate-title">Generate the course file</h2>
       <div class="summary" id="j-summary"></div>
       <div class="step" id="step6">
         <div class="hint" id="j-generate-hint">One file. Your home page is already inside it, set as the course front page, with the module cards linked to the real modules, and your syllabus fills the Syllabus page.</div>
         <div class="hint" id="artpack" hidden style="border-left: 4px solid #0E1C42; padding-left: 12px;"></div>
         <div class="actions">
-          <button type="button" id="dl" disabled>Generate my course file (.imscc)</button>
+          <button type="button" id="dl" disabled>Generate the course file (.imscc)</button>
           <button type="button" id="dl-plain" class="alt" disabled>Original kit, no customization</button>
           <button type="button" id="pdf" class="alt" disabled>Download PDF</button>
           <button type="button" id="copy" class="alt" disabled>Copy home page HTML only</button>
         </div>
         <div class="status" id="status"></div>
-        <div class="hint"><button type="button" class="link" id="j-customize-instead" hidden>Customize it for my section instead</button></div>
+        <div class="hint"><button type="button" class="link" id="j-customize-instead" hidden>Customize this course instead</button></div>
         <details class="howto" open><summary>How to import it into Canvas</summary>
         <ol class="check">
           <li>In your Canvas course: <b>Settings</b> &rarr; <b>Import Course Content</b>.</li>
@@ -2487,12 +2490,12 @@
         : (k.status === 'spec-only' ? 'Authored, not built yet' : 'Coming');
       var on = kit && kit.id === k.id && !(home.onlyModules && home.onlyModules.length);
       out.push(tile('kit' + (on ? ' on' : ''),
-        (isNewKit(k) ? newPill() : '') + '<span class="tt">The whole ' + escHtml(k.label) + '</span>' + (m ? '<span class="pill grey">' + escHtml(MODE_LABEL[m].toUpperCase()) + '</span>' : '') +
+        (isNewKit(k) ? newPill() : '') + '<span class="tt">' + escHtml(k.label) + ', complete</span>' + (m ? '<span class="pill grey">' + escHtml(MODE_LABEL[m].toUpperCase()) + '</span>' : '') +
         '<span class="ts">' + escHtml(s) + '</span>' + (ready ? '' : '<span class="pill grey">PENDING</span>'),
         ' data-part="kit" data-kit="' + escHtml(k.id) + '"', !ready));
     });
     var modOn = kit && home.onlyModules && home.onlyModules.length;
-    out.push(tile('kit' + (modOn ? ' on' : ''), '<span class="tt">Just a module</span><span class="ts">Pick one or more modules; the rest stays out of your file.</span>', ' data-part="module"', !anyReady));
+    out.push(tile('kit' + (modOn ? ' on' : ''), '<span class="tt">Selected modules</span><span class="ts">One or more modules from one semester. Other modules are left out of the file.</span>', ' data-part="module"', !anyReady));
     var grid = document.createElement('div'); grid.className = 'tiles kits'; grid.innerHTML = out.join('');
     el.appendChild(grid);
     grid.querySelectorAll('.tile[data-part="kit"]').forEach(function (b) {
@@ -4313,8 +4316,8 @@
   function renderBeta() {
     var el = $('j-beta'); if (!el) return;
     el.innerHTML = reviewFlow()
-      ? 'You are trying the one-page review (beta): dates, publishing and gradebook on one screen. <button type="button" class="link" id="j-beta-btn">Use the classic steps</button>'
-      : 'New: <button type="button" class="link" id="j-beta-btn">try the one-page review</button> (beta), with dates, publishing and gradebook on one screen.';
+      ? 'One-page review (beta) is on: dates, publishing and gradebook on one screen. <button type="button" class="link" id="j-beta-btn">Turn off</button>'
+      : 'Beta: dates, publishing and gradebook on one screen. <button type="button" class="link" id="j-beta-btn">Turn on the one-page review</button>';
     $('j-beta-btn').addEventListener('click', function () { setReviewFlow(!reviewFlow()); renderBeta(); });
   }
   function renderGreeting() {
@@ -4323,7 +4326,7 @@
     var p = loadProfile();
     if (!p.teacherName) { el.hidden = true; el.innerHTML = ''; return; }
     el.hidden = false;
-    el.innerHTML = 'Welcome back, ' + escHtml(p.teacherName) + '. Your details are remembered for the next course. <button type="button" class="link" id="j-forget">Not you?</button>';
+    el.innerHTML = 'Teacher details saved on this computer: ' + escHtml(p.teacherName) + '. <button type="button" class="link" id="j-forget">Clear</button>';
     $('j-forget').addEventListener('click', clearProfile);
   }
 
@@ -4446,9 +4449,10 @@
   function renderGradeTiles() {
     var counts = {};
     catalog.courses.forEach(function (c) { gradeList(c.grade).forEach(function (n) { counts[n] = (counts[n] || 0) + 1; }); });
-    var out = [];
+    var out = [], BANDS = { 0: 'Elementary School \u00b7 K\u20135', 6: 'Middle School \u00b7 6\u20138', 9: 'High School \u00b7 9\u201312' };
     for (var n = 0; n <= 12; n++) {
       var k = counts[n] || 0;
+      if (BANDS[n]) out.push('<div class="cgrp">' + BANDS[n] + '</div>');
       out.push(tile('grade' + (finder.grade === n ? ' on' : ''), '<span class="tn">' + gradeLabel(n) + '</span>', ' data-g="' + n + '" aria-label="Grade ' + (n === 0 ? 'K' : n) + (k ? '' : ' (no courses yet)') + '"', !k));
     }
     $('t-grades').innerHTML = out.join('');
@@ -4487,9 +4491,19 @@
     var subjects = {};
     catalog.courses.forEach(function (c) { if (finder.grade === '' || gradeList(c.grade).indexOf(finder.grade) >= 0) { var s = subjectGroup(c); subjects[s] = (subjects[s] || 0) + 1; } });
     var names = Object.keys(subjects).sort(function (a, b) { return (a === 'Electives') - (b === 'Electives') || a.localeCompare(b); });
+    $('t-subjects-hint').textContent = finder.grade === '' ? 'All grades. Each tile lists the grades its courses cover.' : 'Grade ' + gradeLabel(finder.grade) + '. Each tile lists the courses for this grade.';
+    // The detail line: the courses at this grade, or the grade span across all grades.
+    var detail = function (s) {
+      var cs = catalog.courses.filter(function (c) { return subjectGroup(c) === s && (finder.grade === '' || gradeList(c.grade).indexOf(finder.grade) >= 0); });
+      if (finder.grade !== '') return cs.map(function (c) { return c.title; }).sort().join(' \u00b7 ');
+      var g = []; cs.forEach(function (c) { g = g.concat(gradeList(c.grade)); });
+      if (!g.length) return '';
+      var lo = Math.min.apply(null, g), hi = Math.max.apply(null, g);
+      return lo === hi ? 'Grade ' + gradeLabel(lo) : 'Grades ' + gradeLabel(lo) + '\u2013' + gradeLabel(hi);
+    };
     $('t-subjects').innerHTML = names.map(function (s) {
       var st = tileStyleForSubject(s, finder.grade);
-      return tile('subject' + (finder.subject === s ? ' on' : ''), '<img src="' + escHtml(st.file) + '" alt="" loading="lazy"><span class="tt">' + escHtml(s) + '</span>', ' data-s="' + escHtml(s) + '"');
+      return tile('subject' + (finder.subject === s ? ' on' : ''), '<img src="' + escHtml(st.file) + '" alt="" loading="lazy"><span class="tt">' + escHtml(s) + '</span><span class="tm">' + escHtml(detail(s)) + '</span>', ' data-s="' + escHtml(s) + '"');
     }).join('') || '<div class="hint">No courses for this grade yet.</div>';
     $('t-subjects').querySelectorAll('.tile').forEach(function (b) {
       b.addEventListener('click', function () { finder.subject = this.dataset.s; saveFinder(); go('course'); });
@@ -4505,8 +4519,8 @@
     // One subject across every grade (a music teacher sees all music courses), or back to one grade.
     var other = finder.subject ? catalog.courses.filter(function (c) { return subjectGroup(c) === finder.subject; }).length : 0;
     var sw = $('t-courses-all');
-    if (!allGrades && finder.subject && other > rows.length) sw.innerHTML = '<button type="button" class="link" id="t-courses-every">Show ' + escHtml(finder.subject) + ' for every grade (' + other + ' courses)</button>';
-    else if (allGrades && finder.subject && J.history.indexOf('grade') >= 0 && finder.lastGrade !== undefined && finder.lastGrade !== '') sw.innerHTML = '<button type="button" class="link" id="t-courses-one">Only grade ' + escHtml(gradeLabel(finder.lastGrade)) + '</button>';
+    if (!allGrades && finder.subject && other > rows.length) sw.innerHTML = '<button type="button" class="link" id="t-courses-every">Show all grades of ' + escHtml(finder.subject) + ' (' + other + ' courses)</button>';
+    else if (allGrades && finder.subject && J.history.indexOf('grade') >= 0 && finder.lastGrade !== undefined && finder.lastGrade !== '') sw.innerHTML = '<button type="button" class="link" id="t-courses-one">Show grade ' + escHtml(gradeLabel(finder.lastGrade)) + ' only</button>';
     else sw.innerHTML = '';
     var every = $('t-courses-every'), one = $('t-courses-one');
     if (every) every.addEventListener('click', function () { finder.lastGrade = finder.grade; finder.grade = ''; saveFinder(); renderCourseTiles(); });
@@ -4641,7 +4655,7 @@
   }
   function renderGenerate() {
     var fetchOnly = J.path === 'fetch';
-    $('j-generate-title').textContent = fetchOnly ? 'Download your course file' : 'Generate my course file';
+    $('j-generate-title').textContent = fetchOnly ? 'Download the course file' : 'Generate the course file';
     $('j-generate-hint').textContent = fetchOnly
       ? 'One file, exactly as the curriculum team built it. Import it into your Canvas course and put your own name on the home page there.'
       : 'One file. Your home page is already inside it, set as the course front page, with the module cards linked to the real modules, and your syllabus fills the Syllabus page.';
@@ -4867,9 +4881,9 @@
     }
     if (cur) { subj.value = cur.subject && subjectOptions().indexOf(cur.subject) >= 0 ? cur.subject : (cur.subject ? 'Other' : ''); gr.value = gradeList(cur.grade)[0] != null ? String(gradeList(cur.grade)[0]) : ''; }
     var card = $('up-card');
-    if (!cur) { card.innerHTML = ''; $('up-go').disabled = true; $('up-drop-t').textContent = 'Choose your .imscc file'; return; }
+    if (!cur) { card.innerHTML = ''; $('up-go').disabled = true; $('up-drop-t').textContent = 'Select an .imscc file'; return; }
     var k = upload.kit, c = k.counts;
-    $('up-drop-t').textContent = upload.file ? upload.file.name : 'Choose your .imscc file';
+    $('up-drop-t').textContent = upload.file ? upload.file.name : 'Select an .imscc file';
     var notes = [];
     notes.push(c.modules + ' module' + (c.modules === 1 ? '' : 's') + ', ' + c.items + ' module items, ' + c.pages + ' pages');
     notes.push(k.graded_items.length + ' graded items: ' + c.assignments + ' assignments, ' + k.graded_items.filter(function (g) { return g.type === 'quiz'; }).length + ' graded quizzes, ' + k.graded_items.filter(function (g) { return g.type === 'discussion'; }).length + ' graded discussions');
@@ -4879,7 +4893,7 @@
     if (k.graded_items.some(function (g) { return g.type === 'quiz'; })) notes.push('Quiz point totals stay as you built them; change them in Canvas if you need to.');
     card.innerHTML = '<div class="card"><div class="t">' + escHtml(cur.title) + (cur.code ? ' <span class="pill grey">' + escHtml(cur.code) + '</span>' : '') + '</div><ul>' + notes.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul></div>';
     $('up-go').disabled = !cur.subject;
-    $('up-go').textContent = cur.subject ? 'Continue with this course' : 'Choose a subject to continue';
+    $('up-go').textContent = cur.subject ? 'Continue' : 'Select a subject to continue';
   }
   function upStatus(msg, cls) { var el = $('up-status'); el.textContent = msg || ''; el.className = 'status ' + (cls || ''); }
   function takeUploadFile(file) {
@@ -5012,7 +5026,7 @@
       return '<div class="rv-card' + (on ? ' on' : '') + '"><div class="rh"><span class="rt">' + c.t + '</span>' + chip + '</div>' +
         '<div class="rvv">' + escHtml(c.v) + '</div><div class="rvs">' + escHtml(c.s) + '</div>' +
         '<div class="ra"><button type="button" class="sm' + (on ? '' : ' alt') + '" data-rv-mode="' + c.k + '">' + (on ? 'Done' : 'Change') + '</button>' +
-        (ch ? '<button type="button" class="link" data-rv-reset="' + c.k + '">Undo my changes</button>' : '') + '</div></div>';
+        (ch ? '<button type="button" class="link" data-rv-reset="' + c.k + '">Undo changes</button>' : '') + '</div></div>';
     }).join('');
   }
   function rvTotal() {
@@ -5339,7 +5353,7 @@
       b.addEventListener('click', function () {
         var q = this.dataset.q, btn = this;
         var twins = document.querySelectorAll('.screen[data-screen="' + q + '"] button.skip');
-        var setAll = function (armed) { twins.forEach(function (x) { x.dataset.armed = armed ? '1' : ''; x.textContent = armed ? 'Discard my changes here and skip' : 'Skip this step'; }); };
+        var setAll = function (armed) { twins.forEach(function (x) { x.dataset.armed = armed ? '1' : ''; x.textContent = armed ? 'Discard changes and skip' : 'Skip this step'; }); };
         if (panelChanged(q) && btn.dataset.armed !== '1') {
           setAll(true);
           setTimeout(function () { setAll(false); }, 6000);
