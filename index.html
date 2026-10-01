@@ -196,6 +196,9 @@
   .batchrow label { margin:6px 0 3px; }
   .batchrow input[type=datetime-local] { font-size:13px; padding:5px 7px; min-width:0; width:100%; }
   .batchrow .actions { margin-top:8px; }
+  .gb-gpts { display:flex; align-items:center; gap:6px; }
+  table.sched .gb-gpts input[type=number], table.sched input.gb-gweight { width:84px; min-width:0; }
+  .gb-gpts .hint { margin:0; white-space:nowrap; }
   .batchrow select, .batchrow input[type=text], .batchrow input[type=number] { font-size:13px; padding:5px 7px; min-width:0; width:100%; }
   @media (max-width: 560px) { .batchrow .bt-fields { grid-template-columns:1fr; } }
   details.contents { margin-top:10px; border:1px dashed var(--line); border-radius:8px; padding:8px 12px; }
@@ -2915,10 +2918,14 @@
     var out = [];
     out.push('<div class="hint">Set how much each part of the grade counts. If you rename or add groups, a brand-new Canvas course also keeps its own empty Assignments group at 0%; delete that one in Canvas after import.</div>');
     out.push('<label style="display:flex;align-items:center;gap:8px;margin-top:10px;"><input type="checkbox" id="gb-weighted"' + (home.weighted ? ' checked' : '') + '> Weight by group</label>');
-    out.push('<div class="dtable"><table class="sched"><thead><tr><th>Group</th><th>Weight %</th></tr></thead><tbody>');
+    out.push('<div class="dtable"><table class="sched"><thead><tr><th>Group</th><th>Weight %</th><th>Points for every item</th></tr></thead><tbody>');
     home.groups.forEach(function (g, i) {
+      var n = groupItems(g.id).length;
       out.push('<tr><td><input type="text" data-gi="' + i + '" class="gb-gtitle" value="' + escHtml(g.title) + '"></td>' +
-        '<td><input type="number" min="0" max="100" step="1" data-gi="' + i + '" class="gb-gweight" value="' + escHtml(g.weight) + '"></td></tr>');
+        '<td><input type="number" min="0" max="100" step="1" data-gi="' + i + '" class="gb-gweight" value="' + escHtml(g.weight) + '"></td>' +
+        '<td><div class="gb-gpts"><input type="number" min="0" step="0.5" id="gb-gpts-' + i + '" placeholder="Points" aria-label="Points for every item in ' + escHtml(g.title) + '"' + (n ? '' : ' disabled') + '>' +
+        '<button type="button" class="sm alt gb-gpts-apply" data-gi="' + i + '"' + (n ? '' : ' disabled') + '>Apply</button>' +
+        '<span class="hint">' + n + ' item' + (n === 1 ? '' : 's') + '</span></div></td></tr>');
     });
     out.push('</tbody></table></div>');
     out.push('<div class="actions"><button type="button" class="alt" id="gb-addgroup">Add group</button></div>');
@@ -2958,6 +2965,14 @@
     document.querySelectorAll('.gb-gweight').forEach(function (inp) {
       inp.addEventListener('change', function () { home.groups[+this.dataset.gi].weight = parseFloat(this.value) || 0; save(); renderGradebook(); });
     });
+    document.querySelectorAll('.gb-gpts-apply').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var inp = $('gb-gpts-' + this.dataset.gi), pts = parseFloat(inp && inp.value);
+        if (isNaN(pts) || pts < 0) return;
+        setGroupPoints(home.groups[+this.dataset.gi].id, pts);
+        save(); renderGradebook();
+      });
+    });
     $('gb-addgroup').addEventListener('click', function () {
       home.groups.push({ id: 'g' + randHex(32), title: 'New group', weight: 0, position: home.groups.length + 1 });
       save(); renderGradebook();
@@ -2969,6 +2984,18 @@
       inp.addEventListener('input', function () { ensureOverride(itemById(this.dataset.id)).points = parseFloat(this.value) || 0; save(); renderGbSummary(); });
     });
     wireGbBatchRows();
+  }
+  // Every graded item currently in a group (after moves and removals); surveys and
+  // items whose total is set by their questions are left out.
+  function groupItems(gid) {
+    return activeGraded().filter(function (it) {
+      return !(it.type === 'quiz' && it.quiz_type === 'survey') && canEditPoints(it) && effItem(it).group === gid;
+    });
+  }
+  function setGroupPoints(gid, pts) {
+    var items = groupItems(gid);
+    items.forEach(function (it) { ensureOverride(it).points = pts; });
+    return items;
   }
   // ------------------------------------------------------------ gradebook batch rows
   // Same shape as the date batch rows: a kit-wide row and one per module. The type
@@ -3065,7 +3092,7 @@
       if (totals[eff.group] == null) totals[eff.group] = 0;
       totals[eff.group] += Number(eff.points) || 0;
     });
-    var msg = home.groups.map(function (g) { return escHtml(g.title) + ': ' + totals[g.id] + ' pts'; }).join(' · ');
+    var msg = home.groups.map(function (g) { return g.title + ': ' + totals[g.id] + ' pts'; }).join(' · ');
     if (home.weighted) {
       var sum = home.groups.reduce(function (s, g) { return s + (Number(g.weight) || 0); }, 0);
       msg += ' · weights total ' + sum + '%' + (sum === 100 ? '' : ' (should be 100%)');
@@ -5588,7 +5615,7 @@
     // the assertions below by reading the patched cartridge back after building it.
     var dueItem = null, pointsItem = null, unpubItem = null, quizItem = null, batchItems = [];
     var removedGraded = null, removedPage = null, secondModule = null, modulePublishAll = false;
-    var gbBatch = [], gbBatchGroup = '', gbControl = null, gbBatchState = false, gbBatchZip = false;
+    var gbBatch = [], gbBatchGroup = '', gbControl = null, gbBatchState = false, gbBatchZip = false, gbGroupPts = null;
     var byGidAll = {}; (kit.graded_items || []).forEach(function (it) { byGidAll[it.gid] = it; });
     var metaName = (kit.settings && kit.settings.module_meta) || 'course_settings/module_meta.xml';
     var BATCH_DUE = '2026-10-09T23:59';
@@ -5634,6 +5661,18 @@
         var allOff = !modulePublished(secondModule) && inM2().every(function (it) { return !effItem(it).published; });
         setModulePublished(secondModule, true);
         modulePublishAll = allOff && modulePublished(secondModule) && inM2().every(function (it) { return effItem(it).published; });
+      }
+      // Points for a whole group: every editable item in it gets the value, nothing
+      // outside it changes; run on a copy of the overrides and put them back.
+      if (home.groups && home.groups.length) {
+        var snap = JSON.stringify(home.itemOverrides);
+        var g0id = (home.groups.filter(function (g) { return groupItems(g.id).length; })[0] || home.groups[0]).id;
+        var outside = activeGraded().filter(function (it) { return effItem(it).group !== g0id; });
+        var outsidePts = outside.map(function (it) { return effItem(it).points; });
+        var hit = setGroupPoints(g0id, 9);
+        gbGroupPts = { items: hit.length, ok: hit.length > 0 && hit.every(function (it) { return effItem(it).points === 9; })
+          && outside.every(function (it, i) { return effItem(it).points === outsidePts[i]; }) };
+        home.itemOverrides = JSON.parse(snap);
       }
       // Gradebook batch row on the second module: filter by type + title, move the
       // matches to another group at 7 points; the rest of the module stays as built.
@@ -5779,6 +5818,7 @@
         out.previewToggle = previewToggle;
         out.gbBatch = { items: gbBatch.map(function (it) { return it.title; }), state: gbBatchState, zip: gbBatchZip, control: gbControl ? gbControl.title : null };
         if (gbBatch.length) out.ok = out.ok && gbBatchState && gbBatchZip;
+        out.gbGroupPts = gbGroupPts; if (gbGroupPts) out.ok = out.ok && gbGroupPts.ok;
         out.finder = finderCheck; out.ok = out.ok && finderCheck.ok;
         // Art pack: a kit whose sidecar declares figures must show the second-file notice
         // naming its art pack; a kit without figures must keep the notice hidden.
