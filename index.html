@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Optima Course Kit</title>
 <!--
-  Optima Course Kit - PROTOTYPE
+  Optima Course Kit - Course Optimizer
   A survey-style journey: a teacher answers one question per screen (grade, subject,
   course, preview or configure, whole semester or a module, then yes/skip for the home
   page, syllabus, dates, publishing and gradebook) and downloads one Canvas cartridge
@@ -22,26 +22,40 @@
 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Wix+Madefor+Display:wght@500;600;700;800&family=Wix+Madefor+Text:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root { --navy:#0E1C42; --cyan:#55C8E8; --gold:#E0A82E; --ink:#0e1c42; --mute:#4a5878; --line:#D0D9E8; --bg:#F4F6FB; }
+  :root { --navy:#0E1C42; --navy-2:#1A2F66; --cyan:#55C8E8; --cyan-ink:#137C9E; --gold:#C7922C; --ink:#0E1C42; --mute:#56637F; --line:#DFE5EF; --bg:#F2F5FA; --soft:#F7F9FC;
+    --r-lg:20px; --r-md:14px; --r-sm:10px;
+    --sh-1:0 1px 2px rgba(14,28,66,.05);
+    --sh-2:0 1px 2px rgba(14,28,66,.05), 0 14px 34px -10px rgba(14,28,66,.14);
+    --sh-3:0 2px 4px rgba(14,28,66,.06), 0 20px 40px -14px rgba(14,28,66,.28);
+    --f-display:'Wix Madefor Display', 'Segoe UI', Arial, sans-serif; --f-text:'Wix Madefor Text', 'Segoe UI', Arial, sans-serif; }
   * { box-sizing: border-box; }
-  body { margin:0; font-family:'Segoe UI', Arial, sans-serif; color:var(--ink); background:var(--bg); font-size:16px; line-height:1.45; }
-  .top { background:var(--navy); border-bottom:5px solid var(--cyan); padding:18px 28px; display:flex; align-items:center; gap:16px; color:#fff; }
-  .top .owl { width:52px; height:52px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .top .owl img { width:50px; height:40px; object-fit:contain; }
-  .top .brand { font-size:22px; line-height:1.15; }
-  .top .brand small { display:block; font-size:12px; color:var(--cyan); }
-  .top .tool { margin-left:auto; text-align:right; }
-  .top .tool .name { font-size:24px; }
-  .top .tool .tag { font-size:12px; color:var(--gold); letter-spacing:1px; }
-  .wrap { display:grid; grid-template-columns: minmax(340px, 680px) 1fr; gap:22px; padding:22px 28px; max-width:1500px; margin:0 auto; }
+  body { margin:0; font-family:var(--f-text); color:var(--ink); background:var(--bg); font-size:16px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  h1, h2, h3 { font-family:var(--f-display); }
+  .top { position:relative; overflow:hidden; color:#fff; padding:18px 32px 96px;
+    background:radial-gradient(900px 360px at 85% -30%, rgba(85,200,232,.34), transparent 62%),
+               radial-gradient(640px 280px at 0% 120%, rgba(85,200,232,.16), transparent 62%),
+               linear-gradient(135deg, #0A1533 0%, #0E1C42 48%, #172C61 100%); }
+  .top::after { content:""; position:absolute; inset:0; pointer-events:none; background-image:radial-gradient(rgba(255,255,255,.08) 1px, transparent 1px); background-size:22px 22px;
+    -webkit-mask-image:linear-gradient(100deg, transparent 35%, #000); mask-image:linear-gradient(100deg, transparent 35%, #000); }
+  .top-in { position:relative; z-index:1; max-width:1500px; margin:0 auto; }
+  .top .bar { display:flex; align-items:center; gap:12px; }
+  .top .owl { width:40px; height:40px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .top .owl img { width:38px; height:30px; object-fit:contain; }
+  .top .brand { font-family:var(--f-display); font-size:15px; font-weight:600; line-height:1.15; }
+  .top .brand small { display:block; font-size:11.5px; font-weight:500; color:var(--cyan); }
+  .top .title { text-align:center; margin-top:30px; }
+  .top h1 { margin:0; font-size:clamp(38px, 5.4vw, 60px); font-weight:800; letter-spacing:-1.2px; line-height:1.05; }
+  .top h1 span { background:linear-gradient(90deg, #8FDDF2, var(--cyan)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .top .sub { margin:10px auto 0; max-width:620px; font-size:17px; color:rgba(255,255,255,.76); }
+  .wrap { position:relative; z-index:1; display:grid; grid-template-columns: minmax(340px, 680px) 1fr; gap:22px; padding:0 28px 28px; max-width:1500px; margin:-64px auto 0; }
   .wrap.nopreview { grid-template-columns: 1fr; max-width:1180px; }
   .wrap.nopreview .preview { display:none; }
   @media (max-width: 1000px) { .wrap { grid-template-columns: 1fr; } .preview { order: 2; } }
-  .step { background:#fff; border:1px solid var(--line); border-top:4px solid var(--cyan); border-radius:8px; padding:18px 20px; margin-bottom:16px; }
-  .step h2 { margin:0 0 10px; font-size:19px; font-weight:600; display:flex; align-items:center; gap:10px; }
-  .step h2 .n { width:28px; height:28px; border-radius:50%; background:var(--navy); color:#fff; font-size:14px; display:inline-flex; align-items:center; justify-content:center; }
+  .step { background:#fff; border:1px solid var(--line); border-radius:var(--r-lg); padding:22px 24px; margin-bottom:16px; box-shadow:var(--sh-2); }
+  .step h2 { margin:0 0 12px; font-size:19px; font-weight:700; display:flex; align-items:center; gap:10px; }
+  .step h2 .n { width:28px; height:28px; border-radius:9px; background:linear-gradient(135deg, var(--navy), var(--navy-2)); color:var(--cyan); font-size:14px; display:inline-flex; align-items:center; justify-content:center; }
   .step.locked { opacity:.55; }
   /* Steps 3 onward fold up on their heading so a long page stays manageable. */
   .step.collapsible > h2 { cursor:pointer; user-select:none; }
@@ -50,12 +64,13 @@
   .step.collapsible.collapsed > h2 { margin-bottom:0; }
   .step.collapsible.collapsed > :not(h2) { display:none; }
   label { display:block; font-size:13px; color:var(--mute); margin:10px 0 4px; }
-  input[type=text], input[type=email], input[type=url], input[type=date], input[type=datetime-local], input[type=number], select, textarea { width:100%; font:inherit; font-size:15px; padding:9px 11px; border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--ink); }
+  input[type=text], input[type=email], input[type=url], input[type=date], input[type=datetime-local], input[type=number], select, textarea { width:100%; font:inherit; font-size:15px; padding:10px 12px; border:1px solid #D3DBE8; border-radius:var(--r-sm); background:#fff; color:var(--ink); transition:border-color .15s, box-shadow .15s; }
+  input:focus, select:focus, textarea:focus { outline:none; border-color:var(--cyan-ink); box-shadow:0 0 0 4px rgba(85,200,232,.22); }
   textarea { min-height:70px; resize:vertical; }
   .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   .hint { font-size:13px; color:var(--mute); margin-top:6px; }
-  .card { border:1px solid var(--line); border-left:5px solid var(--navy); border-radius:8px; padding:12px 14px; margin-top:10px; background:#F9FAFD; }
-  .card .t { font-size:18px; }
+  .card { border:1px solid var(--line); border-left:4px solid var(--cyan); border-radius:var(--r-md); padding:16px 18px; margin-top:10px; background:var(--soft); }
+  .card .t { font-family:var(--f-display); font-size:20px; font-weight:700; }
   .card .m { font-size:13px; color:var(--mute); }
   .kit { display:flex; align-items:flex-start; gap:10px; border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-top:8px; cursor:pointer; background:#fff; }
   .kit.sel { border-color:var(--navy); box-shadow: inset 4px 0 0 var(--navy); }
@@ -63,8 +78,8 @@
   .kit input { margin-top:5px; }
   .kit .l { font-size:16px; }
   .kit .s { font-size:13px; color:var(--mute); }
-  .pill { display:inline-block; font-size:11px; letter-spacing:.5px; padding:2px 8px; border-radius:10px; background:var(--gold); color:var(--navy); margin-left:6px; vertical-align:middle; }
-  .pill.grey { background:#D0D9E8; }
+  .pill { display:inline-block; font-size:11px; font-weight:600; letter-spacing:.5px; padding:3px 9px; border-radius:999px; background:var(--gold); color:var(--navy); margin-left:6px; vertical-align:middle; }
+  .pill.grey { background:#E3E8F1; }
   .browse { margin-top:10px; }
   .browse > summary { cursor:pointer; font-size:14px; font-weight:500; color:var(--navy); list-style:none; display:flex; align-items:center; gap:6px; }
   .browse > summary::before { content:"\25B8"; color:var(--mute); font-size:13px; }
@@ -103,9 +118,13 @@
   .mods { margin-top:8px; }
   .mod { display:grid; grid-template-columns:24px 1fr; gap:8px; align-items:center; margin:6px 0; }
   .mod input[type=text] { padding:6px 9px; font-size:14px; }
-  button { font:inherit; font-size:15px; border-radius:24px; padding:11px 22px; cursor:pointer; border:2px solid var(--navy); background:var(--navy); color:#fff; }
-  button.alt { background:#fff; color:var(--navy); }
-  button:disabled { opacity:.5; cursor:not-allowed; }
+  button { font:inherit; font-family:var(--f-display); font-size:15px; font-weight:600; border-radius:999px; padding:11px 22px; cursor:pointer; border:1.5px solid var(--navy); background:var(--navy); color:#fff; transition:background-color .15s, border-color .15s, box-shadow .2s, transform .2s, color .15s; }
+  /* A light wash on hover: visible on navy buttons, invisible on white ones, so no class needs undoing. */
+  button:hover:not(:disabled) { background-image:linear-gradient(rgba(255,255,255,.12), rgba(255,255,255,.12)); }
+  button:focus-visible { outline:3px solid rgba(85,200,232,.6); outline-offset:2px; }
+  button.alt { background:#fff; color:var(--navy); border-color:#CBD4E3; }
+  button.alt:hover:not(:disabled) { border-color:var(--navy); }
+  button:disabled { opacity:.45; cursor:not-allowed; }
   .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
   .status { margin-top:10px; font-size:14px; min-height:20px; }
   .printrow { margin-top:18px; padding-top:14px; border-top:1px solid var(--line); }
@@ -116,12 +135,12 @@
   .check { margin:10px 0 0; padding-left:0; list-style:none; counter-reset: c; }
   .check li { counter-increment:c; position:relative; padding:6px 0 6px 34px; border-top:1px solid var(--line); font-size:14px; }
   .check li:before { content:counter(c); position:absolute; left:0; top:6px; width:24px; height:24px; border-radius:50%; background:var(--gold); color:var(--navy); font-size:12px; display:flex; align-items:center; justify-content:center; }
-  .preview { background:#fff; border:1px solid var(--line); border-radius:8px; overflow:hidden; display:flex; flex-direction:column; min-height:70vh; position:sticky; top:16px; height: calc(100vh - 32px); }
-  .previewbar { background:var(--navy); color:#fff; padding:10px 16px; font-size:14px; display:flex; justify-content:space-between; align-items:center; }
+  .preview { background:#fff; border:1px solid var(--line); border-radius:var(--r-lg); box-shadow:var(--sh-2); overflow:hidden; display:flex; flex-direction:column; min-height:70vh; position:sticky; top:16px; height: calc(100vh - 32px); }
+  .previewbar { background:linear-gradient(135deg, var(--navy), var(--navy-2)); color:#fff; padding:12px 18px; font-family:var(--f-display); font-size:14px; font-weight:600; display:flex; justify-content:space-between; align-items:center; }
   .previewbar span { color:var(--cyan); }
-  #preview { flex:1; overflow:auto; padding:18px; background:#e9edf5; }
+  #preview { flex:1; overflow:auto; padding:18px; background:#EDF1F7; }
   #preview .empty { font-family:'Segoe UI', Arial, sans-serif; color:#4a5878; padding:40px; text-align:center; }
-  .foot { text-align:center; font-size:12px; color:var(--mute); padding:14px; }
+  .foot { text-align:center; font-size:12px; color:var(--mute); padding:20px 14px 32px; }
   details summary { cursor:pointer; color:var(--navy); font-size:14px; margin-top:8px; }
   .dtable { overflow-x:auto; margin-top:8px; border:1px solid var(--line); border-radius:8px; }
   table.sched { width:100%; border-collapse:collapse; font-size:13.5px; min-width:640px; }
@@ -146,9 +165,10 @@
   .seg { display:inline-flex; border:1px solid var(--line); border-radius:20px; overflow:hidden; background:#fff; }
   .seg button { border:0; border-radius:0; background:#fff; color:var(--navy); font-size:13px; padding:7px 14px; }
   .seg button[aria-pressed="true"] { background:var(--navy); color:#fff; }
-  .tabs { background:var(--navy); padding:0 28px; display:flex; gap:6px; }
-  .tab { border:0; border-radius:8px 8px 0 0; background:rgba(255,255,255,0.08); color:#fff; font-size:15px; padding:10px 22px; }
-  .tab[aria-pressed="true"] { background:var(--bg); color:var(--navy); font-weight:600; }
+  .tabs { margin-left:auto; display:flex; gap:4px; padding:4px; border-radius:999px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); }
+  .tab { border:0; border-radius:999px; background:transparent; color:rgba(255,255,255,.82); font-size:14px; font-weight:500; padding:8px 18px; }
+  .tab:hover { color:#fff; }
+  .tab[aria-pressed="true"] { background:#fff; color:var(--navy); font-weight:600; box-shadow:0 4px 12px rgba(0,0,0,.22); }
   .wrap[hidden] { display:none; }   /* the grid display would otherwise beat [hidden] */
   .tileswrap { grid-template-columns: minmax(340px, 540px) 1fr; align-items:start; }
   /* Each pane scrolls on its own, so the previews stay in view while the form is edited. */
@@ -243,33 +263,32 @@
      edit the kit show the home page preview beside them. */
   .wrap.solo { grid-template-columns:1fr; max-width:1040px; }
   .wrap.solo .preview { display:none; }
-  .jnav { display:flex; align-items:center; gap:14px; margin-bottom:14px; }
+  /* Progress: a floating bar above the screen card, one segment per step. */
+  .jnav { display:flex; align-items:center; gap:14px; margin-bottom:14px; background:#fff; border:1px solid var(--line); border-radius:999px; padding:7px 18px 7px 7px; box-shadow:var(--sh-2); }
   .jnav[hidden] { display:none; }
-  .jtrail { flex:1; display:flex; align-items:center; gap:5px; flex-wrap:wrap; font-size:12.5px; color:var(--mute); }
-  .jtrail .dot { width:9px; height:9px; border-radius:50%; background:#D0D9E8; flex-shrink:0; }
+  .jtrail { flex:1; min-width:0; display:flex; align-items:center; gap:4px; font-size:12.5px; color:var(--mute); }
+  .jtrail .dot { flex:1 1 0; max-width:42px; min-width:6px; height:6px; border-radius:3px; background:#E3E8F1; transition:background-color .3s; }
   .jtrail .dot.done { background:var(--cyan); }
-  .jtrail .dot.now { background:var(--navy); transform:scale(1.3); }
-  .jtrail .lbl { margin-left:8px; white-space:nowrap; }
-  button.link { font:inherit; font-size:inherit; background:none; border:0; padding:0; color:var(--navy); text-decoration:underline; cursor:pointer; border-radius:0; }
-  .screen { background:#fff; border:1px solid var(--line); border-top:4px solid var(--cyan); border-radius:8px; padding:24px 26px; margin-bottom:16px; }
+  .jtrail .dot.now { background:var(--navy); }
+  .jtrail .lbl { margin-left:10px; white-space:nowrap; font-family:var(--f-display); font-weight:600; color:var(--navy); }
+  button.link { font:inherit; font-size:inherit; background:none; border:0; padding:0; color:var(--navy); text-decoration:underline; text-decoration-color:var(--cyan); text-underline-offset:3px; cursor:pointer; border-radius:0; }
+  button.link:hover:not(:disabled) { background-image:none; color:var(--cyan-ink); }
+  .screen { background:#fff; border:1px solid var(--line); border-radius:var(--r-lg); padding:32px 36px; margin-bottom:16px; box-shadow:var(--sh-2); animation:rise .3s ease-out; }
+  @keyframes rise { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
   .screen[hidden] { display:none; }
-  .screen .step { border:0; border-radius:0; padding:0; margin:0; background:transparent; }
+  .screen .step { border:0; border-radius:0; padding:0; margin:0; background:transparent; box-shadow:none; }
   .screen .step.locked { opacity:1; }
-  .screen h2.q { margin:0 0 12px; font-size:24px; font-weight:600; line-height:1.25; }
-  .hero { text-align:center; padding:18px 0 4px; }
-  .hero h1 { font-size:32px; font-weight:600; margin:0 0 8px; line-height:1.2; }
-  .hero .lead { font-size:18px; color:var(--mute); margin:0 0 8px; }
-  .hint.center { text-align:center; margin-top:16px; }
-  .tiles { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:12px; margin-top:12px; }
+  .screen h2.q { margin:0 0 8px; font-size:28px; font-weight:700; letter-spacing:-.4px; line-height:1.2; }
+  .hint.center { text-align:center; margin-top:18px; }
+  .tiles { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:14px; margin-top:16px; }
   .tiles.two { grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); }
   .tiles.three { grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); }
-  .tile.allgrades { margin-top:14px; width:100%; flex-direction:row; align-items:center; justify-content:space-between; gap:12px; padding:16px 20px; }
-  .tile.allgrades .ts { margin:0; }
-  .cgrp { grid-column:1 / -1; font-size:13px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--mute); margin:10px 0 -2px; }
-  .up-drop { display:block; border:2px dashed var(--line); border-radius:12px; padding:28px 20px; text-align:center; cursor:pointer; margin-top:14px; background:#fff; }
+  .cgrp { grid-column:1 / -1; display:flex; align-items:center; gap:12px; font-family:var(--f-display); font-size:12px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--mute); margin:12px 0 -2px; }
+  .cgrp::after { content:""; flex:1; height:1px; background:var(--line); }
+  .up-drop { display:block; border:2px dashed #CBD4E3; border-radius:var(--r-md); padding:32px 20px; text-align:center; cursor:pointer; margin-top:16px; background:var(--soft); transition:border-color .15s, background-color .15s; }
   .up-drop:hover, .up-drop.over { border-color:var(--cyan); background:#F4FAFD; }
   .up-drop input { position:absolute; width:1px; height:1px; opacity:0; }
-  .up-drop .tt { display:block; font-size:18px; font-weight:600; }
+  .up-drop .tt { display:block; font-family:var(--f-display); font-size:18px; font-weight:700; }
   .up-drop .ts { display:block; font-size:13px; color:var(--mute); margin-top:6px; }
   .up-row { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-top:14px; }
   .up-row label { display:block; font-size:13px; font-weight:600; }
@@ -279,38 +298,47 @@
   .tiles.grades { grid-template-columns:repeat(auto-fill, minmax(92px, 1fr)); gap:10px; }
   .tiles.subjects { grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:16px; }
   .tiles.courses, .tiles.kits, .tiles.mods { grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); }
-  .tiles .grp { grid-column:1 / -1; font-size:12px; letter-spacing:.6px; text-transform:uppercase; color:var(--mute); font-weight:600; margin-top:6px; }
-  .tile { font:inherit; text-align:left; background:#fff; color:var(--ink); border:2px solid var(--line); border-radius:10px; padding:16px 16px 14px; cursor:pointer; display:flex; flex-direction:column; gap:6px; min-height:74px; transition:border-color .12s, box-shadow .12s, transform .12s; }
-  .tile:hover:not(:disabled), .tile:focus-visible { border-color:var(--navy); box-shadow:0 4px 14px rgba(14,28,66,.10); transform:translateY(-1px); outline:none; }
-  .tile:disabled { color:#8E9BB5; background:#F4F6FB; cursor:not-allowed; }
+  .tiles .grp { grid-column:1 / -1; font-family:var(--f-display); font-size:12px; letter-spacing:1.2px; text-transform:uppercase; color:var(--mute); font-weight:700; margin-top:8px; }
+  .tile { font:inherit; text-align:left; background:#fff; color:var(--ink); border:1.5px solid var(--line); border-radius:var(--r-md); padding:18px 18px 16px; cursor:pointer; display:flex; flex-direction:column; gap:6px; min-height:74px; box-shadow:var(--sh-1); transition:border-color .15s, box-shadow .2s, transform .2s, background-color .15s; }
+  .tile:hover:not(:disabled), .tile:focus-visible { border-color:var(--cyan); box-shadow:var(--sh-3); transform:translateY(-2px); outline:none; }
+  .tile:disabled { color:#8E9BB5; background:var(--soft); cursor:not-allowed; box-shadow:none; }
   .tile:disabled .tt, .tile:disabled .tn { color:#8E9BB5; }
-  .tile.on { border-color:var(--navy); box-shadow:0 0 0 2px var(--cyan); }
-  .tile .tt { font-size:17px; font-weight:600; line-height:1.25; }
-  .tile .ts { font-size:13px; color:var(--mute); line-height:1.35; }
-  .tile .tn { font-size:30px; font-weight:600; line-height:1; color:var(--navy); }
+  .tile.on { border-color:var(--navy); box-shadow:0 0 0 3px rgba(85,200,232,.45); }
+  .tile .tt { font-family:var(--f-display); font-size:17px; font-weight:700; line-height:1.25; }
+  .tile .ts { font-size:13.5px; color:var(--mute); line-height:1.45; }
+  .tile .tn { font-family:var(--f-display); font-size:30px; font-weight:800; line-height:1; color:var(--navy); }
+  /* Icon badge on the path and mode tiles. */
+  .tile .ti { width:46px; height:46px; border-radius:13px; background:linear-gradient(135deg, var(--navy), var(--navy-2)); color:var(--cyan); display:inline-flex; align-items:center; justify-content:center; margin-bottom:10px; box-shadow:0 8px 16px -8px rgba(14,28,66,.6); transition:transform .2s; }
+  .tile .ti svg { width:24px; height:24px; }
+  .tile:hover:not(:disabled) .ti { transform:scale(1.06) rotate(-3deg); }
   .tile .pill { margin-left:0; align-self:flex-start; }
   /* NEW: a kit that reached the store in the last three days. Sits in the tile's corner. */
   .tile.course, .tile.kit { position:relative; }
   .tile .newpill { position:absolute; top:10px; right:10px; margin:0; font-size:11px; font-weight:600; letter-spacing:.9px; padding:3px 9px; border-radius:10px; background:var(--gold); color:var(--navy); box-shadow:0 1px 3px rgba(14,28,66,.15); }
   .tile.course .tt, .tile.kit .tt { padding-right:52px; }
-  .tile.big { padding:22px 20px; min-height:120px; }
+  .tile.big { padding:24px 22px 22px; min-height:132px; gap:8px; }
   .tile.big .tt { font-size:20px; }
-  /* Grade: one numeral per tile, nothing else. Cyan rule below, navy fill on hover. */
-  .tile.grade { align-items:center; justify-content:center; text-align:center; padding:18px 8px 14px; gap:0; min-height:92px; border-color:var(--line); border-bottom:4px solid var(--cyan); border-radius:12px; }
-  .tile.grade .tn { font-size:44px; font-weight:700; letter-spacing:-.5px; }
-  .tile.grade:hover:not(:disabled), .tile.grade:focus-visible { background:var(--navy); border-color:var(--navy); border-bottom-color:var(--cyan); transform:translateY(-2px); }
+  /* The second answer on a yes/skip question sits back a step. */
+  .tile.big[data-v="0"] { background:var(--soft); border-style:dashed; box-shadow:none; }
+  .tile.big[data-v="0"] .tt { color:var(--mute); }
+  /* Grade: one numeral per tile, nothing else; navy fill on hover. The all-grades
+     tile is the same tile, two columns wide. */
+  .tile.grade { align-items:center; justify-content:center; text-align:center; padding:16px 8px; gap:0; min-height:96px; background:linear-gradient(180deg, #fff, var(--soft)); }
+  .tile.grade .tn { font-size:42px; letter-spacing:-1px; }
+  .tile.grade.wide { grid-column:span 2; }
+  .tile.grade:hover:not(:disabled), .tile.grade:focus-visible { background:var(--navy); border-color:var(--navy); }
   .tile.grade:hover:not(:disabled) .tn, .tile.grade:focus-visible .tn { color:#fff; }
-  .tile.grade.on { background:var(--navy); border-color:var(--navy); border-bottom-color:var(--gold); box-shadow:none; }
-  .tile.grade.on .tn { color:#fff; }
-  .tile.grade:disabled { border-bottom-color:var(--line); background:#F7F8FC; }
-  .tile.grade:disabled .tn { color:#C3CBDB; }
+  .tile.grade.on { background:var(--navy); border-color:var(--navy); }
+  .tile.grade.on .tn { color:var(--cyan); }
+  .tile.grade:disabled { background:var(--soft); border-style:dashed; }
+  .tile.grade:disabled .tn { color:#C9D1E0; }
   /* Subject: the 2026-27 course tile background for that subject and band (tiles/),
      the subject name set in the tile's white field under the logo. */
-  .tile.subject { position:relative; overflow:hidden; aspect-ratio:16 / 9; min-height:0; padding:0; border-radius:14px; border-color:var(--line); background:#fff; box-shadow:0 2px 6px rgba(14,28,66,.08); justify-content:center; }
+  .tile.subject { position:relative; overflow:hidden; aspect-ratio:16 / 9; min-height:0; padding:0; border-radius:var(--r-md); border-color:var(--line); background:#fff; box-shadow:var(--sh-1); justify-content:center; }
   .tile.subject img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:right center; transition:transform .25s; }
   .tile.subject .tt { position:relative; z-index:1; margin:14% 0 0 5.5%; max-width:46%; font-size:clamp(17px, 2.1vw, 24px); line-height:1.15; color:var(--navy); text-shadow:0 0 10px #fff, 0 0 4px #fff; }
   .tile.subject .tm { position:relative; z-index:1; margin:6px 0 0 5.5%; max-width:46%; align-self:flex-start; font-size:13px; line-height:1.3; color:var(--navy); background:rgba(255,255,255,.94); padding:3px 8px; border-radius:6px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
-  .tile.subject:hover:not(:disabled), .tile.subject:focus-visible { border-color:var(--navy); box-shadow:0 8px 22px rgba(14,28,66,.18); transform:translateY(-2px); }
+  .tile.subject:hover:not(:disabled), .tile.subject:focus-visible { border-color:var(--cyan); box-shadow:var(--sh-3); transform:translateY(-3px); }
   .tile.subject:hover:not(:disabled) img, .tile.subject:focus-visible img { transform:scale(1.03); }
   .tile.subject.on { border-color:var(--navy); box-shadow:0 0 0 2px var(--cyan); }
   @media (max-width: 640px) { .tiles.subjects { grid-template-columns:1fr; } }
@@ -320,7 +348,7 @@
   .screen .browse { margin-top:18px; }
   .screen .browse > summary { font-size:14px; }
   .summary { display:flex; flex-wrap:wrap; gap:8px; margin:6px 0 14px; }
-  .summary .chipx { font-size:13px; padding:5px 11px; border-radius:16px; background:#EEF1F8; color:var(--navy); }
+  .summary .chipx { font-size:13px; padding:6px 12px; border-radius:999px; background:#EEF3FA; color:var(--navy); }
   .summary .chipx b { font-weight:600; }
   .summary .chipx.off { color:var(--mute); }
   .video { margin-top:18px; }
@@ -347,7 +375,7 @@
   .tilefields { max-width:760px; }
   .tilefields .row { grid-template-columns:1fr 1fr; }
   /* Continue / Skip stay in view while a long panel scrolls. */
-  .screen > .actions:last-child { position:sticky; bottom:0; z-index:2; background:#fff; margin:14px -26px -24px; padding:12px 26px 16px; border-top:1px solid var(--line); border-radius:0 0 8px 8px; }
+  .screen > .actions:last-child { position:sticky; bottom:0; z-index:2; background:rgba(255,255,255,.94); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); margin:18px -36px -32px; padding:14px 36px 18px; border-top:1px solid var(--line); border-radius:0 0 var(--r-lg) var(--r-lg); }
   /* One-page review (beta, behind ?review=1): dates, publishing and gradebook on one
      course map, with a summary card per part. */
   #kit-view > .col { min-width:0; } /* wide tables scroll in their own box, not the page */
@@ -418,20 +446,30 @@
   .rv-sw input:checked + span::after { transform:translateX(14px); }
   .rv-sw input:focus-visible + span { outline:2px solid var(--cyan); outline-offset:2px; }
   @media (prefers-reduced-motion: reduce) { .rv-sw span, .rv-sw span::after { transition:none; } }
-  @media (max-width: 640px) { .screen { padding:18px 16px; } .hero h1 { font-size:26px; } .screen h2.q { font-size:21px; } .screen > .actions:last-child { margin:14px -16px -18px; padding:12px 16px 14px; } }
+  @media (max-width: 640px) {
+    .top { padding:14px 16px 84px; } .top .brand small { display:none; } .tab { padding:7px 12px; font-size:13px; } .top .sub { font-size:15px; }
+    .wrap { padding:0 16px 24px; } .jnav { padding-right:12px; }
+    .screen { padding:22px 18px; } .screen h2.q { font-size:23px; } .screen > .actions:last-child { margin:14px -18px -22px; padding:12px 18px 14px; } }
+  @media (prefers-reduced-motion: reduce) { .screen { animation:none; } .tile, .tile .ti, button { transition:none; } .tile:hover:not(:disabled), .tile.subject:hover:not(:disabled) { transform:none; } }
 </style>
 </head>
 <body>
 <header class="top">
-  <div class="owl"><img src="https://raw.githubusercontent.com/optimaondemand/optima-assets/eeb0b335630058906d52f478028361d352253a93/images/Optima%20Final%20Circle%20-%20Owl%20Only.png" alt="Optima Academy"></div>
-  <div class="brand">Optima Academy Online<small>An Education Experience Company</small></div>
-  <div class="tool"><div class="name">Course Optimizer</div><div class="tag">PROTOTYPE</div></div>
+  <div class="top-in">
+    <div class="bar">
+      <div class="owl"><img src="https://raw.githubusercontent.com/optimaondemand/optima-assets/eeb0b335630058906d52f478028361d352253a93/images/Optima%20Final%20Circle%20-%20Owl%20Only.png" alt="Optima Academy"></div>
+      <div class="brand">Optima Academy Online<small>An Education Experience Company</small></div>
+      <nav class="tabs" aria-label="Tools">
+        <button type="button" class="tab" data-tab="kit" aria-pressed="true">Course Optimizer</button>
+        <button type="button" class="tab" data-tab="tiles" aria-pressed="false">Course tiles</button>
+      </nav>
+    </div>
+    <div class="title">
+      <h1>Course <span>Optimizer</span></h1>
+      <p class="sub">Prepare a course for import into Canvas, from the Optima curriculum store or from a Canvas export.</p>
+    </div>
+  </div>
 </header>
-
-<nav class="tabs" aria-label="Tools">
-  <button type="button" class="tab" data-tab="kit" aria-pressed="true">Course Optimizer</button>
-  <button type="button" class="tab" data-tab="tiles" aria-pressed="false">Course tiles</button>
-</nav>
 
 <main class="wrap solo" id="kit-view">
   <section class="col">
@@ -442,16 +480,13 @@
     </nav>
 
     <section class="screen" data-screen="welcome">
-      <div class="hero">
-        <h1>Course Optimizer</h1>
-        <p class="lead">Prepare a course for import into Canvas, from the Optima curriculum store or from a Canvas export.</p>
-        <p class="hint" id="j-greet" hidden></p>
-        <div id="j-error"></div>
-      </div>
+      <h2 class="q">Select a starting point</h2>
+      <p class="hint" id="j-greet" hidden></p>
+      <div id="j-error"></div>
       <div class="tiles three" id="t-path">
-        <button type="button" class="tile big" data-path="customize"><span class="tt">Customize an Optima course</span><span class="ts">Select a course from the course catalogue, then set the home page, syllabus, dates, publishing and gradebook. Every step is optional.</span></button>
-        <button type="button" class="tile big" data-path="upload"><span class="tt">Upload your own cartridge</span><span class="ts">Start from a course exported from Canvas (.imscc). The same settings apply; the course content stays as exported.</span></button>
-        <button type="button" class="tile big" data-path="fetch"><span class="tt">Preview a course in the course catalogue</span><span class="ts">The course as the curriculum team built it, with no changes. Download available.</span></button>
+        <button type="button" class="tile big" data-path="customize"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></span><span class="tt">Customize an Optima course</span><span class="ts">Select a course from the course catalogue, then set the home page, syllabus, dates, publishing and gradebook. Every step is optional.</span></button>
+        <button type="button" class="tile big" data-path="upload"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></span><span class="tt">Upload your own cartridge</span><span class="ts">Start from a course exported from Canvas (.imscc). The same settings apply; the course content stays as exported.</span></button>
+        <button type="button" class="tile big" data-path="fetch"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="tt">Preview a course in the course catalogue</span><span class="ts">The course as the curriculum team built it, with no changes. Download available.</span></button>
       </div>
       <div class="hint center">Dashboard tiles for several sections at once: <button type="button" class="link" id="j-tiles">Course tiles</button>.</div>
       <div class="hint center" id="j-beta"></div>
@@ -461,7 +496,7 @@
       <h2 class="q">Select a grade</h2>
       <div class="hint">Dimmed grades have no courses in the store yet.</div>
       <div class="tiles grades" id="t-grades"></div>
-      <button type="button" class="tile allgrades" id="t-allgrades"><span class="tt">All grades, by subject</span><span class="ts">Every course in one subject, K&ndash;12, grouped by grade</span></button>
+      <div class="tiles grades"><div class="cgrp">All grades &middot; one subject, K&ndash;12</div><button type="button" class="tile grade wide" id="t-allgrades" aria-label="All grades, by subject"><span class="tn">K&ndash;12</span></button></div>
     </section>
 
     <section class="screen" data-screen="upload" hidden>
@@ -507,8 +542,8 @@
       <div id="course-card"></div>
       <h2 class="q">Preview or configure</h2>
       <div class="tiles two" id="t-mode">
-        <button type="button" class="tile big" data-mode="preview"><span class="tt">Preview the course</span><span class="ts">Read the course as students see it, module by module. Save it as a PDF.</span></button>
-        <button type="button" class="tile big" data-mode="configure"><span class="tt">Configure for Canvas</span><span class="ts">Set it up for one section and download a single file to import.</span></button>
+        <button type="button" class="tile big" data-mode="preview"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="tt">Preview the course</span><span class="ts">Read the course as students see it, module by module. Save it as a PDF.</span></button>
+        <button type="button" class="tile big" data-mode="configure"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></span><span class="tt">Configure for Canvas</span><span class="ts">Set it up for one section and download a single file to import.</span></button>
       </div>
     </section>
 
