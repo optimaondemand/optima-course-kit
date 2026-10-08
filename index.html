@@ -325,7 +325,10 @@
      tile is the same tile, two columns wide. */
   .tile.grade { align-items:center; justify-content:center; text-align:center; padding:16px 8px; gap:0; min-height:96px; background:linear-gradient(180deg, #fff, var(--soft)); }
   .tile.grade .tn { font-size:42px; letter-spacing:-1px; }
-  .tile.grade.wide { grid-column:span 2; }
+  .seg.findby { margin:14px 0 4px; padding:4px; gap:4px; border:1px solid var(--line); border-radius:999px; background:var(--soft); }
+  .seg.findby button { border-radius:999px; font-size:15px; padding:9px 22px; background:transparent; }
+  .seg.findby button + button { border-left:0; }
+  .seg.findby button[aria-pressed="true"] { background:var(--navy); color:#fff; box-shadow:0 4px 12px -4px rgba(14,28,66,.5); }
   .tile.grade:hover:not(:disabled), .tile.grade:focus-visible { background:var(--navy); border-color:var(--navy); }
   .tile.grade:hover:not(:disabled) .tn, .tile.grade:focus-visible .tn { color:#fff; }
   .tile.grade.on { background:var(--navy); border-color:var(--navy); }
@@ -493,10 +496,16 @@
     </section>
 
     <section class="screen" data-screen="grade" hidden>
-      <h2 class="q">Select a grade</h2>
-      <div class="hint">Dimmed grades have no courses in the store yet.</div>
-      <div class="tiles grades" id="t-grades"></div>
-      <div class="tiles grades"><div class="cgrp">All grades &middot; one subject, K&ndash;12</div><button type="button" class="tile grade wide" id="t-allgrades" aria-label="All grades, by subject"><span class="tn">K&ndash;12</span></button></div>
+      <h2 class="q">Find a course</h2>
+      <div class="seg findby" role="group" aria-label="Browse by"><button type="button" data-by="grade" aria-pressed="true">By grade</button><button type="button" data-by="subject" aria-pressed="false">By subject</button></div>
+      <div id="by-grade">
+        <div class="hint">Dimmed grades have no courses in the store yet.</div>
+        <div class="tiles grades" id="t-grades"></div>
+      </div>
+      <div id="by-subject" hidden>
+        <div class="hint">Every course in the subject, all grades, on one screen.</div>
+        <div class="tiles subjects" id="t-allsubjects"></div>
+      </div>
     </section>
 
     <section class="screen" data-screen="upload" hidden>
@@ -2328,15 +2337,16 @@
   // course card (Honors and Standard share a title and never a code). Live and
   // On-Demand, when a course ships one kit per mode, are a switch in step 2, not
   // two courses. Grade, subject and mode choices persist per browser.
-  var finder = { grade: '', subject: '', mode: '' };
+  var finder = { grade: '', subject: '', mode: '', by: 'grade' };
   function saveFinder() {
-    try { var u = uiPref(); u.finder = { grade: finder.grade, subject: finder.subject, mode: finder.mode }; localStorage.setItem(UI_STORE, JSON.stringify(u)); } catch (e) { /* ignore */ }
+    try { var u = uiPref(); u.finder = { grade: finder.grade, subject: finder.subject, mode: finder.mode, by: finder.by }; localStorage.setItem(UI_STORE, JSON.stringify(u)); } catch (e) { /* ignore */ }
   }
   function loadFinder() {
     var f = uiPref().finder || {};
     finder.grade = (typeof f.grade === 'number' && f.grade >= 0 && f.grade <= 12) ? f.grade : '';
     finder.subject = typeof f.subject === 'string' ? f.subject : '';
     finder.mode = f.mode === 'live' || f.mode === 'od' ? f.mode : '';
+    finder.by = f.by === 'subject' ? 'subject' : 'grade';
   }
   // "K" -> [0]; "7" -> [7]; "9-12" -> [9,10,11,12]; "K-5" -> [0..5]; "6, 8" -> [6,8].
   function gradeList(g) {
@@ -4509,7 +4519,7 @@
   // The screens a teacher will pass through, given the answers so far. Unanswered
   // questions count as one screen (the question itself).
   function sequence() {
-    var seq = uploadPath() ? ['welcome', 'upload'] : ['welcome', 'grade', 'subject', 'course', 'mode', 'part'];
+    var seq = uploadPath() ? ['welcome', 'upload'] : finder.by === 'subject' ? ['welcome', 'grade', 'course', 'mode', 'part'] : ['welcome', 'grade', 'subject', 'course', 'mode', 'part'];
     if (!uploadPath() && (J.scope === 'modules' || J.screen === 'modules')) seq.push('modules');
     if (!uploadPath() && (J.mode === 'preview' || J.screen === 'preview')) seq.push('preview');
     if (J.path === 'fetch') { seq.push('generate'); return seq; }
@@ -4614,7 +4624,10 @@
     $('t-grades').querySelectorAll('.tile').forEach(function (b) {
       b.addEventListener('click', function () { finder.grade = +this.dataset.g; finder.subject = ''; saveFinder(); go('subject'); });
     });
-    $('t-allgrades').classList.toggle('on', finder.grade === '' && !!finder.subject);
+    var bySubject = finder.by === 'subject';
+    $('by-grade').hidden = bySubject; $('by-subject').hidden = !bySubject;
+    document.querySelectorAll('.findby button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.by === finder.by ? 'true' : 'false'); });
+    if (bySubject) subjectTiles($('t-allsubjects'), '', function (s) { finder.lastGrade = ''; finder.grade = ''; finder.subject = s; saveFinder(); go('course'); });
   }
   // The course tile background for a subject: middle-school art for grades 6-8, the
   // upper-school art otherwise; a key only one band has falls through to the other.
@@ -4643,25 +4656,29 @@
     return styleFor(band + '/' + key) || styleFor(other + '/' + key) || styleFor('upper/homeroom');
   }
   function renderSubjectTiles() {
-    var subjects = {};
-    catalog.courses.forEach(function (c) { if (finder.grade === '' || gradeList(c.grade).indexOf(finder.grade) >= 0) { var s = subjectGroup(c); subjects[s] = (subjects[s] || 0) + 1; } });
-    var names = Object.keys(subjects).sort(function (a, b) { return (a === 'Electives') - (b === 'Electives') || a.localeCompare(b); });
     $('t-subjects-hint').textContent = finder.grade === '' ? 'All grades. Each tile lists the grades its courses cover.' : 'Grade ' + gradeLabel(finder.grade) + '. Each tile lists the courses for this grade.';
+    subjectTiles($('t-subjects'), finder.grade, function (s) { finder.subject = s; saveFinder(); go('course'); });
+  }
+  // Subject tiles for one grade, or for every grade when grade is ''.
+  function subjectTiles(el, grade, onPick) {
+    var subjects = {};
+    catalog.courses.forEach(function (c) { if (grade === '' || gradeList(c.grade).indexOf(grade) >= 0) { var s = subjectGroup(c); subjects[s] = (subjects[s] || 0) + 1; } });
+    var names = Object.keys(subjects).sort(function (a, b) { return (a === 'Electives') - (b === 'Electives') || a.localeCompare(b); });
     // The detail line: the courses at this grade, or the grade span across all grades.
     var detail = function (s) {
-      var cs = catalog.courses.filter(function (c) { return subjectGroup(c) === s && (finder.grade === '' || gradeList(c.grade).indexOf(finder.grade) >= 0); });
-      if (finder.grade !== '') return cs.map(function (c) { return c.title; }).sort().join(' \u00b7 ');
+      var cs = catalog.courses.filter(function (c) { return subjectGroup(c) === s && (grade === '' || gradeList(c.grade).indexOf(grade) >= 0); });
+      if (grade !== '') return cs.map(function (c) { return c.title; }).sort().join(' \u00b7 ');
       var g = []; cs.forEach(function (c) { g = g.concat(gradeList(c.grade)); });
       if (!g.length) return '';
       var lo = Math.min.apply(null, g), hi = Math.max.apply(null, g);
       return lo === hi ? 'Grade ' + gradeLabel(lo) : 'Grades ' + gradeLabel(lo) + '\u2013' + gradeLabel(hi);
     };
-    $('t-subjects').innerHTML = names.map(function (s) {
-      var st = tileStyleForSubject(s, finder.grade);
+    el.innerHTML = names.map(function (s) {
+      var st = tileStyleForSubject(s, grade);
       return tile('subject' + (finder.subject === s ? ' on' : ''), '<img src="' + escHtml(st.file) + '" alt="" loading="lazy"><span class="tt">' + escHtml(s) + '</span><span class="tm">' + escHtml(detail(s)) + '</span>', ' data-s="' + escHtml(s) + '"');
     }).join('') || '<div class="hint">No courses for this grade yet.</div>';
-    $('t-subjects').querySelectorAll('.tile').forEach(function (b) {
-      b.addEventListener('click', function () { finder.subject = this.dataset.s; saveFinder(); go('course'); });
+    el.querySelectorAll('.tile').forEach(function (b) {
+      b.addEventListener('click', function () { onPick(this.dataset.s); });
     });
   }
   function renderCourseTiles() {
@@ -5482,7 +5499,9 @@
         J.path = p; J.want = {}; J.mode = p === 'upload' ? 'configure' : ''; saveJourney(); go(p === 'upload' ? 'upload' : 'grade');
       });
     });
-    $('t-allgrades').addEventListener('click', function () { finder.lastGrade = finder.grade; finder.grade = ''; finder.subject = ''; saveFinder(); go('subject'); });
+    document.querySelectorAll('.findby button').forEach(function (b) {
+      b.addEventListener('click', function () { finder.by = this.dataset.by; saveFinder(); renderScreen(); });
+    });
     wireUpload();
     $('j-tiles').addEventListener('click', function () { setTab('tiles'); });
     $('j-back').addEventListener('click', back);
