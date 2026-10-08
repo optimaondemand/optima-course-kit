@@ -283,6 +283,12 @@
   .tiles { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:14px; margin-top:16px; }
   .tiles.two { grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); }
   .tiles.three { grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); }
+  .tiles.four { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 640px) { .tiles.four { grid-template-columns:1fr; } }
+  /* Home page, syllabus and tile only: no course file, so no module list on the home page. */
+  .pieces-only { display:none; }
+  .pieces .pieces-only { display:revert; }
+  .pieces .no-pieces { display:none; }
   .cgrp { grid-column:1 / -1; display:flex; align-items:center; gap:12px; font-family:var(--f-display); font-size:12px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--mute); margin:12px 0 -2px; }
   .cgrp::after { content:""; flex:1; height:1px; background:var(--line); }
   .up-drop { display:block; border:2px dashed #CBD4E3; border-radius:var(--r-md); padding:32px 20px; text-align:center; cursor:pointer; margin-top:16px; background:var(--soft); transition:border-color .15s, background-color .15s; }
@@ -486,10 +492,11 @@
       <h2 class="q">Select a starting point</h2>
       <p class="hint" id="j-greet" hidden></p>
       <div id="j-error"></div>
-      <div class="tiles three" id="t-path">
+      <div class="tiles four" id="t-path">
         <button type="button" class="tile big" data-path="customize"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></span><span class="tt">Customize an Optima course</span><span class="ts">Select a course from the course catalogue, then set the home page, syllabus, dates, publishing and gradebook. Every step is optional.</span></button>
         <button type="button" class="tile big" data-path="upload"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></span><span class="tt">Upload your own cartridge</span><span class="ts">Start from a course exported from Canvas (.imscc). The same settings apply; the course content stays as exported.</span></button>
         <button type="button" class="tile big" data-path="fetch"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="tt">Preview a course in the course catalogue</span><span class="ts">The course as the curriculum team built it, with no changes. Download available.</span></button>
+        <button type="button" class="tile big" data-path="pieces"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M10 20v-5h4v5"/></svg></span><span class="tt">Create a home page, syllabus and course tile</span><span class="ts">For a Canvas course that already has its content. One .zip with the three files to paste and upload; no course file.</span></button>
       </div>
       <div class="hint center">Dashboard tiles for several sections at once: <button type="button" class="link" id="j-tiles">Course tiles</button>.</div>
       <div class="hint center" id="j-beta"></div>
@@ -602,6 +609,10 @@
           <div><label for="f-meeting">Study Hall or class meeting</label><input type="text" id="f-meeting" placeholder="Study Hall: Thursdays, 1:00 PM ET"></div>
         </div>
         <label for="f-studyHall">Study Hall link (Teams), optional</label><input type="url" id="f-studyHall" placeholder="https://teams.microsoft.com/...">
+        <div class="pieces-only">
+          <label for="f-courseUrl">Canvas course link, optional</label><input type="url" id="f-courseUrl" placeholder="https://optimaoaoteam.instructure.com/courses/1234">
+          <div class="hint" id="f-courseUrl-hint">Copy it from the browser address bar while the course is open. It makes the Syllabus and Modules buttons on the home page work; without it those two buttons are left off.</div>
+        </div>
       </div>
       <div class="actions"><button type="button" class="next">Continue</button></div>
     </section>
@@ -625,7 +636,7 @@
             <select id="f-house"><option value="">None</option><option value="galahad">Galahad (Perseverance)</option><option value="cincinnatus">Cincinnatus (Courage)</option><option value="nightingale">Nightingale (Service)</option><option value="odysseus">Odysseus (Self-Governance)</option></select></div>
           <div><label for="f-tagline">Tagline under the course name</label><input type="text" id="f-tagline" placeholder="Course Home · Start here every week."></div>
         </div>
-        <details><summary>Module cards (edit titles, untick to hide)</summary><div class="mods" id="mods"></div></details>
+        <details class="no-pieces" id="mod-cards"><summary>Module cards (edit titles, untick to hide)</summary><div class="mods" id="mods"></div></details>
       </div>
       <div class="actions"><button type="button" class="next">Continue</button><button type="button" class="alt skip" data-q="home">Skip this step</button></div>
     </section>
@@ -648,7 +659,7 @@
 
     <section class="screen" data-screen="tile" hidden>
       <h2 class="q">Course tile</h2>
-      <div class="skiptop"><button type="button" class="sm alt skip" data-q="tile">Skip this step</button> Leaves the tile out of the file.</div>
+      <div class="skiptop"><button type="button" class="sm alt skip" data-q="tile">Skip this step</button> <span class="no-pieces">Leaves the tile out of the file.</span><span class="pieces-only">Uses the standard tile.</span></div>
       <div class="step locked" id="stepT">
         <canvas id="tile-prev" width="1920" height="1080" aria-label="Course tile preview"></canvas>
         <div class="hint" id="tl-derived"></div>
@@ -897,14 +908,24 @@
         <div class="hint" id="j-generate-hint">One file. Your home page is already inside it, set as the course front page, with the module cards linked to the real modules, and your syllabus fills the Syllabus page.</div>
         <div class="hint" id="artpack" hidden style="border-left: 4px solid #0E1C42; padding-left: 12px;"></div>
         <div class="actions">
+          <button type="button" id="dl-pieces" hidden>Download the three files (.zip)</button>
           <button type="button" id="dl" disabled>Generate the course file (.imscc)</button>
           <button type="button" id="dl-plain" class="alt" disabled>Original kit, no customization</button>
           <button type="button" id="pdf" class="alt" disabled>Download PDF</button>
           <button type="button" id="copy" class="alt" disabled>Copy home page HTML only</button>
+          <button type="button" id="copy-syl" class="alt" hidden>Copy syllabus HTML</button>
         </div>
         <div class="status" id="status"></div>
         <div class="hint"><button type="button" class="link" id="j-customize-instead" hidden>Customize this course instead</button></div>
-        <details class="howto" open><summary>How to import it into Canvas</summary>
+        <details class="howto pieces-only" open><summary>How to add them to Canvas</summary>
+        <ol class="check">
+          <li>Unzip the file. To paste HTML, open an .html file in Notepad and copy everything, or use the Copy buttons above.</li>
+          <li><b>Home page:</b> Pages &rarr; <b>+ Page</b> (or Edit an existing home page) &rarr; the HTML editor button (&lt;/&gt;) &rarr; paste the home page HTML &rarr; <b>Save</b>. In the Pages list, open the page&rsquo;s menu &rarr; <b>Use as Front Page</b>. Then Home &rarr; <b>Choose Home Page</b> &rarr; <b>Pages Front Page</b>.</li>
+          <li><b>Syllabus:</b> Syllabus &rarr; <b>Edit</b> &rarr; the HTML editor button &rarr; select all, paste the syllabus HTML &rarr; <b>Update Syllabus</b>.</li>
+          <li><b>Course tile:</b> Settings &rarr; <b>Course Details</b> &rarr; <b>Image</b> &rarr; upload the .png &rarr; <b>Update Course Details</b>.</li>
+        </ol>
+        </details>
+        <details class="howto no-pieces" open><summary>How to import it into Canvas</summary>
         <ol class="check">
           <li>In your Canvas course: <b>Settings</b> &rarr; <b>Import Course Content</b>.</li>
           <li>Content Type: <b>Canvas Course Export Package</b>. Choose the file you just downloaded.</li>
@@ -1098,7 +1119,7 @@
   function blankHome() {
     return { teacherName: '', teacherTitle: '', teacherEmail: '', mode: 'On-Demand', term: '', section: '', meeting: '',
              studyHall: '', blurb: '', house: '', tagline: '',
-             theme: '', modStyle: 'journey',
+             theme: '', modStyle: 'journey', courseUrl: '',
              tileOn: false, tileStyle: '', tilePeriod: null, tileDays: '', tileTime: '',
              modules: [], courseStart: '', dates: {}, itemOverrides: {}, moduleOverrides: {}, removed: {}, groups: null, weighted: null };
   }
@@ -1165,7 +1186,12 @@
   // contains a <div>, and the whole card's styling goes with it.
   var BLOCK = 'display: block; ';
 
-  function buildHome(c, k, h) {
+  // o.standalone: the page is pasted into an existing course, not imported, so the
+  // Canvas tokens would never resolve. Links come from the teacher's course address
+  // (o.base, '' = leave the Syllabus and Modules buttons off) and there is no module list.
+  function buildHome(c, k, h, o) {
+    o = o || {};
+    var L = o.standalone ? { syllabus: o.base ? o.base + '/assignments/syllabus' : '', modules: o.base ? o.base + '/modules' : '' } : T;
     var title = (c.title || 'Course').toUpperCase();
     var TH = THEMES[h.theme] || THEMES.classic;
     var HEADER = 'background: #0E1C42; border-bottom: 5px solid ' + TH.accent + '; padding: 24px 34px; border-radius: 10px 10px 0 0;';
@@ -1209,10 +1235,10 @@
     out.push('<div style="' + BODYS + '">');
 
     var tiles = [
-      { icon: '\ud83d\udcdc', label: 'Syllabus', desc: 'Grading, pacing & policies', url: T.syllabus },
-      { icon: '\ud83d\udcda', label: 'Modules', desc: 'Every week, in order', url: T.modules },
+      { icon: '\ud83d\udcdc', label: 'Syllabus', desc: 'Grading, pacing & policies', url: L.syllabus },
+      { icon: '\ud83d\udcda', label: 'Modules', desc: 'Every week, in order', url: L.modules },
       { icon: '\ud83d\udd27', label: 'Tech Help', desc: 'Live support with the tech team', url: TEAMS_TECH_HELP, blank: true }
-    ];
+    ].filter(function (t) { return t.url; });
     // The fourth tile only exists once a teacher has a study hall link.
     if (String(h.studyHall || '').trim()) {
       tiles.push({ icon: '\ud83c\udf93', label: 'Study Hall', desc: h.meeting || 'Office hours & support', url: h.studyHall, blank: true });
@@ -1251,6 +1277,7 @@
     }
 
     var mods = (h.modules || []).filter(function (m) { return m.show && String(m.title || '').trim(); });
+    if (!o.standalone) {
     out.push('<div style="display: flex; align-items: baseline; justify-content: space-between; border-bottom: 2px solid ' + TH.rule + '; padding-bottom: 8px; margin-bottom: 16px;">');
     out.push('<div style="font-size: 24px; color: #0e1c42;">Course Modules</div>');
     out.push('<div style="font-size: 15px; color: #6b7a99;">' + esc(k.label) + ' &middot; select a module to begin</div>');
@@ -1288,6 +1315,7 @@
       out.push('</div></div>');
     }
     out.push('<div style="margin-top: 20px;"><a href=\"' + href(T.modules) + '\" style=\"display: inline-block; text-decoration: none; background: #0E1C42; color: #ffffff; border: 2px solid ' + TH.accent + '; border-radius: 28px; padding: 14px 30px; font-size: 17px;">See all modules &rarr;</a></div>');
+    }
 
     out.push('</div>');
     var foot = '<span style="color: ' + TH.bright + ';">Optima Academy Online</span> &middot; ' + esc(title);
@@ -2473,7 +2501,7 @@
       r.innerHTML = '<div><div class="t">' + escHtml(c.title) + (lvl ? ' <span class="pill' + (/honors/i.test(lvl) ? '' : ' grey') + '">' + escHtml(lvl.toUpperCase()) + '</span>' : '') + '</div>' +
         '<div class="m">' + escHtml(gradeText(c.grade)) + ' &middot; ' + escHtml(c.code) + '</div></div>' +
         '<div class="st">' + (ready ? ready + ' of ' + c.kits.length + ' kit' + (c.kits.length === 1 ? '' : 's') + ' ready' : (c.kits.length ? 'Coming' : 'No kits listed')) + '</div>';
-      var pick = function () { chooseCourse(c); if (J.screen === 'course') go('mode'); };
+      var pick = function () { chooseCourse(c); if (J.screen === 'course') go(nextScreen('course')); };
       r.addEventListener('click', pick);
       r.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
       list.appendChild(r);
@@ -2536,12 +2564,12 @@
         : (k.status === 'spec-only' ? 'Authored, not built yet' : 'Coming');
       var on = kit && kit.id === k.id && !(home.onlyModules && home.onlyModules.length);
       out.push(tile('kit' + (on ? ' on' : ''),
-        (isNewKit(k) ? newPill() : '') + '<span class="tt">' + escHtml(k.label) + ', complete</span>' + (m ? '<span class="pill grey">' + escHtml(MODE_LABEL[m].toUpperCase()) + '</span>' : '') +
+        (isNewKit(k) ? newPill() : '') + '<span class="tt">' + escHtml(k.label) + (piecesPath() ? '' : ', complete') + '</span>' + (m ? '<span class="pill grey">' + escHtml(MODE_LABEL[m].toUpperCase()) + '</span>' : '') +
         '<span class="ts">' + escHtml(s) + '</span>' + (ready ? '' : '<span class="pill grey">PENDING</span>'),
         ' data-part="kit" data-kit="' + escHtml(k.id) + '"', !ready));
     });
     var modOn = kit && home.onlyModules && home.onlyModules.length;
-    out.push(tile('kit' + (modOn ? ' on' : ''), '<span class="tt">Selected modules</span><span class="ts">One or more modules from one semester. Other modules are left out of the file.</span>', ' data-part="module"', !anyReady));
+    if (!piecesPath()) out.push(tile('kit' + (modOn ? ' on' : ''), '<span class="tt">Selected modules</span><span class="ts">One or more modules from one semester. Other modules are left out of the file.</span>', ' data-part="module"', !anyReady));
     var grid = document.createElement('div'); grid.className = 'tiles kits'; grid.innerHTML = out.join('');
     el.appendChild(grid);
     grid.querySelectorAll('.tile[data-part="kit"]').forEach(function (b) {
@@ -2550,7 +2578,8 @@
         if (k) chooseWholeKit(k).catch(function () { /* shown in status */ });
       });
     });
-    grid.querySelector('.tile[data-part="module"]').addEventListener('click', function () { J.scope = 'modules'; J.modSel = null; saveJourney(); go('modules'); });
+    var modTile = grid.querySelector('.tile[data-part="module"]');
+    if (modTile) modTile.addEventListener('click', function () { J.scope = 'modules'; J.modSel = null; saveJourney(); go('modules'); });
   }
   // A store built for 130+ courses (optima-courses-2026-27) publishes a LIGHT
   // catalog.json: each kit row names its `sidecar` (cartridges/<kit>.json) and the
@@ -3142,7 +3171,7 @@
       : 'Showing ' + escHtml(cur.label) + '. Suggested for ' + escHtml(course.subject) + ': ' + escHtml(suggested.label) + '.') +
       ' The banner is a hosted image; its motion runs in Canvas and stops for students who have reduced motion turned on.</div>');
     out.push('<div class="row" style="margin-top:10px;">');
-    out.push('<div><label>Module list</label><div class="seg" id="mod-seg"><button type="button" data-v="journey" aria-pressed="' + (home.modStyle !== 'grid') + '">Journey trail</button><button type="button" data-v="grid" aria-pressed="' + (home.modStyle === 'grid') + '">Classic grid</button></div></div>');
+    out.push('<div class="no-pieces"><label>Module list</label><div class="seg" id="mod-seg"><button type="button" data-v="journey" aria-pressed="' + (home.modStyle !== 'grid') + '">Journey trail</button><button type="button" data-v="grid" aria-pressed="' + (home.modStyle === 'grid') + '">Classic grid</button></div></div>');
     out.push('</div>');
     el.innerHTML = out.join('');
     el.querySelectorAll('.swatch').forEach(function (b) {
@@ -3166,11 +3195,17 @@
       el.appendChild(row);
     });
   }
-  var FIELDS = ['teacherName', 'teacherTitle', 'teacherEmail', 'mode', 'term', 'section', 'meeting', 'studyHall', 'blurb', 'house', 'tagline'];
+  var FIELDS = ['teacherName', 'teacherTitle', 'teacherEmail', 'mode', 'term', 'section', 'meeting', 'studyHall', 'courseUrl', 'blurb', 'house', 'tagline'];
   function fillForm() { FIELDS.forEach(function (f) { $('f-' + f).value = home[f] || ($('f-' + f).tagName === 'SELECT' ? $('f-' + f).options[0].value : ''); }); }
   function readForm() { FIELDS.forEach(function (f) { home[f] = $('f-' + f).value; }); }
+  // The address a teacher pastes, cut back to the course: https://host/courses/123
+  function canvasCourseBase(u) {
+    var m = /^\s*(https?:\/\/[^\/\s?#]+\/courses\/\d+)/i.exec(String(u || ''));
+    return m ? m[1] : '';
+  }
   function currentHtml() {
     if (!(course && kit)) return '';
+    if (piecesPath()) return buildHome(course, kit, home, { standalone: true, base: canvasCourseBase(home.courseUrl) });
     if (!home.onlyModules || !home.onlyModules.length) return buildHome(course, kit, home);
     var keptGid = {}; keptModules().forEach(function (m) { keptGid[m.gid] = true; });
     var h = Object.assign({}, home, { modules: (home.modules || []).filter(function (m) { return keptGid[m.gid]; }) });
@@ -4255,6 +4290,22 @@
       return Promise.all(tasks);
     });
   }
+  // The three files for a course that already exists in Canvas. The tile is a PNG so
+  // it uploads at full quality; the cartridge path bakes a JPEG to keep the file small.
+  function piecesTileChanged() { return !!(home.tileStyle || home.tilePeriod != null || home.tileDays || home.tileTime); }
+  function piecesNames() {
+    var base = slug(course.title) || 'course', who = slug(home.teacherName) || 'teacher';
+    return { home: base + '-home-page-' + who + '.html', syllabus: syllabusFilename(), tile: base + '-course-tile-' + who + '.png', zip: base + '-' + who + '-home-syllabus-tile.zip' };
+  }
+  function buildPieces() {
+    var n = piecesNames(), zip = new JSZip(), canvas = document.createElement('canvas');
+    zip.file(n.home, currentHtml());
+    zip.file(n.syllabus, syllabusHtml());
+    return drawKitTile(canvas).then(function () { return tilePng(canvas, false); }).then(function (png) {
+      zip.file(n.tile, png);
+      return zip.generateAsync({ type: 'blob' });
+    }).then(function (blob) { return { blob: blob, names: n }; });
+  }
   function renderTilePanel() {
     if (!kit || !course) return;
     var sel = $('tl-style'), d = kitTile();
@@ -4451,6 +4502,7 @@
   var TUTORIAL_VIDEO_URL = '';
   var J = { path: '', screen: 'welcome', mode: '', scope: '', want: {}, history: [], modSel: null };
   function uploadPath() { return J.path === 'upload'; }
+  function piecesPath() { return J.path === 'pieces'; }
   var PANE_SCREENS = { preview: 1, details: 1, home: 1, syllabus: 1, dates: 1, publish: 1, gradebook: 1, generate: 1 };
   var NEEDS_KIT = { preview: 1, details: 1, home: 1, tile: 1, syllabus: 1, dates: 1, publish: 1, gradebook: 1, review: 1, generate: 1, 'q-home': 1, 'q-tile': 1, 'q-syllabus': 1, 'q-dates': 1, 'q-publish': 1, 'q-gradebook': 1 };
   var NEEDS_COURSE = { mode: 1, part: 1, modules: 1 };
@@ -4500,7 +4552,7 @@
   }
   function loadJourney() {
     var j = uiPref().journey || {};
-    J.path = j.path === 'fetch' ? 'fetch' : (j.path === 'customize' ? 'customize' : (j.path === 'upload' ? 'upload' : ''));
+    J.path = /^(fetch|customize|upload|pieces)$/.test(j.path || '') ? j.path : '';
     J.mode = j.mode === 'preview' || j.mode === 'configure' ? j.mode : '';
     J.scope = j.scope === 'modules' ? 'modules' : (j.scope === 'all' ? 'all' : '');
     J.want = (j.want && typeof j.want === 'object') ? j.want : {};
@@ -4523,6 +4575,8 @@
     if (!uploadPath() && (J.scope === 'modules' || J.screen === 'modules')) seq.push('modules');
     if (!uploadPath() && (J.mode === 'preview' || J.screen === 'preview')) seq.push('preview');
     if (J.path === 'fetch') { seq.push('generate'); return seq; }
+    // Home page, syllabus and tile only: straight from the semester to those three panels.
+    if (piecesPath()) { seq.splice(seq.indexOf('mode'), 1); seq.push('details', 'home', 'tile', 'syllabus', 'generate'); return seq; }
     // A module-only file is an add-on to a course the teacher already has: it never
     // touches the home page or the syllabus, so those steps (and the details behind them) go.
     var addon = J.scope === 'modules';
@@ -4577,6 +4631,9 @@
     var wrap = $('kit-view');
     wrap.classList.toggle('solo', !PANE_SCREENS[J.screen]);
     wrap.classList.toggle('wide', J.screen === 'review');
+    wrap.classList.toggle('pieces', piecesPath());
+    $('preview-note').textContent = piecesPath() ? 'Links work once the page is in Canvas.' : 'Links work after import, not here.';
+    document.querySelector('.screen[data-screen="part"] h2.q').textContent = piecesPath() ? 'Select a semester' : 'Select the scope';
     syncPreviewButton();
     renderTrail();
     var panel = $('dates-panel');
@@ -4711,7 +4768,7 @@
         ' data-code="' + escHtml(c.code) + '"', !ready);
     }).join('') || '<div class="hint">No courses match. Try another subject or grade, or search the full list below.</div>';
     $('t-courses').querySelectorAll('.tile').forEach(function (b) {
-      b.addEventListener('click', function () { chooseCourse(findCourse(this.dataset.code)); go('mode'); });
+      b.addEventListener('click', function () { chooseCourse(findCourse(this.dataset.code)); go(nextScreen('course')); });
     });
   }
   // After the course: whole semester = a kit; a module = a kit plus a scope.
@@ -4826,6 +4883,25 @@
     if (!kit.contents) loadContents().then(function () { if (J.screen === 'preview') renderContentsPreview(); });
   }
   function renderGenerate() {
+    var pieces = piecesPath();
+    ['dl-pieces', 'copy-syl'].forEach(function (id) { $(id).hidden = !pieces; $(id).disabled = !(course && kit); });
+    $('j-customize-instead').hidden = true;
+    if (pieces) {
+      ['dl', 'dl-plain', 'pdf'].forEach(function (id) { $(id).hidden = true; });
+      $('copy').hidden = false; $('copy').textContent = 'Copy home page HTML';
+      $('j-generate-title').textContent = 'Download the home page, syllabus and course tile';
+      $('j-generate-hint').textContent = 'One .zip with three files: the home page and the syllabus as HTML to paste into Canvas, and the course tile image to upload.'
+        + (canvasCourseBase(home.courseUrl) ? '' : ' The home page has no Syllabus or Modules buttons because no Canvas course link was given under Teacher details.');
+      $('j-summary').innerHTML = [
+        course ? '<span class="chipx"><b>' + escHtml(course.title) + '</b> ' + escHtml(course.code) + '</span>' : '',
+        kit ? '<span class="chipx">' + escHtml(kit.label) + '</span>' : '',
+        '<span class="chipx' + (panelChanged('home') ? '' : ' off') + '">Home page: ' + (panelChanged('home') ? 'customized' : 'suggested look') + '</span>',
+        '<span class="chipx' + (panelChanged('syllabus') ? '' : ' off') + '">Syllabus: ' + (panelChanged('syllabus') ? 'customized' : 'standard') + '</span>',
+        '<span class="chipx' + (piecesTileChanged() ? '' : ' off') + '">Course tile: ' + (piecesTileChanged() ? 'customized' : 'standard') + '</span>'
+      ].join('');
+      $('j-video').innerHTML = '';
+      return;
+    }
     var fetchOnly = J.path === 'fetch';
     $('j-generate-title').textContent = fetchOnly ? 'Download the course file' : 'Generate the course file';
     $('j-generate-hint').textContent = fetchOnly
@@ -4833,7 +4909,7 @@
       : 'One file. Your home page is already inside it, set as the course front page, with the module cards linked to the real modules, and your syllabus fills the Syllabus page.';
     var addon = moduleAddon();
     if (addon && !fetchOnly) $('j-generate-hint').textContent = 'One file with ' + scopeLabel() + '. Import it into the course you already have: it adds the module and its assignments, quizzes and discussions, and leaves your home page, syllabus and other modules as they are.';
-    $('dl').hidden = fetchOnly; $('copy').hidden = fetchOnly || addon;
+    $('dl').hidden = fetchOnly; $('copy').hidden = fetchOnly || addon; $('pdf').hidden = false; $('copy').textContent = 'Copy home page HTML only';
     document.querySelectorAll('#step6 li.li-home').forEach(function (li) { li.hidden = addon; });
     $('li-tile').hidden = addon || fetchOnly || !home.tileOn;
     $('dl-plain').hidden = (!fetchOnly && !!home.onlyModules && home.onlyModules.length > 0) || !!(kit && kit.upload);
@@ -5496,7 +5572,7 @@
       b.addEventListener('click', function () {
         var p = this.dataset.path;
         if (course && course.upload && p !== 'upload') { course = null; kit = null; }
-        J.path = p; J.want = {}; J.mode = p === 'upload' ? 'configure' : ''; saveJourney(); go(p === 'upload' ? 'upload' : 'grade');
+        J.path = p; J.want = {}; J.mode = p === 'upload' || p === 'pieces' ? 'configure' : ''; J.scope = p === 'pieces' ? 'all' : J.scope; saveJourney(); go(p === 'upload' ? 'upload' : 'grade');
       });
     });
     document.querySelectorAll('.findby button').forEach(function (b) {
@@ -5535,6 +5611,7 @@
         }
         setAll(false);
         resetPanel(q); J.want[q] = false;
+        if (piecesPath()) { saveJourney(); go(nextScreen(q)); return; }
         if (reviewFlow()) { saveJourney(); go('review'); return; }
         // leave by way of the question, so Back returns there and the panel drops out of the trail
         J.screen = Q_OF[q]; saveJourney();
@@ -5544,6 +5621,18 @@
     $('j-another').addEventListener('click', function () { startOver('grade'); });
     wireTilePanel();
     $('j-customize-instead').addEventListener('click', function () { J.path = 'customize'; J.mode = 'configure'; saveJourney(); go(nextScreen(J.scope === 'modules' ? 'modules' : 'part')); });
+    $('dl-pieces').addEventListener('click', function () {
+      var btn = this; btn.disabled = true; status('Building the three files\u2026');
+      buildPieces().then(function (r) { saveBlob(r.blob, r.names.zip); status('Downloaded ' + r.names.zip + '.', 'ok'); })
+        .catch(function (e) { status('Could not build the files: ' + e.message, 'err'); })
+        .then(function () { btn.disabled = false; });
+    });
+    $('copy-syl').addEventListener('click', function () {
+      var html = syllabusHtml();
+      var done = function () { status('Syllabus HTML copied. In Canvas: Syllabus, Edit, the HTML editor button, select all, paste, Update Syllabus.', 'ok'); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(html).then(done, function () { fallbackCopy(html); done(); });
+      else { fallbackCopy(html); done(); }
+    });
     $('pdf').addEventListener('click', function () { openPrintable('all', 'status').catch(function () { /* shown in status */ }); });
     wireReview();
     renderGreeting();
@@ -5564,7 +5653,7 @@
     loadFinder();
     // The search box drives the picker: an exact code or title selects the course;
     // anything else narrows the browse list and clears the current selection.
-    $('code').addEventListener('input', function () { var c = findCourse(this.value); chooseCourse(c); if (c && J.screen === 'course') go('mode'); });
+    $('code').addEventListener('input', function () { var c = findCourse(this.value); chooseCourse(c); if (c && J.screen === 'course') go(nextScreen('course')); });
     $('subject-filter').addEventListener('change', function () { finder.subject = this.value; saveFinder(); renderFinder(); });
     $('preview').addEventListener('click', function (e) { if (e.target.closest('a')) e.preventDefault(); });
     FIELDS.forEach(function (f) { $('f-' + f).addEventListener('input', function () { readForm(); save(); saveProfile(); renderPreview(); if (kit) renderSyllabus(); }); });
@@ -5584,7 +5673,7 @@
     $('print-open').addEventListener('click', function () { openPrintable().catch(function () { /* shown in status */ }); });
     $('copy').addEventListener('click', function () {
       var html = currentHtml();
-      var done = function () { status('Home page HTML copied. Paste it into a Canvas page in HTML view. Module links only work inside an import; in a pasted page, edit them to your Modules URLs.', 'ok'); };
+      var done = function () { status(piecesPath() ? 'Home page HTML copied. Paste it into a Canvas page in the HTML editor.' : 'Home page HTML copied. Paste it into a Canvas page in HTML view. Module links only work inside an import; in a pasted page, edit them to your Modules URLs.', 'ok'); };
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(html).then(done, function () { fallbackCopy(html); done(); });
       else { fallbackCopy(html); done(); }
     });
@@ -5898,6 +5987,9 @@
         return printSelfTest();
       }).then(function (pr) {
         out.print = pr; out.ok = out.ok && pr.ok;
+        return piecesSelfTest();
+      }).then(function (pc) {
+        out.pieces = pc; out.ok = out.ok && pc.ok;
         $('selftest-out').textContent = JSON.stringify(out);
         document.title = 'Optima Course Kit [selftest done]';
       });
@@ -6045,6 +6137,39 @@
   // Tiles: five English 1 sections differing only by period. Asserts Poppins
   // loaded, every canvas carries ink in the text block, names differ per tile,
   // and the zip holds one PNG per tile.
+  // Home page, syllabus and tile only: the path's screens, a home page with no module
+  // list and no Canvas tokens (links from the course address, or none), and a zip of three files.
+  function piecesSelfTest() {
+    var res = {}, keep = { path: J.path, url: home.courseUrl, want: J.want };
+    J.path = 'pieces'; J.want = {};
+    var seq = sequence();
+    res.seq = seq.indexOf('mode') < 0 && seq.indexOf('q-home') < 0 && seq.indexOf('dates') < 0 && seq.slice(-5).join(',') === 'details,home,tile,syllabus,generate';
+    home.courseUrl = '';
+    var bare = currentHtml();
+    res.bare = !/Course Modules/.test(bare) && bare.indexOf('CANVAS_') < 0 && bare.indexOf('/modules') < 0 && bare.indexOf('Tech Help') >= 0;
+    home.courseUrl = ' https://optimaoaoteam.instructure.com/courses/123/pages/home ';
+    var linked = currentHtml();
+    res.linked = linked.indexOf('href="https://optimaoaoteam.instructure.com/courses/123/modules"') >= 0 && linked.indexOf('href="https://optimaoaoteam.instructure.com/courses/123/assignments/syllabus"') >= 0 && linked.indexOf('CANVAS_') < 0;
+    go('details', true); res.urlField = getComputedStyle($('f-courseUrl')).display !== 'none';
+    go('home', true); res.modHidden = getComputedStyle($('mod-cards')).display === 'none';
+    go('part', true); res.noModuleTile = !$('kits').querySelector('.tile[data-part="module"]');
+    go('generate', true); res.generate = !$('dl-pieces').hidden && !$('copy-syl').hidden && $('dl').hidden && $('dl-plain').hidden && $('pdf').hidden;
+    var n = piecesNames();
+    return buildPieces().then(function (r) { return JSZip.loadAsync(r.blob); }).then(function (z) {
+      var names = Object.keys(z.files).sort();
+      res.files = names.length === 3 && [n.home, n.syllabus, n.tile].every(function (x) { return names.indexOf(x) >= 0; });
+      return Promise.all([z.file(n.home).async('string'), z.file(n.syllabus).async('string'), z.file(n.tile).async('uint8array')]);
+    }).then(function (a) {
+      res.homeFile = a[0] === linked;
+      res.syllabusFile = a[1].length > 1000 && a[1].indexOf('CANVAS_') < 0;
+      res.png = a[2].length > 50000 && a[2][0] === 0x89 && a[2][1] === 0x50;
+      J.path = 'customize'; go('generate', true);
+      res.restored = !$('dl').hidden && $('dl-pieces').hidden && !/Course Modules/.test(bare) && /Course Modules/.test(currentHtml());
+      res.ok = ['seq', 'bare', 'linked', 'urlField', 'modHidden', 'noModuleTile', 'generate', 'files', 'homeFile', 'syllabusFile', 'png', 'restored'].every(function (k) { return res[k]; });
+      J.path = keep.path; J.want = keep.want; home.courseUrl = keep.url;
+      return res;
+    }).catch(function (e) { res.error = String(e && e.message || e); J.path = keep.path; J.want = keep.want; home.courseUrl = keep.url; return res; });
+  }
   // Preview one assignment, one discussion and one graded quiz out of the cartridge.
   function previewSelfTest() {
     var picks = ['assignment', 'discussion', 'quiz'].map(function (ty) {
