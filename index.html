@@ -944,7 +944,7 @@
   </section>
 
   <section class="preview">
-    <div class="previewbar"><div>Home page preview</div><div style="display:flex;gap:12px;align-items:center;"><span id="preview-note">Links work after import, not here.</span><button type="button" class="sm" id="preview-home" hidden>Back to home page</button><button type="button" class="sm" id="hide-preview">Hide preview</button></div></div>
+    <div class="previewbar"><div id="preview-title">Home page preview</div><div style="display:flex;gap:12px;align-items:center;"><span id="preview-note">Links work after import, not here.</span><button type="button" class="sm" id="preview-home" hidden>Back to home page</button><button type="button" class="sm" id="hide-preview">Hide preview</button></div></div>
     <div id="preview" aria-label="Home page preview"></div>
   </section>
 </main>
@@ -2195,15 +2195,17 @@
     save();
     if (p === 'meta.band' || /\.on$/.test(p) || /\.(at|tone|kind)$/.test(p)) renderSyllabus(); else refreshSyllabusPreview();
   }
-  function previewSyllabus() {
+  // auto: opened by arriving at the syllabus step, so a hidden preview stays hidden
+  function previewSyllabus(auto) {
     if (!kit) return;
     previewItemId = '__syllabus__';
-    setPreviewShown(true);
+    if (!auto) setPreviewShown(true);
     $('preview-home').hidden = false;
     var pv = $('preview'); pv.className = 'item'; pv.innerHTML = '';
     var fr = document.createElement('iframe'); fr.className = 'itemframe'; fr.setAttribute('sandbox', ''); fr.setAttribute('title', 'Syllabus preview');
     pv.appendChild(fr);
-    $('preview-note').textContent = 'Previewing: your syllabus. In Canvas its own assignment list follows below.';
+    $('preview-title').textContent = 'Syllabus preview';
+    $('preview-note').textContent = 'In Canvas the assignment list follows below.';
     refreshSyllabusPreview();
   }
   function refreshSyllabusPreview() {
@@ -3367,8 +3369,8 @@
   }
   function leaveItemPreview() {
     previewItemId = null;
-    $('preview').className = ''; $('preview-home').hidden = true;
-    $('preview-note').textContent = 'Links work after import, not here.';
+    $('preview').className = ''; $('preview-home').hidden = true; $('preview-title').textContent = 'Home page preview';
+    $('preview-note').textContent = piecesPath() ? 'Links work once the page is in Canvas.' : 'Links work after import, not here.';
     renderPreview();
   }
   function renderPreview() {
@@ -4654,6 +4656,9 @@
     if (J.screen === 'upload') renderUpload();
     if (J.screen === 'review') renderReview();
     if (J.screen === 'home' || J.screen === 'details') fillForm();
+    // The syllabus step shows the syllabus beside it; every other step shows the home page.
+    if (J.screen === 'syllabus' && kit && previewItemId !== '__syllabus__') previewSyllabus(true);
+    else if (J.screen !== 'syllabus' && previewItemId === '__syllabus__') leaveItemPreview();
     if (J.screen === 'tile') renderTilePanel();
   }
   function renderTrail() {
