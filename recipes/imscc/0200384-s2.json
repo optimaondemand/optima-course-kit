@@ -1,0 +1,46 @@
+{
+ "cartridge": "C:/Users/JorgeAcevedo/Documents/DiscoveringComputerScience/course/build/dist/discovering-cs.imscc",
+ "code": "0200384",
+ "kit": "0200384-s2",
+ "course_title": "Discovering Computer Science Sem 2",
+ "course": {
+  "title": "Discovering Computer Science",
+  "grade": "9-12",
+  "subject": "Computer Science",
+  "label": "Semester 2 (Start Here + Units 5-8)"
+ },
+ "modules": {
+  "select": [
+   1,
+   7,
+   8,
+   9,
+   10
+  ]
+ },
+ "weeks": {
+  "mode": "list",
+  "starts": [
+   1,
+   1,
+   5,
+   10,
+   14
+  ]
+ },
+ "note": "Course build DiscoveringComputerScience (course/build/build_imscc.py -> dist/discovering-cs.imscc, 2026-08-10); widgets iframe facevedooe.github.io/DiscoveringComputerScience. Week starts per unit follow docs/scope-and-sequence.md quarters (Unit 0 week 1, two units per quarter). The welcome letter and syllabus placeholders {{INSTRUCTOR_NAME}}, {{INSTRUCTOR_EMAIL}} and {{RESPONSE_TIME}} (unfilled in the build, per its README) are shipped as bracketed blanks for the teacher to edit.",
+ "replace": [
+  [
+   "\\{\\{INSTRUCTOR_NAME\\}\\}",
+   "[Instructor name]"
+  ],
+  [
+   "\\{\\{INSTRUCTOR_EMAIL\\}\\}",
+   "[instructor email]"
+  ],
+  [
+   "\\{\\{RESPONSE_TIME\\}\\}",
+   "[response time]"
+  ]
+ ]
+}

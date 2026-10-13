@@ -1,0 +1,37 @@
+{
+ "cartridge": "C:/Users/JorgeAcevedo/Documents/6 and 7 Grade PE/mission-move-1508060-semester-1.imscc",
+ "code": "1508060",
+ "kit": "1508060-s1",
+ "course_title": "M/J Comprehensive Physical Education Grade 6/7 (Mission: Move!) Sem 1",
+ "course": {
+  "title": "M/J Comprehensive Physical Education Grade 6/7",
+  "grade": "6-7",
+  "subject": "Physical Education",
+  "label": "Semester 1 (Mission: Move! units 1.1-1.9, Weeks 1-18)"
+ },
+ "media": {
+  "mode": "pack",
+  "pack_out": "C:/Users/JorgeAcevedo/Documents/Course Kit Media Packs",
+  "fallback": [
+   "C:/Users/JorgeAcevedo/Documents/3rd Grade PE/mission-move-3rd-grade-pe.imscc",
+   "C:/Users/JorgeAcevedo/Documents/4th Grade PE/mission-move-4th-grade-pe.imscc",
+   "C:/Users/JorgeAcevedo/Documents/5th Grade PE/mission-move-5th-grade-pe.imscc",
+   "C:/Users/JorgeAcevedo/Documents/7th and 8th Grade PE/mission-move-7-8-grade-pe.imscc"
+  ]
+ },
+ "replace": [
+  [
+   "https://optimadomi\\.instructure\\.com/courses/\\d+/files/\\d+/preview",
+   "https://facevedooe.github.io/On-Demand-PE/oao-logo.png"
+  ]
+ ],
+ "rename_groups": {
+  "Imported Assignments": "Discussions"
+ },
+ "weeks": {
+  "mode": "title",
+  "per_module": 2
+ },
+ "front_page": "Course Home Page",
+ "note": "Course build 6 and 7 Grade PE, semester cartridge mission-move-1508060-semester-1.imscc (the course ships as two halves; both are required for credit, see its Teacher-Manual.md). Embedded demonstration videos travel in the companion media pack."
+}

@@ -1,0 +1,28 @@
+{
+ "cartridge": "C:/Users/JorgeAcevedo/Documents/Courses/OAO-Hope/dist/hope-course.imscc",
+ "code": "3026010",
+ "kit": "3026010-s1",
+ "course_title": "HOPE - Health Opportunities through Physical Education Sem 1",
+ "course": {
+  "title": "Health Opportunities through Physical Education (HOPE)",
+  "grade": "9-12",
+  "subject": "Physical Education",
+  "label": "Semester 1 (Units 1-8 + Segment 1 Midterm)"
+ },
+ "modules": {
+  "select": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8
+  ]
+ },
+ "weeks": {
+  "mode": "title"
+ },
+ "note": "Course build OAO-Hope (tools/build_imscc.py -> dist/hope-course.imscc, 2026-09-03); lessons iframe facevedooe.github.io/OAO-Hope."
+}

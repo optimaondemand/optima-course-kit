@@ -1,0 +1,51 @@
+{
+ "cartridge": "C:/Users/JorgeAcevedo/Documents/6th Grade PE/mission-move-6th-grade-pe.imscc",
+ "code": "1508000",
+ "media": {
+  "mode": "pack",
+  "pack_out": "C:/Users/JorgeAcevedo/Documents/Course Kit Media Packs",
+  "fallback": [
+   "C:/Users/JorgeAcevedo/Documents/3rd Grade PE/mission-move-3rd-grade-pe.imscc",
+   "C:/Users/JorgeAcevedo/Documents/4th Grade PE/mission-move-4th-grade-pe.imscc",
+   "C:/Users/JorgeAcevedo/Documents/5th Grade PE/mission-move-5th-grade-pe.imscc",
+   "C:/Users/JorgeAcevedo/Documents/7th and 8th Grade PE/mission-move-7-8-grade-pe.imscc"
+  ]
+ },
+ "replace": [
+  [
+   "https://optimadomi\\.instructure\\.com/courses/\\d+/files/\\d+/preview",
+   "https://facevedooe.github.io/On-Demand-PE/oao-logo.png"
+  ]
+ ],
+ "rename_groups": {
+  "Imported Assignments": "Discussions"
+ },
+ "weeks": {
+  "mode": "title",
+  "per_module": 2
+ },
+ "note": "Course build 6th Grade PE (tools/build.py -> mission-move-6th-grade-pe.imscc); the duplicate '1.10 (Copy)' module is left out. Embedded demonstration videos travel in the companion media pack.",
+ "kit": "1508000-s1",
+ "course_title": "M/J Fitness - Grade 6 (Mission: Move!) Sem 1",
+ "course": {
+  "title": "M/J Fitness - Grade 6",
+  "grade": "6",
+  "subject": "Physical Education",
+  "label": "Semester 1 (Mission: Move! units 1.1-1.8)"
+ },
+ "modules": {
+  "skip_titles": [
+   "\\(Copy\\)"
+  ],
+  "select": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8
+  ]
+ }
+}

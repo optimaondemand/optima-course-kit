@@ -1,0 +1,24 @@
+{
+ "cartridge": "C:/Users/JorgeAcevedo/Documents/6th Grade Digital Discoveries/6th-grade-digital-discoveries.imscc",
+ "code": "0200021",
+ "kit": "0200021-s2",
+ "course_title": "M/J Grade 6 Digital Discoveries Sem 2",
+ "course": {
+  "title": "M/J Grade 6 Digital Discoveries",
+  "grade": "6",
+  "subject": "Computer Science",
+  "label": "Semester 2 (Units 3-5, Weeks 19-36)"
+ },
+ "modules": {
+  "select": [
+   1,
+   4,
+   5,
+   6
+  ]
+ },
+ "weeks": {
+  "mode": "title"
+ },
+ "note": "Course build 6th Grade Digital Discoveries (build_imscc.py -> 6th-grade-digital-discoveries.imscc, 2026-05-14); readings and activities iframe facevedoOE.github.io/oao-digital-discoveries-gr6."
+}

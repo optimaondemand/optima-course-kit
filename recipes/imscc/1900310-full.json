@@ -1,0 +1,16 @@
+{
+ "cartridge": "C:/Users/JorgeAcevedo/Documents/Courses/OAO-drivers-ed/SUBMIT-2026-09/drivers-ed-corrected-v5.imscc",
+ "code": "1900310",
+ "kit": "1900310-full",
+ "course_title": "Driver Education/Traffic Safety Classroom",
+ "course": {
+  "title": "Driver Education/Traffic Safety Classroom",
+  "grade": "9-12",
+  "subject": "Driver Education",
+  "label": "Full course (Road Ready, FLHSMV DETS, self-paced)"
+ },
+ "weeks": {
+  "mode": "none"
+ },
+ "note": "Course build OAO-drivers-ed, FLHSMV submission package SUBMIT-2026-09/drivers-ed-corrected-v5.imscc; lessons and activities iframe facevedooe.github.io/OAO-drivers-ed. Units 1-5 ship unpublished in that package (pending FLHSMV approval); self-paced, so no week numbers. The 38 question banks behind the Final Exam are outside the Common Cartridge spec; the Final Exam's 40 fixed questions are included."
+}

@@ -1,0 +1,47 @@
+{
+ "cartridge": "C:/Users/JorgeAcevedo/Documents/4th Grade PE/mission-move-4th-grade-pe.imscc",
+ "code": "5015060",
+ "media": {
+  "mode": "pack",
+  "pack_out": "C:/Users/JorgeAcevedo/Documents/Course Kit Media Packs",
+  "fallback": [
+   "C:/Users/JorgeAcevedo/Documents/3rd Grade PE/mission-move-3rd-grade-pe.imscc",
+   "C:/Users/JorgeAcevedo/Documents/5th Grade PE/mission-move-5th-grade-pe.imscc",
+   "C:/Users/JorgeAcevedo/Documents/7th and 8th Grade PE/mission-move-7-8-grade-pe.imscc"
+  ]
+ },
+ "replace": [
+  [
+   "https://optimadomi\\.instructure\\.com/courses/\\d+/files/\\d+/preview",
+   "https://facevedooe.github.io/On-Demand-PE/oao-logo.png"
+  ]
+ ],
+ "rename_groups": {
+  "Imported Assignments": "Discussions"
+ },
+ "weeks": {
+  "mode": "title",
+  "per_module": 2
+ },
+ "note": "Course build 4th Grade PE (tools/build.py -> mission-move-4th-grade-pe.imscc). Embedded demonstration videos travel in the companion media pack.",
+ "kit": "5015060-s2",
+ "course_title": "Physical Education - Grade 4 (Mission: Move!) Sem 2",
+ "course": {
+  "title": "Physical Education - Grade 4",
+  "grade": "4",
+  "subject": "Physical Education",
+  "label": "Semester 2 (Mission: Move! units 1.9-1.16)"
+ },
+ "modules": {
+  "select": [
+   9,
+   10,
+   11,
+   12,
+   13,
+   14,
+   15,
+   16
+  ]
+ }
+}
