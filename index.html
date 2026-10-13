@@ -2433,9 +2433,11 @@
   function newPill() { return '<span class="pill newpill" title="Added in the last three days">NEW</span>'; }
   // Subjects as a teacher picks them. Career and college courses and critical
   // thinking are electives, so they share one tile whatever course.json calls them.
+  // Computer science courses sit under Technology.
   function subjectGroup(c) {
     var s = String((c && c.subject) || 'Other');
     if (/critical thinking|career|college counseling|decision making|study skills|leadership|research skills|elective/i.test(s)) return 'Electives';
+    if (/computer science|technology/i.test(s)) return 'Technology';
     return s;
   }
   function matchesFinder(c) {
