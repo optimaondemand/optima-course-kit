@@ -287,6 +287,9 @@
   @media (max-width: 640px) { .tiles.four { grid-template-columns:1fr; } }
   /* Home page, syllabus and tile only: no course file, so no module list on the home page. */
   .pieces-only { display:none; }
+  .ready-note { margin:22px 0 4px; padding:16px 20px; background:var(--soft); border-left:6px solid var(--navy); border-radius:4px; }
+  .ready-note b { display:block; font-size:21px; line-height:1.3; color:var(--navy); }
+  .ready-note span { display:block; font-size:16px; color:var(--ink); margin-top:4px; }
   .policy-note { font-size:21px; font-weight:700; line-height:1.35; color:var(--navy); background:var(--soft); border-left:6px solid var(--gold); padding:14px 18px; margin:14px 0; }
   .pieces .pieces-only { display:revert; }
   .pieces .no-pieces { display:none; }
@@ -491,6 +494,7 @@
 
     <section class="screen" data-screen="welcome">
       <h2 class="q">Select a starting point</h2>
+      <p class="hint" id="j-cartridge-note">You configure your own Canvas course cartridge (.imscc file) here, then import it into your Canvas course shell.</p>
       <p class="hint" id="j-greet" hidden></p>
       <div id="j-error"></div>
       <div class="tiles four" id="t-path">
@@ -501,6 +505,7 @@
       </div>
       <div class="hint center">Dashboard tiles for several sections at once: <button type="button" class="link" id="j-tiles">Course tiles</button>.</div>
       <div class="hint center" id="j-beta"></div>
+      <div class="ready-note"><b>Your curriculum is ready for you.</b><span>You are in control of when and how curriculum is added to your course shells.</span></div>
     </section>
 
     <section class="screen" data-screen="grade" hidden>
