@@ -287,6 +287,7 @@
   @media (max-width: 640px) { .tiles.four { grid-template-columns:1fr; } }
   /* Home page, syllabus and tile only: no course file, so no module list on the home page. */
   .pieces-only { display:none; }
+  .policy-note { font-size:21px; font-weight:700; line-height:1.35; color:var(--navy); background:var(--soft); border-left:6px solid var(--gold); padding:14px 18px; margin:14px 0; }
   .pieces .pieces-only { display:revert; }
   .pieces .no-pieces { display:none; }
   .cgrp { grid-column:1 / -1; display:flex; align-items:center; gap:12px; font-family:var(--f-display); font-size:12px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:var(--mute); margin:12px 0 -2px; }
@@ -881,6 +882,7 @@
 
     <section class="screen" data-screen="q-gradebook" hidden>
       <h2 class="q">Gradebook</h2>
+      <div class="policy-note">Every course file made here gives a 0 to missing work. You can change this in Canvas: Grades, then the Settings gear, then Late Policies.</div>
       <div class="tiles two yn">
         <button type="button" class="tile big" data-q="gradebook" data-v="1"><span class="tt">Configure the gradebook</span><span class="ts">Set group weights, move items between groups and change point values.</span></button>
         <button type="button" class="tile big" data-q="gradebook" data-v="0"><span class="tt">Skip this step</span><span class="ts">Keep the groups, weights and points as built.</span></button>
@@ -904,6 +906,7 @@
     <section class="screen" data-screen="generate" hidden>
       <h2 class="q" id="j-generate-title">Generate the course file</h2>
       <div class="summary" id="j-summary"></div>
+      <div class="policy-note no-pieces">Every course file made here gives a 0 to missing work. You can change this in Canvas: Grades, then the Settings gear, then Late Policies.</div>
       <div class="step" id="step6">
         <div class="hint" id="j-generate-hint">One file. Your home page is already inside it, set as the course front page, with the module cards linked to the real modules, and your syllabus fills the Syllabus page.</div>
         <div class="hint" id="artpack" hidden style="border-left: 4px solid #0E1C42; padding-left: 12px;"></div>
@@ -3001,8 +3004,8 @@
     out.push('</tbody></table></div>');
     out.push('<div class="actions"><button type="button" class="alt" id="gb-addgroup">Add group</button></div>');
     out.push('<div class="status" id="gb-summary"></div>');
-    out.push('<label style="display:flex;align-items:center;gap:8px;margin-top:14px;"><input type="checkbox" id="gb-missingzero"' + (home.missingZero ? ' checked' : '') + '> Give a 0 to missing work</label>');
-    out.push('<div class="hint">Optional. Canvas scores a published assignment, quiz or discussion 0 once its due date passes with nothing turned in, whatever it is worth. Unpublished items and items with no due date are not scored. When a student turns the work in, the 0 comes off and you grade it as usual.</div>');
+    out.push('<div class="policy-note">Every course file made here gives a 0 to missing work. You can change this in Canvas: Grades, then the Settings gear, then Late Policies.</div>');
+    out.push('<div class="hint">Canvas scores a published assignment, quiz or discussion 0 once its due date passes with nothing turned in. Unpublished items and items with no due date are not scored. When a student turns the work in, the 0 comes off and you grade it as usual.</div>');
     out.push('<div class="hint" style="margin-top:14px;">A graded quiz total is split evenly across its questions when you change it. Publishing has its own step.</div>');
     out.push('<div class="hint">To set many items at once, fill in a batch row and apply it. A blank group or points field leaves that setting alone.</div>');
     out.push(gbBatchRow('all', 'Every graded item in this kit', 'Apply to matching items'));
@@ -3032,7 +3035,6 @@
   }
   function wireGradebook() {
     $('gb-weighted').addEventListener('change', function () { home.weighted = this.checked; save(); renderGbSummary(); });
-    $('gb-missingzero').addEventListener('change', function () { home.missingZero = this.checked; save(); });
     document.querySelectorAll('.gb-gtitle').forEach(function (inp) {
       inp.addEventListener('change', function () { home.groups[+this.dataset.gi].title = this.value; save(); renderGradebook(); });
     });
@@ -4024,7 +4026,8 @@
         return f.async('string').then(function (text) { zip.file(kit.settings.assignment_groups, patchGroupsXml(text)); });
       });
     }
-    if (home.missingZero) tasks.push(function () { return applyMissingZero(zip); });
+    // Program rule: every generated file gives a 0 to missing work (not a teacher option).
+    tasks.push(function () { return applyMissingZero(zip); });
     if (kit.settings && kit.settings.course_settings && !!home.weighted !== !!kit.weighted) {
       tasks.push(function () {
         var f = zip.file(kit.settings.course_settings);
@@ -5545,7 +5548,7 @@
     if (q === 'dates') return !!home.courseStart || Object.keys(home.dates || {}).some(function (id) { var d = home.dates[id] || {}; return !!(d.due_at || d.unlock_at || d.lock_at); });
     if (q === 'publish') return Object.keys(home.moduleOverrides || {}).length > 0 || Object.keys(home.removed || {}).length > 0
       || (kit.graded_items || []).some(function (it) { var o = home.itemOverrides[it.id]; return !!o && o.published !== it.published; });
-    if (q === 'gradebook') return groupsChanged() || !!home.weighted !== !!kit.weighted || !!home.missingZero
+    if (q === 'gradebook') return groupsChanged() || !!home.weighted !== !!kit.weighted
       || (kit.graded_items || []).some(function (it) { var o = home.itemOverrides[it.id]; return !!o && (o.group !== it.group || Number(o.points) !== Number(it.points)); });
     return false;
   }
@@ -5568,7 +5571,7 @@
       renderDates(); renderGradebook();
     } else if (q === 'gradebook') {
       home.groups = (kit.groups || []).map(function (g) { return { id: g.id, title: g.title, weight: g.weight, position: g.position }; });
-      home.weighted = !!kit.weighted; home.missingZero = false;
+      home.weighted = !!kit.weighted;
       (kit.graded_items || []).forEach(function (it) { var o = home.itemOverrides[it.id]; if (o) { o.group = it.group; o.points = it.points; } });
       renderGradebook(); renderDates();
     }
@@ -5673,7 +5676,9 @@
     });
     $('dl-plain').addEventListener('click', function () {
       status('Fetching the original kit…');
-      fetch(BASE + kit.file, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.blob(); })
+      fetch(BASE + kit.file, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+        .then(function (buf) { return JSZip.loadAsync(buf); })
+        .then(function (zip) { return applyMissingZero(zip).then(function () { return zip.generateAsync({ type: 'blob', compression: 'DEFLATE' }); }); })
         .then(function (b) { saveBlob(b, kit.file.split('/').pop()); status('Downloaded the original kit. Its home page is the generic one.', 'ok'); })
         .catch(function (e) { status('Could not fetch the kit: ' + e.message, 'err'); });
     });
@@ -5817,8 +5822,6 @@
         setModulePublished(secondModule, true);
         modulePublishAll = allOff && modulePublished(secondModule) && inM2().every(function (it) { return effItem(it).published; });
       }
-      // Missing work scored 0: the late policy file lands in the cartridge.
-      home.missingZero = true;
       // Gradebook batch row on the second module: filter by type + title, move the
       // matches to another group at 7 points; the rest of the module stays as built.
       if (secondModule) {
@@ -5933,7 +5936,7 @@
           }
         }));
         if (zip2) reads.push(Promise.all([zip2.file(LATE_POLICY) ? zip2.file(LATE_POLICY).async('string') : Promise.resolve(''), zip2.file('imsmanifest.xml').async('string')]).then(function (lp) {
-          checks.missingZero = !hasSchedule || (/<missing_submission_deduction_enabled>true<\/missing_submission_deduction_enabled>/.test(lp[0])
+          checks.missingZero = (/<missing_submission_deduction_enabled>true<\/missing_submission_deduction_enabled>/.test(lp[0])
             && /<missing_submission_deduction>100(\.0)?<\/missing_submission_deduction>/.test(lp[0])
             && lp[1].indexOf('<file href="' + LATE_POLICY + '"/>') >= 0);
         }));
@@ -5968,7 +5971,7 @@
         out.previewToggle = previewToggle;
         out.gbBatch = { items: gbBatch.map(function (it) { return it.title; }), state: gbBatchState, zip: gbBatchZip, control: gbControl ? gbControl.title : null };
         if (gbBatch.length) out.ok = out.ok && gbBatchState && gbBatchZip;
-        out.missingZero = checks.missingZero; if (hasSchedule) out.ok = out.ok && checks.missingZero;
+        out.missingZero = checks.missingZero; out.ok = out.ok && checks.missingZero;
         out.finder = finderCheck; out.ok = out.ok && finderCheck.ok;
         // Art pack: a kit whose sidecar declares figures must show the second-file notice
         // naming its art pack; a kit without figures must keep the notice hidden.
