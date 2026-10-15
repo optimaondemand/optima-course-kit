@@ -147,7 +147,16 @@
   table.sched th { text-align:left; background:var(--bg); color:var(--mute); font-weight:600; padding:8px 10px; border-bottom:1px solid var(--line); white-space:nowrap; }
   table.sched td { padding:6px 10px; border-bottom:1px solid var(--line); vertical-align:middle; }
   table.sched tr.modrow td, table.sched tr.wkrow td { background:#F9FAFD; color:var(--navy); font-size:13px; font-weight:600; padding:7px 10px; }
-  table.sched tr.wkrow td { color:var(--mute); font-weight:400; background:#fff; }
+  table.sched tr.wkrow td { color:var(--mute); font-weight:400; background:#F4F6FB; }
+  table.sched input[type=date] { font-size:13px; padding:4px 6px; width:140px; min-width:0; }
+  table.sched tr.wkrow td { border-top:1px solid var(--line); vertical-align:top; }
+  table.sched tr.wkrow b { color:var(--navy); font-weight:600; }
+  .wk-tools { display:flex; gap:6px; margin-top:6px; }
+  .bt-n { color:var(--mute); font-weight:400; font-size:12.5px; margin-left:4px; }
+  .dt-time { display:block; font-size:11.5px; color:var(--mute); margin-top:2px; }
+  .dates-top { display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px; justify-content:space-between; }
+  .dates-top label { margin:0; }
+  .dates-top input[type=date] { display:block; margin-top:4px; }
   table.sched input[type=datetime-local], table.sched input[type=number], table.sched input[type=text] { font-size:13px; padding:5px 7px; min-width:150px; }
   table.sched select { font-size:13px; padding:5px 7px; }
   table.sched tbody tr:not(.modrow):not(.wkrow) td:first-child { min-width:200px; max-width:260px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -214,7 +223,7 @@
   .batchrow .bl { font-size:13px; color:var(--navy); font-weight:600; }
   .batchrow .bt-fields { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px; }
   .batchrow label { margin:6px 0 3px; }
-  .batchrow input[type=datetime-local] { font-size:13px; padding:5px 7px; min-width:0; width:100%; }
+  .batchrow input[type=date] { display:block; margin-top:3px; font-size:13px; padding:5px 7px; min-width:0; width:100%; }
   .batchrow .actions { margin-top:8px; }
   .batchrow select, .batchrow input[type=text], .batchrow input[type=number] { font-size:13px; padding:5px 7px; min-width:0; width:100%; }
   @media (max-width: 560px) { .batchrow .bt-fields { grid-template-columns:1fr; } }
@@ -377,8 +386,8 @@
   .contents-tree summary .pill { margin-left:8px; }
   /* Dates and publishing share one panel; each question shows only its own controls. */
   #dates-panel.mode-dates .gb-pub, #dates-panel.mode-dates .gb-modall, #dates-panel.mode-dates .gb-modpub, #dates-panel.mode-dates #gb-pub-all, #dates-panel.mode-dates #gb-unpub-all,
-  #dates-panel.mode-dates details.contents, #dates-panel.mode-dates .h-pub, #dates-panel.mode-dates table.sched th:nth-child(7), #dates-panel.mode-dates table.sched td:nth-child(7) { display:none; }
-  #dates-panel.mode-publish .batchrow, #dates-panel.mode-publish #course-start, #dates-panel.mode-publish label[for=course-start], #dates-panel.mode-publish #dates-clear, #dates-panel.mode-publish .h-dates,
+  #dates-panel.mode-dates details.contents, #dates-panel.mode-dates details.nodates, #dates-panel.mode-dates .h-pub, #dates-panel.mode-dates table.sched th:nth-child(7), #dates-panel.mode-dates table.sched td:nth-child(7) { display:none; }
+  #dates-panel.mode-publish .batchrow, #dates-panel.mode-publish .dates-top, #dates-panel.mode-publish .wk-tools, #dates-panel.mode-publish .h-dates,
   #dates-panel.mode-publish table.sched th:nth-child(4), #dates-panel.mode-publish table.sched td:nth-child(4), #dates-panel.mode-publish table.sched th:nth-child(5), #dates-panel.mode-publish table.sched td:nth-child(5),
   #dates-panel.mode-publish table.sched th:nth-child(6), #dates-panel.mode-publish table.sched td:nth-child(6) { display:none; }
   #dates-panel.mode-publish table.sched { min-width:0; }
@@ -2786,52 +2795,81 @@
     if (it.points_locked) return false;
     return !!it.points_editable || (it.type === 'quiz' && it.quiz_type !== 'survey');
   }
+  // Scopes: 'all', a module id, or 'wk|<module id>|<week>' for one week inside a
+  // module ('none' = the module's items with no week number).
   function itemsInScope(scope) {
     var all = activeGraded();
-    return scope === 'all' ? all.slice() : all.filter(function (it) { return it.module === scope; });
+    if (scope === 'all') return all.slice();
+    var w = /^wk\|(.*)\|([^|]+)$/.exec(scope);
+    if (w) return all.filter(function (it) { return it.module === w[1] && String(it.week == null ? 'none' : it.week) === w[2]; });
+    return all.filter(function (it) { return it.module === scope; });
   }
-  // Batch dates: vals = { unlock_at, due_at, lock_at } as datetime-local strings;
-  // blank or missing fields leave the item's current value alone. Returns the items touched.
+  // Date fields hold a date only; the time is fixed per field, as on the review page:
+  // items open at 12:00 AM and are due and close at 11:59 PM, local time.
+  var DATE_FIELDS = ['unlock_at', 'due_at', 'lock_at'];
+  function fieldTime(f) { return f === 'unlock_at' ? 'T00:00' : 'T23:59'; }
+  function withTime(f, day) { return day ? (day.length > 10 ? day : day + fieldTime(f)) : ''; }
+  // Batch dates: vals = { unlock_at, due_at, lock_at } as dates (or datetime-local
+  // strings); blank or missing fields leave the item's current value alone.
+  // Returns the items touched.
   function applyBatch(scope, vals) {
     var items = itemsInScope(scope);
     items.forEach(function (it) {
       var rec = home.dates[it.id] || (home.dates[it.id] = {});
-      ['unlock_at', 'due_at', 'lock_at'].forEach(function (f) { if (vals[f]) rec[f] = vals[f]; });
+      DATE_FIELDS.forEach(function (f) { if (vals[f]) rec[f] = withTime(f, vals[f]); });
     });
     save();
     return items;
   }
   function clearBatch(scope) {
     itemsInScope(scope).forEach(function (it) { delete home.dates[it.id]; });
+    if (home.batchDraft) delete home.batchDraft[scope];
     save();
   }
+  // What a teacher typed into a batch row is kept in home.batchDraft, so a redraw
+  // of the panel (applying another row, ticking a box) never empties it.
+  function draftOf(scope) { return (home.batchDraft && home.batchDraft[scope]) || {}; }
+  function batchInput(scope, f, label) {
+    return '<input type="date" class="bt-in" data-scope="' + escHtml(scope) + '" data-f="' + f + '" value="' + escHtml(draftOf(scope)[f] || '') + '" aria-label="' + escHtml(label) + '">';
+  }
+  function batchButtons(scope, applyLabel) {
+    return '<button type="button" class="sm batch-apply" data-scope="' + escHtml(scope) + '">' + escHtml(applyLabel) + '</button>' +
+      '<button type="button" class="sm alt batch-clear" data-scope="' + escHtml(scope) + '">Clear dates</button>';
+  }
   function batchRow(scope, label, applyLabel) {
-    var id = function (f) { return 'bt-' + f + '-' + scope; };
+    var n = itemsInScope(scope).length;
     return '<div class="batchrow" data-scope="' + escHtml(scope) + '">' +
-      '<div class="bl">' + escHtml(label) + '</div>' +
+      '<div class="bl">' + escHtml(label) + ' <span class="bt-n">' + n + ' item' + (n === 1 ? '' : 's') + '</span></div>' +
       '<div class="bt-fields">' +
-      '<div><label for="' + id('unlock_at') + '">Opens</label><input type="datetime-local" id="' + id('unlock_at') + '"></div>' +
-      '<div><label for="' + id('due_at') + '">Due</label><input type="datetime-local" id="' + id('due_at') + '"></div>' +
-      '<div><label for="' + id('lock_at') + '">Closes</label><input type="datetime-local" id="' + id('lock_at') + '"></div>' +
+      '<label>Opens' + batchInput(scope, 'unlock_at', label + ': opens') + '</label>' +
+      '<label>Due' + batchInput(scope, 'due_at', label + ': due') + '</label>' +
+      '<label>Closes' + batchInput(scope, 'lock_at', label + ': closes') + '</label>' +
       '</div>' +
-      '<div class="actions"><button type="button" class="sm batch-apply" data-scope="' + escHtml(scope) + '">' + escHtml(applyLabel) + '</button>' +
-      '<button type="button" class="sm alt batch-clear" data-scope="' + escHtml(scope) + '">Clear these dates</button></div>' +
+      '<div class="actions">' + batchButtons(scope, applyLabel) + '</div>' +
       '</div>';
   }
   function wireBatchRows() {
-    document.querySelectorAll('.batch-apply').forEach(function (btn) {
+    var el = $('dates-panel');
+    el.querySelectorAll('.bt-in').forEach(function (inp) {
+      inp.addEventListener('change', function () {
+        var bd = home.batchDraft || (home.batchDraft = {});
+        var d = bd[this.dataset.scope] || (bd[this.dataset.scope] = {});
+        if (this.value) d[this.dataset.f] = this.value; else delete d[this.dataset.f];
+        save();
+      });
+    });
+    el.querySelectorAll('.batch-apply').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var scope = this.dataset.scope, vals = {};
-        ['unlock_at', 'due_at', 'lock_at'].forEach(function (f) {
-          var inp = document.getElementById('bt-' + f + '-' + scope);
-          if (inp && inp.value) vals[f] = inp.value;
+        el.querySelectorAll('.bt-in').forEach(function (inp) {
+          if (inp.dataset.scope === scope && inp.value) vals[inp.dataset.f] = inp.value;
         });
         if (!vals.unlock_at && !vals.due_at && !vals.lock_at) return;
         applyBatch(scope, vals);
         renderDates();
       });
     });
-    document.querySelectorAll('.batch-clear').forEach(function (btn) {
+    el.querySelectorAll('.batch-clear').forEach(function (btn) {
       btn.addEventListener('click', function () { clearBatch(this.dataset.scope); renderDates(); });
     });
   }
@@ -2898,17 +2936,21 @@
     var el = $('dates-panel'); if (!el) return;
     if (!kit) { el.innerHTML = '<div class="hint">Choose a kit first.</div>'; return; }
     var graded = activeGraded(), hasDates = !!(kit.graded_items && kit.graded_items.length);
+    // A redraw keeps the modules a teacher opened or closed, and the scroll position.
+    if (openMods.__kit !== kit.id) openMods = { __kit: kit.id };
+    var scrollers = [], sc = el;
+    while (sc) { if (sc.scrollTop) scrollers.push([sc, sc.scrollTop]); sc = sc.parentElement; }
+    var winY = window.scrollY;
     var out = [];
     if (hasDates) {
-      out.push('<label for="course-start">Course start date</label>');
-      out.push('<input type="date" id="course-start" value="' + escHtml(home.courseStart || '') + '">');
-      out.push('<div class="hint h-dates">Proposed: 11:59 PM on the last day of each item\u2019s week. Edit any date, or leave a row blank.</div>');
-      out.push('<div class="hint h-dates">To set many at once, fill in a batch row and apply it. Blank batch fields leave existing dates alone. Times are your local time.</div>');
-      out.push(batchRow('all', 'Every graded item in this kit', 'Apply to all items'));
+      out.push('<div class="dates-top"><label>Course start date<input type="date" id="course-start" value="' + escHtml(home.courseStart || '') + '"></label>' +
+        '<button type="button" class="sm alt" id="dates-clear">Clear all dates</button></div>');
+      out.push('<div class="hint h-dates">Opens 12:00 AM. Due and Closes 11:59 PM. Your local time. A blank batch field leaves those dates alone.</div>');
+      out.push(batchRow('all', 'Whole course', 'Apply to all'));
     } else {
       out.push('<div class="hint">This kit has no schedule data yet.</div>');
     }
-    out.push('<div class="actions">' + (hasDates ? '<button type="button" class="alt" id="dates-clear">Clear all dates</button>' : '') + '<button type="button" class="sm alt" id="gb-pub-all">Publish everything</button><button type="button" class="sm alt" id="gb-unpub-all">Unpublish everything</button></div>');
+    out.push('<div class="actions h-pub-actions"><button type="button" class="sm alt" id="gb-pub-all">Publish everything</button><button type="button" class="sm alt" id="gb-unpub-all">Unpublish everything</button></div>');
     out.push('<div class="hint h-pub">Each module has its own Publish all and Unpublish all, which carry the module and everything inside it. Untick one item in the Published column to import just that item unpublished. Open Module contents to remove an item from this import.</div>');
     if (!kit.contents) out.push('<div class="hint h-pub">' + (kit.contentsError ? 'The module contents could not be read (' + escHtml(kit.contentsError) + '); removal is unavailable for this kit.' : 'Reading the module contents\u2026') + '</div>');
     (kit.modules || []).forEach(function (m) {
@@ -2917,14 +2959,13 @@
       var cont = contentsOf(m);
       if (!items.length && !cont) return;
       var mp = modulePublished(m);
-      out.push('<details class="modblock"' + (mp ? ' open' : '') + '>');
+      var isOpen = m.id in openMods ? openMods[m.id] : mp;
+      out.push('<details class="modblock' + (items.length ? '' : ' nodates') + '" data-m="' + escHtml(m.id) + '"' + (isOpen ? ' open' : '') + '>');
       out.push('<summary><label style="display:inline-flex;align-items:center;gap:8px;"><input type="checkbox" class="gb-modpub" data-m="' + m.id + '"' + (mp ? ' checked' : '') + '> ' + escHtml(m.title) + '</label>' + (mp ? '' : ' <span class="pill grey">UNPUBLISHED</span>') + '</summary>');
       out.push('<div class="actions"><button type="button" class="sm alt gb-modall" data-m="' + m.id + '" data-v="1">Publish all in this module</button><button type="button" class="sm alt gb-modall" data-m="' + m.id + '" data-v="0">Unpublish all in this module</button></div>');
       if (!mp) out.push('<div class="hint h-pub">This module will import unpublished. Its dates still apply once you publish it.</div>');
       if (cont) out.push(contentsList(m, cont));
       if (items.length) {
-        out.push(batchRow(m.id, 'Every graded item in this module', 'Apply to this module'));
-        out.push('<div class="dtable"><table class="sched"><thead><tr><th>Item</th><th>Type</th><th>Points</th><th>Opens</th><th>Due</th><th>Closes</th><th>Published</th></tr></thead><tbody>');
         var byWeek = {}, weeks = [];
         items.forEach(function (it) {
           var wk = it.week == null ? 'none' : it.week;
@@ -2932,8 +2973,18 @@
           byWeek[wk].push(it);
         });
         weeks.sort(function (a, b) { if (a === 'none') return 1; if (b === 'none') return -1; return a - b; });
+        var wkName = function (wk) { return wk === 'none' ? 'No fixed week' : 'Week ' + wk; };
+        // A module that is one week needs no week rows: its batch row is that week's.
+        var oneWeek = weeks.length === 1;
+        out.push(batchRow(m.id, oneWeek && weeks[0] !== 'none' ? wkName(weeks[0]) : 'Whole module', 'Apply to ' + (oneWeek && weeks[0] !== 'none' ? 'this week' : 'this module')));
+        out.push('<div class="dtable"><table class="sched"><thead><tr><th>Item</th><th>Type</th><th>Points</th><th>Opens</th><th>Due</th><th>Closes</th><th>Published</th></tr></thead><tbody>');
         weeks.forEach(function (wk) {
-          out.push('<tr class="wkrow"><td colspan="7">' + (wk === 'none' ? 'No fixed week' : 'Week ' + wk) + '</td></tr>');
+          if (!oneWeek) {
+            var scope = 'wk|' + m.id + '|' + wk, n = byWeek[wk].length;
+            out.push('<tr class="wkrow"><td><b>' + wkName(wk) + '</b> <span class="bt-n">' + n + ' item' + (n === 1 ? '' : 's') + '</span><div class="wk-tools">' + batchButtons(scope, 'Apply to week') + '</div></td><td></td><td></td>' +
+              DATE_FIELDS.map(function (f) { return '<td>' + batchInput(scope, f, wkName(wk) + ': ' + (f === 'unlock_at' ? 'opens' : f === 'due_at' ? 'due' : 'closes')) + '</td>'; }).join('') +
+              '<td></td></tr>');
+          }
           byWeek[wk].forEach(function (it) { out.push(dateRow(it)); });
         });
         out.push('</tbody></table></div>');
@@ -2941,8 +2992,13 @@
       out.push('</details>');
     });
     el.innerHTML = out.join('');
+    window.scrollTo(window.scrollX, winY);
+    scrollers.forEach(function (s) { s[0].scrollTop = s[1]; });
+    el.querySelectorAll('details.modblock').forEach(function (d) {
+      d.addEventListener('toggle', function () { openMods[this.dataset.m] = this.open; });
+    });
     if ($('course-start')) $('course-start').addEventListener('change', function () { home.courseStart = this.value; proposeDates(); save(); renderDates(); });
-    if ($('dates-clear')) $('dates-clear').addEventListener('click', function () { home.dates = {}; save(); renderDates(); });
+    if ($('dates-clear')) $('dates-clear').addEventListener('click', function () { home.dates = {}; home.batchDraft = {}; save(); renderDates(); });
     wireBatchRows();
     el.querySelectorAll('.prev-link').forEach(function (a) {
       a.addEventListener('click', function (e) { e.preventDefault(); previewItem(itemById(this.dataset.id)); });
@@ -2966,16 +3022,28 @@
       b.addEventListener('click', function () { toggleRemoved(this.dataset.i); });
     });
     graded.forEach(function (it) {
-      ['unlock_at', 'due_at', 'lock_at'].forEach(function (f) {
+      DATE_FIELDS.forEach(function (f) {
         var input = document.getElementById('dt-' + f + '-' + it.id);
         if (!input) return;
         input.addEventListener('change', function () {
           var rec = home.dates[it.id] || (home.dates[it.id] = {});
-          rec[f] = this.value;
+          rec[f] = withTime(f, this.value);
           save();
         });
       });
     });
+  }
+  var openMods = {};
+  // One item's date cell. An imported time other than the field's usual one
+  // shows beside the date, so it is never hidden.
+  function dateCell(it, f) {
+    var v = effLocal(it, f), day = v ? v.slice(0, 10) : '', t = v.length > 10 ? 'T' + v.slice(11, 16) : '';
+    var odd = day && t && t !== fieldTime(f) ? '<span class="dt-time">' + escHtml(fmtTime(t.slice(1))) + '</span>' : '';
+    return '<td><input type="date" id="dt-' + f + '-' + it.id + '" value="' + escHtml(day) + '" aria-label="' + escHtml(it.title) + ': ' + (f === 'unlock_at' ? 'opens' : f === 'due_at' ? 'due' : 'closes') + '">' + odd + '</td>';
+  }
+  function fmtTime(hm) {
+    var h = Number(hm.slice(0, 2)), m = hm.slice(3, 5);
+    return (h % 12 || 12) + ':' + m + (h < 12 ? ' AM' : ' PM');
   }
   function dateRow(it) {
     var typeLabel = it.type === 'assignment' ? 'Assignment' : it.type === 'quiz' ? 'Quiz' : 'Discussion';
@@ -2984,9 +3052,7 @@
       '<td><a href="#" class="prev-link" data-id="' + escHtml(it.id) + '" title="Preview this item">' + escHtml(it.title) + '</a></td>' +
       '<td><span class="pill grey">' + typeLabel + '</span></td>' +
       '<td>' + pts + '</td>' +
-      '<td><input type="datetime-local" id="dt-unlock_at-' + it.id + '" value="' + escHtml(effLocal(it, 'unlock_at')) + '"></td>' +
-      '<td><input type="datetime-local" id="dt-due_at-' + it.id + '" value="' + escHtml(effLocal(it, 'due_at')) + '"></td>' +
-      '<td><input type="datetime-local" id="dt-lock_at-' + it.id + '" value="' + escHtml(effLocal(it, 'lock_at')) + '"></td>' +
+      DATE_FIELDS.map(function (f) { return dateCell(it, f); }).join('') +
       '<td style="text-align:center;"><input type="checkbox" class="gb-pub" data-id="' + escHtml(it.id) + '"' + (effItem(it).published ? ' checked' : '') + '></td>' +
       '</tr>';
   }
@@ -5816,6 +5882,29 @@
       home.weighted = true;
       // Batch: every remaining graded item in the first content module due on one date.
       if (firstContentModule) batchItems = applyBatch(firstContentModule.id, { due_at: BATCH_DUE });
+      // Week batch: in a module holding two or more weeks, one week's row dates only
+      // that week, and a typed draft survives a redraw. In memory; restored after.
+      var weekBatchRes = {};
+      (function () {
+        var weeksOf = function (m) { var w = {}; activeGraded().forEach(function (it) { if (it.module === m.id) w[it.week == null ? 'none' : it.week] = 1; }); return Object.keys(w); };
+        var wm = (kit.modules || []).filter(function (m) { return weeksOf(m).length > 1; })[0];
+        if (!wm) { weekBatchRes = { weekBatch: 'no multi-week module' }; return; }
+        var wk = weeksOf(wm)[0], scope = 'wk|' + wm.id + '|' + wk;
+        var inMod = activeGraded().filter(function (it) { return it.module === wm.id; });
+        var before = JSON.stringify(inMod.map(function (it) { return home.dates[it.id] || null; }));
+        var hit = applyBatch(scope, { unlock_at: '2026-11-16' });
+        var hitIds = {}; hit.forEach(function (it) { hitIds[it.id] = 1; });
+        var okHit = hit.length > 0 && hit.every(function (it) { return home.dates[it.id].unlock_at === '2026-11-16T00:00'; });
+        var okRest = inMod.filter(function (it) { return !hitIds[it.id]; }).every(function (it) { return !(home.dates[it.id] && home.dates[it.id].unlock_at === '2026-11-16T00:00'); });
+        home.batchDraft = { 'all': { due_at: '2026-12-01' } };
+        renderDates();
+        var draftKept = !!$('dates-panel').querySelector('.bt-in[data-scope="all"][data-f="due_at"][value="2026-12-01"]');
+        var wkRows = $('dates-panel').querySelectorAll('tr.wkrow .bt-in').length;
+        JSON.parse(before).forEach(function (d, i) { if (d) home.dates[inMod[i].id] = d; else delete home.dates[inMod[i].id]; });
+        home.batchDraft = {};
+        weekBatchRes = { weekBatch: okHit && okRest && draftKept && wkRows > 0 };
+        weekBatchRes.weekBatchDetail = { module: wm.title, week: wk, items: hit.length, okHit: okHit, okRest: okRest, draftKept: draftKept, wkRowInputs: wkRows };
+      })();
       // Module publish-all, both ways, on a second content module.
       secondModule = (kit.modules || []).filter(function (m) {
         return m !== firstContentModule && kit.graded_items.some(function (it) { return it.module === m.id; });
@@ -5971,6 +6060,8 @@
         out.pointsPatched = checks.pointsPatched;
         out.unpublished = checks.unpublished;
         out.batchDates = checks.batchDates; out.batchCount = batchItems.length;
+        Object.assign(out, weekBatchRes);
+        if (weekBatchRes.weekBatch === false) out.ok = false;
         out.quizPoints = checks.quizPoints; out.quiz = quizItem ? quizItem.title : null;
         out.syllabus = checks.syllabus; out.tile = checks.tile; out.removedOk = checks.removed; out.metaItemState = checks.metaItemState; out.modulePublishAll = modulePublishAll; out.secondModule = secondModule ? secondModule.title : null;
         out.previewToggle = previewToggle;
