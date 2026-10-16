@@ -391,6 +391,12 @@
   .imp-steps span { display:block; font-size:14px; color:var(--mute); margin-top:2px; }
   .imp-steps .imp-flag { display:inline-block; margin-top:6px; font-size:13.5px; font-weight:700; color:var(--navy); background:#FBF3E4; border:1.5px solid var(--gold); border-radius:999px; padding:3px 12px; }
   .imp + .video { margin-top:22px; }
+  .seg.imp-seg { margin:0 0 18px; padding:4px; gap:4px; border:1px solid var(--line); border-radius:999px; background:var(--soft); }
+  .seg.imp-seg button { border:0; border-radius:999px; font-size:14px; padding:8px 20px; background:transparent; color:var(--navy); }
+  .seg.imp-seg button[aria-pressed="true"] { background:var(--navy); color:#fff; box-shadow:0 4px 12px -4px rgba(14,28,66,.5); }
+  .imp .imp-some { display:none; }
+  .imp.some .imp-some { display:block; }
+  .imp.some .imp-all { display:none; }
   details.howto { margin-top:14px; }
   details.howto > summary { font-size:15px; font-weight:600; }
   .contents-tree { margin-top:8px; }
@@ -956,14 +962,17 @@
         </ol>
         </details>
         <section class="imp no-pieces" id="j-import" aria-labelledby="j-import-title">
-          <div class="imp-head"><h3 id="j-import-title">Import into Canvas</h3><span class="imp-count">7 steps</span></div>
+          <div class="imp-head"><h3 id="j-import-title">Import into Canvas</h3><span class="imp-count" id="j-import-count">7 steps</span></div>
+          <div class="seg imp-seg" role="group" aria-label="What to import"><button type="button" data-imp="all" aria-pressed="true">Whole file</button><button type="button" data-imp="some" aria-pressed="false">Some modules</button></div>
           <ol class="imp-steps">
             <li><b>Open Import Existing Content</b><span>Modules page, right-hand column</span></li>
             <li><b>Choose Canvas Course Export Package</b><span>Select Content Type menu</span></li>
             <li><b>Choose the .imscc file</b><span>Choose File, select the file, Open</span></li>
-            <li><b>Keep All content selected</b><span>Under Content</span></li>
+            <li class="imp-all"><b>Keep All content selected</b><span>Under Content</span></li>
+            <li class="imp-some"><b>Choose Select specific content</b><span>Under Content</span></li>
             <li><b>Leave both options unchecked</b><span class="imp-flag">Do not convert to New Quizzes</span></li>
             <li><b>Click Add to Import Queue</b><span>Wait for the upload to reach 100%</span></li>
+            <li class="imp-some"><b>Tick the modules you want</b><span>Select content in the import row, tick the modules, then Select Content</span></li>
             <li><b>Let the import finish</b><span>Queued, then Running</span></li>
           </ol>
         </section>
@@ -5030,6 +5039,17 @@
       ? '<div class="frame"><iframe src="' + escHtml(TUTORIAL_VIDEO_URL) + '" title="Implementation tutorial" allowfullscreen loading="lazy"></iframe></div>'
       : '<div class="soon">The tutorial video for importing your course file is coming soon. Until then, the steps above walk you through the import.</div>');
   }
+  // Import checklist switch: whole file (All content) or some modules (Select specific content).
+  function setImportScope(v) {
+    var box = $('j-import'); if (!box) return;
+    box.classList.toggle('some', v === 'some');
+    box.querySelectorAll('[data-imp]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.imp === v)); });
+    $('j-import-count').textContent = (v === 'some' ? 8 : 7) + ' steps';
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('#j-import [data-imp]');
+    if (b) setImportScope(b.dataset.imp);
+  });
   // ------------------------------------------------------------ a teacher's own course (.imscc)
   // A Canvas course export chosen from the teacher's computer. It never leaves the
   // browser. readUploadedCourse builds the same kit object a store sidecar gives
