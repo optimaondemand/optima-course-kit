@@ -378,6 +378,19 @@
   .video .frame { position:relative; padding-top:56.25%; border-radius:8px; overflow:hidden; background:#000; }
   .video .frame iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
   .video .soon { border:1px dashed var(--line); border-radius:8px; padding:14px 16px; background:#F9FAFD; font-size:14px; color:var(--mute); }
+  .imp { margin-top:22px; padding:22px 24px 18px; border-radius:var(--r-lg); background:#fff; box-shadow:var(--sh-2); }
+  .imp-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
+  .imp-head h3 { margin:0; font-size:20px; font-weight:700; color:var(--navy); }
+  .imp-count { font-family:var(--f-display); font-size:12px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--navy); background:#FBF3E4; padding:5px 12px; border-radius:999px; }
+  .imp-steps { list-style:none; margin:0; padding:0; counter-reset:imp; }
+  .imp-steps li { counter-increment:imp; position:relative; padding:0 0 16px 50px; min-height:34px; }
+  .imp-steps li:last-child { padding-bottom:4px; }
+  .imp-steps li::before { content:counter(imp); position:absolute; left:0; top:0; width:34px; height:34px; border-radius:50%; background:var(--gold); color:var(--navy); font-family:var(--f-display); font-size:15px; font-weight:800; display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 4px #fff; z-index:1; }
+  .imp-steps li:not(:last-child)::after { content:""; position:absolute; left:16px; top:34px; bottom:0; width:2px; background:var(--line); }
+  .imp-steps b { display:block; font-family:var(--f-display); font-size:16px; font-weight:700; color:var(--navy); line-height:1.3; padding-top:6px; }
+  .imp-steps span { display:block; font-size:14px; color:var(--mute); margin-top:2px; }
+  .imp-steps .imp-flag { display:inline-block; margin-top:6px; font-size:13.5px; font-weight:700; color:var(--navy); background:#FBF3E4; border:1.5px solid var(--gold); border-radius:999px; padding:3px 12px; }
+  .imp + .video { margin-top:22px; }
   details.howto { margin-top:14px; }
   details.howto > summary { font-size:15px; font-weight:600; }
   .contents-tree { margin-top:8px; }
@@ -942,18 +955,18 @@
           <li><b>Course tile:</b> Settings &rarr; <b>Course Details</b> &rarr; <b>Image</b> &rarr; upload the .png &rarr; <b>Update Course Details</b>.</li>
         </ol>
         </details>
-        <details class="howto no-pieces" open><summary>How to import it into Canvas</summary>
-        <ol class="check">
-          <li>In your Canvas course: <b>Settings</b> &rarr; <b>Import Course Content</b>.</li>
-          <li>Content Type: <b>Canvas Course Export Package</b>. Choose the file you just downloaded.</li>
-          <li>Content: <b>All content</b>. Leave dates unadjusted. Leave <b>Import existing quizzes as New Quizzes</b> <u>unchecked</u>: that option drops the module Intro and Outro surveys and hands you empty quizzes.</li>
-          <li>Click <b>Import</b> and wait for the green check.</li>
-          <li class="li-home">Open <b>Home</b>. Your page should be there with your name on it. If not: Pages &rarr; set it as Front Page &rarr; Home &rarr; Choose Home Page &rarr; Pages Front Page.</li>
-          <li id="li-tile" hidden>Your <b>Dashboard</b> card shows your course tile. If it does not: Settings &rarr; Course Details &rarr; Image &rarr; choose <b>course-tile.jpg</b> from the course files.</li>
-          <li>Check <b>Modules</b> (count matches the kit), <b>Assignments</b> (group weights present) and <b>Syllabus</b> (your text is there), then <b>Publish</b> the course.</li>
-        </ol>
-        <div class="hint">Importing the same kit again later updates the course in place instead of duplicating it.</div>
-        </details>
+        <section class="imp no-pieces" id="j-import" aria-labelledby="j-import-title">
+          <div class="imp-head"><h3 id="j-import-title">Import into Canvas</h3><span class="imp-count">7 steps</span></div>
+          <ol class="imp-steps">
+            <li><b>Open Import Existing Content</b><span>Modules page, right-hand column</span></li>
+            <li><b>Choose Canvas Course Export Package</b><span>Select Content Type menu</span></li>
+            <li><b>Choose the .imscc file</b><span>Choose File, select the file, Open</span></li>
+            <li><b>Keep All content selected</b><span>Under Content</span></li>
+            <li><b>Leave both options unchecked</b><span class="imp-flag">Do not convert to New Quizzes</span></li>
+            <li><b>Click Add to Import Queue</b><span>Wait for the upload to reach 100%</span></li>
+            <li><b>Let the import finish</b><span>Queued, then Running</span></li>
+          </ol>
+        </section>
         <div class="video" id="j-video"></div>
         <div class="actions" style="margin-top:18px;"><button type="button" id="j-another">Configure another course</button></div>
       </div>
@@ -2661,7 +2674,7 @@
     var name = ap.cartridge || (kit.id + '-art-pack.imscc');
     box.innerHTML = '<b>This kit needs a second file.</b> ' + ap.figures + ' licensed artwork' + (ap.figures === 1 ? '' : 's') +
       ' appear on the lesson pages, and they are not inside the kit. After you import the kit, import the art pack <b>' + esc(name) +
-      '</b> into the same course the same way (Settings &rarr; Import Course Content &rarr; Canvas Course Export Package, All content). ' +
+      '</b> into the same course with the same import steps below. ' +
       (url ? 'Get it from the <a href="' + esc(url) + '" target="_blank" rel="noopener">Optima staff store</a> (sign-in required). '
            : 'Ask the curriculum team for it; it lives on the signed-in staff SharePoint, not on this site. ') +
       'Until it is imported, those artwork slots show as missing images.';
@@ -4991,8 +5004,6 @@
     var addon = moduleAddon();
     if (addon && !fetchOnly) $('j-generate-hint').textContent = 'One file with ' + scopeLabel() + '. Import it into the course you already have: it adds the module and its assignments, quizzes and discussions, and leaves your home page, syllabus and other modules as they are.';
     $('dl').hidden = fetchOnly; $('copy').hidden = fetchOnly || addon; $('pdf').hidden = false; $('copy').textContent = 'Copy home page HTML only';
-    document.querySelectorAll('#step6 li.li-home').forEach(function (li) { li.hidden = addon; });
-    $('li-tile').hidden = addon || fetchOnly || !home.tileOn;
     $('dl-plain').hidden = (!fetchOnly && !!home.onlyModules && home.onlyModules.length > 0) || !!(kit && kit.upload);
     if (kit && kit.upload) $('j-generate-hint').textContent = 'One file with your own course in it. ' + (uploadWantsHome() ? 'An Optima home page is set as the front page (your old home page stays as a page). ' : 'Your home page stays as it is. ') + (uploadWantsSyllabus() ? 'Your syllabus fills the Syllabus page.' : 'Your Syllabus page stays as it is.');
     $('dl-plain').textContent = fetchOnly ? 'Download the course file (.imscc)' : 'Original kit, no customization';
