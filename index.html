@@ -377,6 +377,8 @@
   .video h3 { font-size:16px; font-weight:600; margin:0 0 8px; }
   .video .frame { position:relative; padding-top:56.25%; border-radius:8px; overflow:hidden; background:#000; }
   .video .frame iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
+  .video video { display:block; width:100%; aspect-ratio:16/9; border-radius:8px; background:#000; }
+  .video.welcome-video { margin-top:24px; }
   .video .soon { border:1px dashed var(--line); border-radius:8px; padding:14px 16px; background:#F9FAFD; font-size:14px; color:var(--mute); }
   .imp { margin-top:22px; padding:22px 24px 18px; border-radius:var(--r-lg); background:#fff; box-shadow:var(--sh-2); }
   .imp-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
@@ -531,6 +533,7 @@
         <button type="button" class="tile big" data-path="fetch"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="tt">Preview a course in the course catalogue</span><span class="ts">The course as the curriculum team built it, with no changes. Download available.</span></button>
         <button type="button" class="tile big" data-path="pieces"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M10 20v-5h4v5"/></svg></span><span class="tt">Create a home page, syllabus and course tile</span><span class="ts">For a Canvas course that already has its content. One .zip with the three files to paste and upload; no course file.</span></button>
       </div>
+      <div class="video welcome-video"><h3>Course Optimizer introduction</h3><video controls preload="metadata" playsinline src="videos/course-optimizer-intro.mp4" title="Course Optimizer introduction"></video></div>
       <div class="hint center">Dashboard tiles for several sections at once: <button type="button" class="link" id="j-tiles">Course tiles</button>.</div>
       <div class="hint center" id="j-beta"></div>
       <div class="ready-note"><b>Your curriculum is ready for you.</b><span>You are in control of when and how curriculum is added to your course shells.</span></div>
@@ -961,6 +964,7 @@
           <li><b>Course tile:</b> Settings &rarr; <b>Course Details</b> &rarr; <b>Image</b> &rarr; upload the .png &rarr; <b>Update Course Details</b>.</li>
         </ol>
         </details>
+        <div class="video no-pieces" id="j-video"><h3>Import a course file into Canvas</h3><video controls preload="metadata" playsinline src="videos/import-imscc-into-canvas.mp4" title="Import a course file into Canvas"></video></div>
         <section class="imp no-pieces" id="j-import" aria-labelledby="j-import-title">
           <div class="imp-head"><h3 id="j-import-title">Import into Canvas</h3><span class="imp-count" id="j-import-count">7 steps</span></div>
           <div class="seg imp-seg" role="group" aria-label="What to import"><button type="button" data-imp="all" aria-pressed="true">Whole file</button><button type="button" data-imp="some" aria-pressed="false">Some modules</button></div>
@@ -976,7 +980,6 @@
             <li><b>Let the import finish</b><span>Queued, then Running</span></li>
           </ol>
         </section>
-        <div class="video" id="j-video"></div>
         <div class="actions" style="margin-top:18px;"><button type="button" id="j-another">Configure another course</button></div>
       </div>
     </section>
@@ -4597,9 +4600,6 @@
   // (name, email, Teams link...) are remembered on this computer for the next course.
   var PROFILE_STORE = 'optima-course-kit-teacher';
   var PROFILE_FIELDS = ['teacherName', 'teacherTitle', 'teacherEmail', 'mode', 'term', 'section', 'meeting', 'studyHall'];
-  // Set to the implementation tutorial's embed URL when it exists (YouTube embed,
-  // Stream or SharePoint embed). Empty = a "coming soon" card under the checklist.
-  var TUTORIAL_VIDEO_URL = '';
   var J = { path: '', screen: 'welcome', mode: '', scope: '', want: {}, history: [], modSel: null };
   function uploadPath() { return J.path === 'upload'; }
   function piecesPath() { return J.path === 'pieces'; }
@@ -5002,7 +5002,6 @@
         '<span class="chipx' + (panelChanged('syllabus') ? '' : ' off') + '">Syllabus: ' + (panelChanged('syllabus') ? 'customized' : 'standard') + '</span>',
         '<span class="chipx' + (piecesTileChanged() ? '' : ' off') + '">Course tile: ' + (piecesTileChanged() ? 'customized' : 'standard') + '</span>'
       ].join('');
-      $('j-video').innerHTML = '';
       return;
     }
     var fetchOnly = J.path === 'fetch';
@@ -5034,10 +5033,6 @@
       chips.push(on('Gradebook', panelChanged('gradebook'), 'as built'));
     }
     $('j-summary').innerHTML = chips.join('');
-    var v = $('j-video');
-    v.innerHTML = '<h3>Implementation tutorial</h3>' + (TUTORIAL_VIDEO_URL
-      ? '<div class="frame"><iframe src="' + escHtml(TUTORIAL_VIDEO_URL) + '" title="Implementation tutorial" allowfullscreen loading="lazy"></iframe></div>'
-      : '<div class="soon">The tutorial video for importing your course file is coming soon. Until then, the steps above walk you through the import.</div>');
   }
   // Import checklist switch: whole file (All content) or some modules (Select specific content).
   function setImportScope(v) {
