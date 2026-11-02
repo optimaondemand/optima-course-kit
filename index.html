@@ -235,6 +235,13 @@
   ol.contents .ct-n { width:24px; text-align:right; color:var(--mute); font-size:12px; flex-shrink:0; }
   ol.contents .pill { margin-left:0; flex-shrink:0; }
   ol.contents .ct-title { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .nm-head { display:flex; align-items:center; gap:8px; margin:10px 0 2px; }
+  .nm-head input, ol.names input { flex:1; min-width:0; font-size:14px; padding:6px 8px; }
+  .nm-head input { font-weight:600; color:var(--navy); }
+  ol.names li { flex-wrap:wrap; }
+  ol.names .nm-note { flex-basis:100%; padding-left:32px; font-size:12px; color:var(--mute); }
+  ol.names .nm-note.warn, .nm-head + .nm-note.warn { color:#9A3412; }
+  .nm-batch .bt-fields { grid-template-columns:repeat(2, minmax(0, 1fr)); }
   ol.contents li.removed .ct-title { text-decoration:line-through; color:var(--mute); }
   ol.contents button.sm { padding:3px 10px; font-size:12px; flex-shrink:0; }
   /* Step 4, the syllabus: repeatable items and the teacher's own sections, in the kit's palette. */
@@ -914,6 +921,21 @@
       <div class="actions"><button type="button" class="next">Continue</button><button type="button" class="alt skip" data-q="publish">Skip this step</button></div>
     </section>
 
+    <section class="screen" data-screen="q-names" hidden>
+      <h2 class="q">Module and item names</h2>
+      <div class="tiles two yn">
+        <button type="button" class="tile big" data-q="names" data-v="1"><span class="tt">Rename modules and items</span><span class="ts">Change the names of modules, pages, assignments, quizzes and discussions as they appear in Canvas.</span></button>
+        <button type="button" class="tile big" data-q="names" data-v="0"><span class="tt">Skip this step</span><span class="ts">Keep the names as built.</span></button>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="names" hidden>
+      <h2 class="q">Module and item names</h2>
+      <div class="skiptop"><button type="button" class="sm alt skip" data-q="names">Skip this step</button> Restores the defaults for this part.</div>
+      <div class="step" id="step-names"><div id="names-panel"><div class="hint">Choose a kit first.</div></div></div>
+      <div class="actions"><button type="button" class="next">Continue</button><button type="button" class="alt skip" data-q="names">Skip this step</button></div>
+    </section>
+
     <div id="step4" hidden><div id="dates-panel"><div class="hint">Choose a kit first.</div></div></div>
 
     <section class="screen" data-screen="q-gradebook" hidden>
@@ -1320,7 +1342,11 @@
       out.push('</div></div>');
     }
 
-    var mods = (h.modules || []).filter(function (m) { return m.show && String(m.title || '').trim(); });
+    var mods = (h.modules || []).filter(function (m) { return m.show && String(m.title || '').trim(); }).map(function (m) {
+      // a module renamed on the names step follows onto its card, unless the card title was edited here
+      var t = h.titles && h.titles.m && h.titles.m[m.gid], o = t && k && (k.modules || []).filter(function (x) { return x.gid === m.gid; })[0];
+      return o && m.title === o.title ? Object.assign({}, m, { title: t }) : m;
+    });
     if (!o.standalone) {
     out.push('<div style="display: flex; align-items: baseline; justify-content: space-between; border-bottom: 2px solid ' + TH.rule + '; padding-bottom: 8px; margin-bottom: 16px;">');
     out.push('<div style="font-size: 24px; color: #0e1c42;">Course Modules</div>');
@@ -2779,10 +2805,10 @@
       if (!f) throw new Error('no ' + metaName + ' in the cartridge');
       return f.async('string').then(function (t) {
         k.contents = readModuleMeta(t);
-        if (kit === k) { renderDates(); renderGradebook(); }
+        if (kit === k) { renderDates(); renderGradebook(); renderNames(); }
         return k.contents;
       });
-    }).catch(function (e) { k.contentsError = String(e && e.message || e); if (kit === k) renderDates(); return null; });
+    }).catch(function (e) { k.contentsError = String(e && e.message || e); if (kit === k) { renderDates(); renderNames(); } return null; });
   }
   function contentsOf(m) {
     return (kit.contents || []).filter(function (c) { return c.gid === m.gid; })[0] || null;
@@ -2823,6 +2849,240 @@
     });
     out.push('</ol></details>');
     return out.join('');
+  }
+  // ------------------------------------------------------------ names (modules + items)
+  // A teacher's own names for modules and module items, written into this file only.
+  // home.titles.m is keyed by module identifier; home.titles.i by the item's content
+  // identifier (identifierref), or the module item's own identifier when it has none
+  // (text headers, links), so an item placed in two modules carries one name.
+  // Blank or unchanged = the name as built.
+  var NAME_MAX = 255;
+  var NAME_TYPES = { WikiPage: 1, Assignment: 1, 'Quizzes::Quiz': 1, DiscussionTopic: 1 };
+  var openNames = {};
+  function ensureTitles() {
+    if (!home.titles || typeof home.titles !== 'object') home.titles = {};
+    if (!home.titles.m) home.titles.m = {};
+    if (!home.titles.i) home.titles.i = {};
+    return home.titles;
+  }
+  function nameKey(ci) { return ci.ref || ci.id; }
+  function cleanName(s) { return String(s == null ? '' : s).replace(/\s+/g, ' ').trim().slice(0, NAME_MAX); }
+  function modName(gid, orig) { var t = home.titles && home.titles.m && home.titles.m[gid]; return t || orig; }
+  function itemName(key, orig) { var t = home.titles && home.titles.i && home.titles.i[key]; return t || orig; }
+  function gradedName(it) { return itemName(it.gid, it.title); }
+  function setName(kind, key, orig, val) {
+    var T = ensureTitles(), v = cleanName(val);
+    if (!v || v === cleanName(orig)) delete T[kind][key]; else T[kind][key] = v;
+  }
+  function namesChanged() {
+    return !!home.titles && (Object.keys(home.titles.m || {}).length + Object.keys(home.titles.i || {}).length) > 0;
+  }
+  // Modules and items as they will import: kept modules, items not removed.
+  function namesRows() {
+    var byGid = {}; (kit.modules || []).forEach(function (m) { byGid[m.gid] = m; });
+    return (kit.contents || []).filter(function (c) { var m = byGid[c.gid]; return !m || moduleKept(m); })
+      .map(function (c) { return { c: c, items: c.items.filter(function (ci) { return !isRemoved(ci); }) }; });
+  }
+  function nameInput(kind, key, orig, label, indent) {
+    var cur = kind === 'm' ? modName(key, orig) : itemName(key, orig);
+    return '<input type="text" class="nm-in" maxlength="' + NAME_MAX + '" data-k="' + kind + '" data-key="' + escHtml(key) + '" data-orig="' + escHtml(orig) + '"' +
+      ' value="' + escHtml(cur) + '" placeholder="' + escHtml(orig) + '" aria-label="' + escHtml(label) + '"' + (indent ? ' style="margin-left:' + (indent * 18) + 'px"' : '') + '>';
+  }
+  // Notes under each name: what it was built as, and a page name used twice.
+  function refreshNameNotes() {
+    var el = $('names-panel'); if (!el || !kit || !kit.contents) return;
+    var pages = {};
+    el.querySelectorAll('input.nm-in[data-type="WikiPage"]').forEach(function (inp) {
+      var n = cleanName(inp.value || inp.dataset.orig).toLowerCase();
+      (pages[n] = pages[n] || {})[inp.dataset.key] = 1;
+    });
+    el.querySelectorAll('input.nm-in').forEach(function (inp) {
+      var row = inp.closest('li') || inp.closest('.nm-wrap');
+      var was = row.querySelector('.nm-was'), dup = row.querySelector('.nm-dup');
+      var T = ensureTitles();
+      if (was) was.hidden = !T[inp.dataset.k][inp.dataset.key];
+      // only a clash a rename made: pages already sharing a name as built are left alone
+      if (dup) { var p = pages[cleanName(inp.value || inp.dataset.orig).toLowerCase()]; dup.hidden = !(p && Object.keys(p).length > 1 && Object.keys(p).some(function (k) { return !!T.i[k]; })); }
+    });
+    el.querySelectorAll('details.nm-mod').forEach(function (d) {
+      var T = ensureTitles(), g = d.dataset.g;
+      var n = (T.m[g] ? 1 : 0) + Array.prototype.filter.call(d.querySelectorAll('input.nm-in[data-k="i"]'), function (inp) { return !!T.i[inp.dataset.key]; }).length;
+      var mi = d.querySelector('input.nm-in[data-k="m"]');
+      d.querySelector('.nm-t').textContent = cleanName(mi.value) || mi.dataset.orig;
+      d.querySelector('.nm-n').textContent = n ? ' · ' + n + ' renamed' : '';
+    });
+  }
+  function nameMatches(find) {
+    if (!find) return 0;
+    var n = 0;
+    namesRows().forEach(function (r) {
+      if (modName(r.c.gid, r.c.title).indexOf(find) >= 0) n++;
+      var seen = {};
+      r.items.forEach(function (ci) { var k = nameKey(ci); if (!seen[k] && itemName(k, ci.title).indexOf(find) >= 0) n++; seen[k] = 1; });
+    });
+    return n;
+  }
+  function replaceInNames(find, repl) {
+    if (!find) return 0;
+    var n = 0, done = {};
+    namesRows().forEach(function (r) {
+      var mt = modName(r.c.gid, r.c.title);
+      if (mt.indexOf(find) >= 0) { setName('m', r.c.gid, r.c.title, mt.split(find).join(repl)); n++; }
+      r.items.forEach(function (ci) {
+        var k = nameKey(ci); if (done[k]) return; done[k] = 1;
+        var t = itemName(k, ci.title);
+        if (t.indexOf(find) >= 0) { setName('i', k, ci.title, t.split(find).join(repl)); n++; }
+      });
+    });
+    return n;
+  }
+  function renderNames() {
+    var el = $('names-panel'); if (!el) return;
+    if (!kit) { el.innerHTML = '<div class="hint">Choose a kit first.</div>'; return; }
+    if (!kit.contents) {
+      el.innerHTML = '<div class="hint">' + (kit.contentsError ? 'The module list could not be read: ' + escHtml(kit.contentsError) : 'Reading the module list…') + '</div>';
+      if (!kit.contentsError) loadContents();
+      return;
+    }
+    ensureTitles();
+    var byGid = {}; (kit.graded_items || []).forEach(function (it) { byGid[it.gid] = it; });
+    var out = [];
+    out.push('<div class="hint">Type over any name. A blank field keeps the name as built. New names go into this course file only; the course in the shared store is unchanged.</div>');
+    out.push('<div class="batchrow nm-batch"><div class="bl">Replace words in every name</div><div class="bt-fields">' +
+      '<div><label for="nm-find">Find</label><input type="text" id="nm-find" placeholder="e.g. Module"></div>' +
+      '<div><label for="nm-repl">Replace with</label><input type="text" id="nm-repl" placeholder="e.g. Unit"></div>' +
+      '</div><div class="actions"><button type="button" class="sm" id="nm-apply">Replace in every name</button><span class="hint" id="nm-count" style="display:inline;margin:0 0 0 8px;"></span></div></div>');
+    namesRows().forEach(function (r, mi) {
+      var c = r.c;
+      var isOpen = c.gid in openNames ? openNames[c.gid] : mi === 0;
+      out.push('<details class="modblock nm-mod" data-g="' + escHtml(c.gid) + '"' + (isOpen ? ' open' : '') + '><summary><span class="nm-t"></span> <span class="hint" style="display:inline;margin:0;">' +
+        r.items.length + ' item' + (r.items.length === 1 ? '' : 's') + '<span class="nm-n"></span></span></summary>');
+      out.push('<div class="nm-wrap"><div class="nm-head"><span class="pill">Module</span>' + nameInput('m', c.gid, c.title, 'Module name') + '</div>' +
+        '<div class="nm-note nm-was" hidden>Built as: ' + escHtml(c.title) + '</div></div>');
+      out.push('<ol class="contents names">');
+      r.items.forEach(function (ci, i) {
+        var g = byGid[ci.ref], label = TYPE_LABEL[ci.type] || ci.type;
+        if (g && g.type === 'quiz' && g.quiz_type === 'survey') label = 'Survey';
+        out.push('<li><span class="ct-n">' + (i + 1) + '</span><span class="pill grey">' + escHtml(label) + '</span>' +
+          nameInput('i', nameKey(ci), ci.title, label + ' name', ci.indent).replace('<input ', '<input data-type="' + escHtml(ci.type) + '" ') +
+          '<div class="nm-note nm-was" hidden>Built as: ' + escHtml(ci.title) + '</div>' +
+          (ci.type === 'WikiPage' ? '<div class="nm-note warn nm-dup" hidden>Another page in this file has this name. Give each page its own name.</div>' : '') + '</li>');
+      });
+      out.push('</ol></details>');
+    });
+    el.innerHTML = out.join('');
+    refreshNameNotes();
+    el.querySelectorAll('details.nm-mod').forEach(function (d) {
+      d.addEventListener('toggle', function () { openNames[d.dataset.g] = d.open; });
+    });
+    el.querySelectorAll('input.nm-in').forEach(function (inp) {
+      inp.addEventListener('input', function () {
+        setName(inp.dataset.k, inp.dataset.key, inp.dataset.orig, inp.value);
+        // the same item placed in another module shows the same name
+        el.querySelectorAll('input.nm-in[data-k="' + inp.dataset.k + '"]').forEach(function (o) { if (o !== inp && o.dataset.key === inp.dataset.key) o.value = inp.value; });
+        save(); refreshNameNotes();
+        if (inp.dataset.k === 'm') renderPreview();
+      });
+      inp.addEventListener('change', function () { if (!cleanName(inp.value)) inp.value = inp.dataset.orig; });
+    });
+    var count = function () { var f = $('nm-find').value, n = nameMatches(f); $('nm-count').textContent = f ? n + ' name' + (n === 1 ? '' : 's') + ' match' + (n === 1 ? 'es' : '') : ''; };
+    $('nm-find').addEventListener('input', count);
+    $('nm-apply').addEventListener('click', function () {
+      var f = $('nm-find').value, rp = $('nm-repl').value;
+      if (!f) { $('nm-count').textContent = 'Type the words to find.'; return; }
+      var n = replaceInNames(f, rp);
+      save(); renderNames(); renderPreview();
+      $('nm-count').textContent = n + ' name' + (n === 1 ? '' : 's') + ' changed';
+    });
+  }
+  // ---- the names in the cartridge: module_meta.xml, the manifest's organization, and
+  // each renamed item's own files (page <title>; assignment, quiz and discussion XML;
+  // the quiz title in both QTI copies). Unrenamed entries keep their bytes.
+  function replaceWith(text, re, s) { return text.replace(re, function () { return s; }); }
+  function renameModuleMeta(text) {
+    var T = ensureTitles();
+    return text.replace(/(<module identifier="([^"]+)">)([\s\S]*?)(<\/module>)/g, function (blk, open, gid, inner, close) {
+      var cut = inner.indexOf('<items>'); if (cut < 0) cut = inner.length;
+      var head = inner.slice(0, cut), rest = inner.slice(cut);
+      if (T.m[gid]) head = replaceWith(head, /<title>[\s\S]*?<\/title>/, '<title>' + xmlEsc(T.m[gid]) + '</title>');
+      rest = rest.replace(/<item identifier="([^"]+)">[\s\S]*?<\/item>/g, function (ib, iid) {
+        var ref = /<identifierref>([^<]*)<\/identifierref>/.exec(ib);
+        var v = T.i[ref && ref[1].trim() ? ref[1].trim() : iid];
+        return v ? replaceWith(ib, /<title>[\s\S]*?<\/title>/, '<title>' + xmlEsc(v) + '</title>') : ib;
+      });
+      return open + head + rest + close;
+    });
+  }
+  function renameOrganization(text) {
+    var T = ensureTitles();
+    var s = text.indexOf('<organizations'), e = text.indexOf('</organizations>');
+    if (s < 0 || e < 0) return text;
+    var org = text.slice(s, e).replace(/(<item\b([^>]*)>\s*<title>)[\s\S]*?(<\/title>)/g, function (m0, open, attrs, close) {
+      var id = /\bidentifier="([^"]+)"/.exec(attrs), ref = /\bidentifierref="([^"]+)"/.exec(attrs);
+      var v = id && T.m[id[1]] ? T.m[id[1]] : T.i[ref ? ref[1] : (id ? id[1] : '')];
+      return v ? open + xmlEsc(v) + close : m0;
+    });
+    return text.slice(0, s) + org + text.slice(e);
+  }
+  // Files of a resource and of the resources it depends on.
+  function resourceFiles(man, rid) {
+    var ids = [rid], files = [], i = 0;
+    var esc = function (s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); };
+    while (i < ids.length) {
+      var m = new RegExp('<resource identifier="' + esc(ids[i]) + '"[^>]*>([\\s\\S]*?)<\\/resource>').exec(man);
+      if (m) {
+        var dm, dre = /<dependency identifierref="([^"]+)"/g;
+        while ((dm = dre.exec(m[1]))) { if (ids.indexOf(dm[1]) < 0) ids.push(dm[1]); }
+        var fm, fre = /<file href="([^"]+)"/g;
+        while ((fm = fre.exec(m[1]))) { var p = unescapeXml(fm[1]); if (files.indexOf(p) < 0) files.push(p); }
+      }
+      i++;
+    }
+    return files;
+  }
+  function renameInFile(path, text, v) {
+    if (/\.html?$/i.test(path)) {
+      // a page or an assignment's description: the <title> in its head ("Assignment: " kept)
+      return text.replace(/<title>([\s\S]*?)<\/title>/, function (m0, old) {
+        var p = /^(Assignment:\s*)/.exec(unescapeXml(old).trim());
+        return '<title>' + xmlEsc((p ? p[1] : '') + v) + '</title>';
+      });
+    }
+    // QTI: the assessment's own title attribute; question titles stay
+    if (/\.qti$|assessment_qti\.xml$/i.test(path)) {
+      return text.replace(/(<assessment\b[^>]*?\btitle=")[^"]*(")/, function (m0, a, b) { return a + xmlEsc(v).replace(/"/g, '&quot;') + b; });
+    }
+    // assignment_settings, assessment_meta, discussion topic + topicMeta: every <title> is the item's own
+    if (/\.xml$/i.test(path)) return replaceWith(text, /<title>[\s\S]*?<\/title>/g, '<title>' + xmlEsc(v) + '</title>');
+    return text;
+  }
+  function applyNames(zip) {
+    if (!namesChanged() || !kit.contents) return Promise.resolve();
+    var T = ensureTitles(), typeOf = {};
+    kit.contents.forEach(function (c) { c.items.forEach(function (ci) { if (ci.ref) typeOf[ci.ref] = ci.type; }); });
+    var metaPath = (kit.settings && kit.settings.module_meta) || 'course_settings/module_meta.xml';
+    return chain([
+      function () {
+        var f = zip.file(metaPath); if (!f) return Promise.resolve();
+        return f.async('string').then(function (t) { zip.file(metaPath, renameModuleMeta(t)); });
+      },
+      function () {
+        var f = zip.file('imsmanifest.xml'); if (!f) return Promise.resolve();
+        return f.async('string').then(function (man) {
+          zip.file('imsmanifest.xml', renameOrganization(man));
+          var jobs = [];
+          Object.keys(T.i).forEach(function (key) {
+            if (!NAME_TYPES[typeOf[key]]) return; // files, links, tools, headers: the module entry only
+            resourceFiles(man, key).forEach(function (p) {
+              if (/^(web_resources|course_settings)\//.test(p) || !/\.(html?|xml|qti)$/i.test(p)) return;
+              var zf = zip.file(p); if (!zf) return;
+              jobs.push(function () { return zf.async('string').then(function (t) { zip.file(p, renameInFile(p, t, T.i[key])); }); });
+            });
+          });
+          return chain(jobs);
+        });
+      }
+    ]);
   }
   function effItem(item) {
     var o = home.itemOverrides[item.id];
@@ -3103,7 +3363,7 @@
     var typeLabel = it.type === 'assignment' ? 'Assignment' : it.type === 'quiz' ? 'Quiz' : 'Discussion';
     var pts = (it.type === 'quiz' && it.quiz_type === 'survey') ? 'ungraded' : fmtPoints(effItem(it).points);
     return '<tr>' +
-      '<td><a href="#" class="prev-link" data-id="' + escHtml(it.id) + '" title="Preview this item">' + escHtml(it.title) + '</a></td>' +
+      '<td><a href="#" class="prev-link" data-id="' + escHtml(it.id) + '" title="Preview this item">' + escHtml(gradedName(it)) + '</a></td>' +
       '<td><span class="pill grey">' + typeLabel + '</span></td>' +
       '<td>' + pts + '</td>' +
       DATE_FIELDS.map(function (f) { return dateCell(it, f); }).join('') +
@@ -3144,12 +3404,12 @@
       var items = graded.filter(function (it) { return it.module === m.id && !(it.type === 'quiz' && it.quiz_type === 'survey'); });
       if (!items.length) return;
       out.push('<details class="modblock" open>');
-      out.push('<summary>' + escHtml(m.title) + (modulePublished(m) ? '' : ' <span class="pill grey">UNPUBLISHED</span>') + '</summary>');
+      out.push('<summary>' + escHtml(modName(m.gid, m.title)) + (modulePublished(m) ? '' : ' <span class="pill grey">UNPUBLISHED</span>') + '</summary>');
       out.push(gbBatchRow(m.id, 'Every graded item in this module', 'Apply to this module'));
       out.push('<div class="dtable"><table class="sched"><thead><tr><th>Item</th><th>Group</th><th>Points</th></tr></thead><tbody>');
       items.forEach(function (it) {
         var eff = effItem(it);
-        out.push('<tr><td>' + escHtml(it.title) + '</td>');
+        out.push('<tr><td>' + escHtml(gradedName(it)) + '</td>');
         out.push('<td><select data-id="' + escHtml(it.id) + '" class="gb-group">' + home.groups.map(function (g) {
           return '<option value="' + escHtml(g.id) + '"' + (g.id === eff.group ? ' selected' : '') + '>' + escHtml(g.title) + '</option>';
         }).join('') + '</select></td>');
@@ -3199,7 +3459,7 @@
     return itemsInScope(scope).filter(function (it) {
       if (it.type === 'quiz' && it.quiz_type === 'survey') return false;
       if (f.type && it.type !== f.type) return false;
-      return !q || String(it.title || '').toLowerCase().indexOf(q) >= 0;
+      return !q || String(it.title || '').toLowerCase().indexOf(q) >= 0 || gradedName(it).toLowerCase().indexOf(q) >= 0;
     });
   }
   function applyGbBatch(scope, f) {
@@ -4251,6 +4511,8 @@
         return f.async('string').then(function (text) { zip.file(kit.settings.assignment_groups, patchGroupsXml(text)); });
       });
     }
+    // The teacher's own module and item names (after every other edit to the same files).
+    if (namesChanged()) tasks.push(function () { return applyNames(zip); });
     // Program rule: every generated file gives a 0 to missing work (not a teacher option).
     tasks.push(function () { return applyMissingZero(zip); });
     if (coreQuarters().length) tasks.push(function () { return applyCore(zip, coreQuarters()); });
@@ -4733,12 +4995,12 @@
   var J = { path: '', screen: 'welcome', mode: '', scope: '', want: {}, history: [], modSel: null };
   function uploadPath() { return J.path === 'upload'; }
   function piecesPath() { return J.path === 'pieces'; }
-  var PANE_SCREENS = { preview: 1, details: 1, home: 1, syllabus: 1, dates: 1, publish: 1, gradebook: 1, generate: 1 };
-  var NEEDS_KIT = { preview: 1, details: 1, home: 1, tile: 1, syllabus: 1, dates: 1, publish: 1, gradebook: 1, review: 1, generate: 1, 'q-home': 1, 'q-tile': 1, 'q-syllabus': 1, 'q-dates': 1, 'q-publish': 1, 'q-gradebook': 1 };
+  var PANE_SCREENS = { preview: 1, details: 1, home: 1, syllabus: 1, dates: 1, publish: 1, names: 1, gradebook: 1, generate: 1 };
+  var NEEDS_KIT = { preview: 1, details: 1, home: 1, tile: 1, syllabus: 1, dates: 1, publish: 1, names: 1, gradebook: 1, review: 1, generate: 1, 'q-home': 1, 'q-tile': 1, 'q-syllabus': 1, 'q-dates': 1, 'q-publish': 1, 'q-names': 1, 'q-gradebook': 1 };
   var NEEDS_COURSE = { mode: 1, part: 1, modules: 1 };
   // Screens that list the course's items: the pane shows an item, never the home page.
   var ITEM_PANE = { preview: 1, dates: 1, publish: 1, gradebook: 1 };
-  var Q_OF = { home: 'q-home', tile: 'q-tile', syllabus: 'q-syllabus', dates: 'q-dates', publish: 'q-publish', gradebook: 'q-gradebook' };
+  var Q_OF = { home: 'q-home', tile: 'q-tile', syllabus: 'q-syllabus', dates: 'q-dates', publish: 'q-publish', names: 'q-names', gradebook: 'q-gradebook' };
   // The one-page review is a beta behind a switch: ?review=1 turns it on and ?review=0
   // off (both remembered on this computer), or the link on the welcome screen.
   // REVIEW_FORCE lets the self-test pin either flow.
@@ -4796,7 +5058,7 @@
     if (NEEDS_COURSE[s] && !course) s = 'welcome';
     if (s !== 'welcome' && !J.path) J.path = 'customize';
     // a journey saved in the classic flow lands on the review when the beta is on, and back
-    if (reviewFlow() && /^(q-.*|dates|publish|gradebook)$/.test(s)) s = 'review';
+    if (reviewFlow() && /^(q-.*|dates|publish|names|gradebook)$/.test(s)) s = 'review';
     if (!reviewFlow() && s === 'review') s = 'q-dates';
     J.screen = s;
   }
@@ -4820,7 +5082,7 @@
       seq.push('review', 'generate');
       return seq;
     }
-    ['home', 'tile', 'syllabus', 'dates', 'publish', 'gradebook'].forEach(function (q) {
+    ['home', 'tile', 'syllabus', 'dates', 'publish', 'names', 'gradebook'].forEach(function (q) {
       if (addon && (q === 'home' || q === 'tile' || q === 'syllabus')) return;
       seq.push(Q_OF[q]);
       if (J.want[q] || J.screen === q) seq.push(q);
@@ -4885,6 +5147,7 @@
     if (J.screen === 'generate') renderGenerate();
     if (J.screen === 'upload') renderUpload();
     if (J.screen === 'review') renderReview();
+    if (J.screen === 'names') renderNames();
     if (J.screen === 'home' || J.screen === 'details') fillForm();
     // The syllabus step shows the syllabus beside it; every other step shows the home page.
     if (J.screen === 'syllabus' && kit && !piecesPath()) syncSyllabusGrading();
@@ -5168,6 +5431,7 @@
       }
       chips.push(on('Dates', panelChanged('dates'), 'none set'));
       chips.push(on('Publishing', panelChanged('publish'), 'as built'));
+      chips.push(on('Names', panelChanged('names'), 'as built'));
       chips.push(on('Gradebook', panelChanged('gradebook'), 'as built'));
     }
     $('j-summary').innerHTML = chips.join('');
@@ -5784,6 +6048,7 @@
     if (q === 'dates') return !!home.courseStart || Object.keys(home.dates || {}).some(function (id) { var d = home.dates[id] || {}; return !!(d.due_at || d.unlock_at || d.lock_at); });
     if (q === 'publish') return Object.keys(home.moduleOverrides || {}).length > 0 || Object.keys(home.removed || {}).length > 0
       || (kit.graded_items || []).some(function (it) { var o = home.itemOverrides[it.id]; return !!o && o.published !== it.published; });
+    if (q === 'names') return namesChanged();
     if (q === 'gradebook') return groupsChanged() || !!home.weighted !== !!kit.weighted
       || (kit.graded_items || []).some(function (it) { var o = home.itemOverrides[it.id]; return !!o && (o.group !== it.group || Number(o.points) !== Number(it.points)); });
     return false;
@@ -5805,6 +6070,8 @@
       home.moduleOverrides = {}; home.removed = {};
       (kit.graded_items || []).forEach(function (it) { var o = home.itemOverrides[it.id]; if (o) o.published = it.published; });
       renderDates(); renderGradebook();
+    } else if (q === 'names') {
+      home.titles = { m: {}, i: {} }; openNames = {}; renderNames();
     } else if (q === 'gradebook') {
       home.groups = (kit.groups || []).map(function (g) { return { id: g.id, title: g.title, weight: g.weight, position: g.position }; });
       home.weighted = !!kit.weighted; home.coreQ = [];
@@ -6063,6 +6330,23 @@
         if (removedGraded) home.removed[removedGraded.id] = true;
         if (removedPage) home.removed[removedPage.id] = true;
       }
+      // Names: one module, one graded item of each kind and one page renamed, with
+      // characters that need escaping and $-patterns a string replace would expand.
+      var nameProbe = { mod: null, items: [] };
+      if (cont) {
+        home.titles = { m: {}, i: {} };
+        nameProbe.mod = { gid: cont.gid, v: 'Unit 1 & "Test" $& <One>' };
+        home.titles.m[cont.gid] = nameProbe.mod.v;
+        var seenType = {};
+        (kit.contents || []).forEach(function (c) {
+          c.items.forEach(function (ci) {
+            if (!ci.ref || isRemoved(ci) || seenType[ci.type] || !NAME_TYPES[ci.type]) return;
+            seenType[ci.type] = 1;
+            var v = 'Renamed ' + ci.type.replace(/\W+/g, ' ') + ' $1 & <x>';
+            home.titles.i[ci.ref] = v; nameProbe.items.push({ ci: ci, v: v });
+          });
+        });
+      }
       if (home.groups && home.groups.length) home.groups[0].weight = 100;
       home.weighted = true;
       home.coreQ = [1, 2];
@@ -6228,6 +6512,30 @@
             });
           });
         }));
+        if (zip2 && nameProbe.mod) reads.push(Promise.all([zip2.file(metaName).async('string'), zip2.file('imsmanifest.xml').async('string')]).then(function (nr) {
+          var meta = nr[0], man = nr[1], esc = xmlEsc, res = { module: false, items: {} };
+          var mb = new RegExp('<module identifier="' + nameProbe.mod.gid + '">\\s*<title>([^<]*)</title>').exec(meta);
+          var ob = new RegExp('<item identifier="' + nameProbe.mod.gid + '">\\s*<title>([^<]*)</title>').exec(man);
+          res.module = !!mb && mb[1] === esc(nameProbe.mod.v) && !!ob && ob[1] === esc(nameProbe.mod.v);
+          return chain(nameProbe.items.map(function (p) {
+            return function () {
+              var files = resourceFiles(man, p.ci.ref).filter(function (f) { return !/^(web_resources|course_settings)\//.test(f) && /\.(html?|xml|qti)$/i.test(f) && zip2.file(f); });
+              var entry = new RegExp('<item identifier="' + p.ci.id + '">[\\s\\S]*?<title>([^<]*)</title>').exec(meta);
+              return Promise.all(files.map(function (f) { return zip2.file(f).async('string'); })).then(function (texts) {
+                var want = esc(p.v);
+                var ok = !!entry && entry[1] === want && files.length > 0 && texts.every(function (t, i) {
+                  var f = files[i];
+                  if (/\.qti$|assessment_qti\.xml$/i.test(f)) return t.indexOf('title="' + want.replace(/"/g, '&quot;') + '"') >= 0;
+                  return t.indexOf('<title>' + want + '</title>') >= 0 || t.indexOf('<title>Assignment: ' + want + '</title>') >= 0;
+                });
+                res.items[p.ci.type] = ok ? true : { files: files, entry: entry && entry[1] };
+              });
+            };
+          })).then(function () {
+            checks.names = res.module && nameProbe.items.length > 0 && nameProbe.items.every(function (p) { return res.items[p.ci.type] === true; });
+            checks.namesDetail = res;
+          });
+        }));
         if (zip2) reads.push(Promise.all([zip2.file(LATE_POLICY) ? zip2.file(LATE_POLICY).async('string') : Promise.resolve(''), zip2.file('imsmanifest.xml').async('string')]).then(function (lp) {
           checks.missingZero = (/<missing_submission_deduction_enabled>true<\/missing_submission_deduction_enabled>/.test(lp[0])
             && /<missing_submission_deduction>100(\.0)?<\/missing_submission_deduction>/.test(lp[0])
@@ -6267,6 +6575,7 @@
         out.gbBatch = { items: gbBatch.map(function (it) { return it.title; }), state: gbBatchState, zip: gbBatchZip, control: gbControl ? gbControl.title : null };
         if (gbBatch.length) out.ok = out.ok && gbBatchState && gbBatchZip;
         out.missingZero = checks.missingZero; out.ok = out.ok && checks.missingZero;
+        if (nameProbe.mod) { out.names = checks.names; out.namesDetail = checks.namesDetail; out.ok = out.ok && !!checks.names; }
         out.finder = finderCheck; out.ok = out.ok && finderCheck.ok;
         // Art pack: a kit whose sidecar declares figures must show the second-file notice
         // naming its art pack; a kit without figures must keep the notice hidden.
@@ -6359,7 +6668,7 @@
       var sq = sequence();
       res.scopeFlow = sq.indexOf('details') < 0 && sq.indexOf('q-home') < 0 && sq.indexOf('q-syllabus') < 0 && sq.indexOf('q-dates') >= 0 && sq.indexOf('q-gradebook') >= 0;
       go('generate', true);
-      res.scopeGenerate = $('copy').hidden && /leaves your home page/.test($('j-generate-hint').textContent) && $('j-summary').querySelectorAll('.chipx').length === 6
+      res.scopeGenerate = $('copy').hidden && /leaves your home page/.test($('j-generate-hint').textContent) && $('j-summary').querySelectorAll('.chipx').length === 7
         && $('preview').textContent.indexOf('module-only file') >= 0;
       go('q-dates', true);
       res.homeCards = (currentHtml().match(/\$CANVAS_OBJECT_REFERENCE\$\/modules\//g) || []).length === 1;
@@ -6389,9 +6698,9 @@
       J.path = 'customize'; home.onlyModules = null; J.scope = 'all'; save(); refreshKitPanels();
       res.restoredScope = keptModules().length === (k.modules || []).length && $('print-scope').options.length === (k.modules || []).length + 1 && sequence().indexOf('details') >= 0;
       J.want = {}; go('q-home', true);
-      ['home', 'syllabus', 'dates', 'publish', 'gradebook'].forEach(function (q) { pick('.screen[data-screen="' + Q_OF[q] + '"] .tile[data-v="0"]'); });
+      ['home', 'syllabus', 'dates', 'publish', 'names', 'gradebook'].forEach(function (q) { pick('.screen[data-screen="' + Q_OF[q] + '"] .tile[data-v="0"]'); });
       res.skipsToGenerate = J.screen === 'generate';
-      res.summaryChips = $('j-summary').querySelectorAll('.chipx').length === 8 && !$('dl').hidden && !$('copy').hidden;
+      res.summaryChips = $('j-summary').querySelectorAll('.chipx').length === 9 && !$('dl').hidden && !$('copy').hidden;
       J.want = {}; go('q-dates', true); pick('.screen[data-screen="q-dates"] .tile[data-v="1"]');
       var th7 = $('dates-panel').querySelector('table.sched th:nth-child(7)');
       res.datesOnly = J.screen === 'dates' && $('slot-dates').contains($('step4')) && $('dates-panel').className === 'mode-dates'
