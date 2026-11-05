@@ -2834,6 +2834,16 @@
     if (home.removed[id]) delete home.removed[id]; else home.removed[id] = true;
     save(); syncSyllabusGrading(); renderDates(); renderGradebook();
   }
+  // Ungraded module entries the preview pane can show (section headers and tools cannot).
+  function entryViewable(ci) { return ci.type === 'WikiPage' || ci.type === 'ExternalUrl' || ci.type === 'Attachment'; }
+  function wirePreviewLinks(el) {
+    el.querySelectorAll('.prev-link').forEach(function (a) {
+      a.addEventListener('click', function (e) { e.preventDefault(); previewItem(itemById(this.dataset.id)); });
+    });
+    el.querySelectorAll('.prev-entry').forEach(function (a) {
+      a.addEventListener('click', function (e) { e.preventDefault(); previewEntry(entryById(this.dataset.m, this.dataset.e)); });
+    });
+  }
   function contentsList(m, cont) {
     var removed = cont.items.filter(isRemoved).length;
     var byGid = {}; (kit.graded_items || []).forEach(function (it) { byGid[it.gid] = it; });
@@ -2844,7 +2854,10 @@
       var g = byGid[ci.ref], gone = isRemoved(ci);
       var label = TYPE_LABEL[ci.type] || ci.type;
       if (g && g.type === 'quiz' && g.quiz_type === 'survey') label = 'Survey';
-      var title = g && !gone ? '<a href="#" class="prev-link" data-id="' + escHtml(g.id) + '" title="Preview this item">' + escHtml(ci.title) + '</a>' : escHtml(ci.title);
+      var title = gone ? escHtml(ci.title)
+        : g ? '<a href="#" class="prev-link" data-id="' + escHtml(g.id) + '" title="Preview this item">' + escHtml(ci.title) + '</a>'
+        : entryViewable(ci) ? '<a href="#" class="prev-entry" data-m="' + escHtml(m.id) + '" data-e="' + escHtml(ci.id) + '" title="Preview this item">' + escHtml(ci.title) + '</a>'
+        : escHtml(ci.title);
       out.push('<li' + (gone ? ' class="removed"' : '') + '><span class="ct-n">' + (i + 1) + '</span><span class="pill grey">' + escHtml(label) + '</span><span class="ct-title"' + (ci.indent ? ' style="padding-left:' + (ci.indent * 18) + 'px"' : '') + '>' + title + '</span><button type="button" class="sm alt ct-remove" data-i="' + escHtml(ci.id) + '">' + (gone ? 'Restore' : 'Remove') + '</button></li>');
     });
     out.push('</ol></details>');
@@ -3314,9 +3327,7 @@
     if ($('course-start')) $('course-start').addEventListener('change', function () { home.courseStart = this.value; proposeDates(); save(); renderDates(); });
     if ($('dates-clear')) $('dates-clear').addEventListener('click', function () { home.dates = {}; home.batchDraft = {}; save(); renderDates(); });
     wireBatchRows();
-    el.querySelectorAll('.prev-link').forEach(function (a) {
-      a.addEventListener('click', function (e) { e.preventDefault(); previewItem(itemById(this.dataset.id)); });
-    });
+    wirePreviewLinks(el);
     $('gb-pub-all').addEventListener('click', function () { setAllPublished(true); });
     $('gb-unpub-all').addEventListener('click', function () { setAllPublished(false); });
     el.querySelectorAll('.gb-pub').forEach(function (cb) {
@@ -3409,7 +3420,7 @@
       out.push('<div class="dtable"><table class="sched"><thead><tr><th>Item</th><th>Group</th><th>Points</th></tr></thead><tbody>');
       items.forEach(function (it) {
         var eff = effItem(it);
-        out.push('<tr><td>' + escHtml(gradedName(it)) + '</td>');
+        out.push('<tr><td><a href="#" class="prev-link" data-id="' + escHtml(it.id) + '" title="Preview this item">' + escHtml(gradedName(it)) + '</a></td>');
         out.push('<td><select data-id="' + escHtml(it.id) + '" class="gb-group">' + home.groups.map(function (g) {
           return '<option value="' + escHtml(g.id) + '"' + (g.id === eff.group ? ' selected' : '') + '>' + escHtml(g.title) + '</option>';
         }).join('') + '</select></td>');
@@ -3419,6 +3430,7 @@
       out.push('</tbody></table></div></details>');
     });
     el.innerHTML = out.join('');
+    wirePreviewLinks(el);
     wireGradebook();
     renderGbSummary();
   }
@@ -5362,7 +5374,7 @@
         cont.items.forEach(function (ci, i) {
           if (isRemoved(ci)) return;
           var g = graded.filter(function (it) { return it.gid === ci.ref; })[0];
-          var viewable = g || ci.type === 'WikiPage' || ci.type === 'ExternalUrl' || ci.type === 'Attachment';
+          var viewable = g || entryViewable(ci);
           out.push('<li><span class="ct-n">' + (i + 1) + '</span><span class="pill grey">' + escHtml(TYPE_LABEL[ci.type] || ci.type) + '</span>' +
             (g ? '<a href="#" class="prev-link ct-title" data-id="' + escHtml(g.id) + '">' + escHtml(ci.title) + '</a>'
               : viewable ? '<a href="#" class="prev-entry ct-title" data-m="' + escHtml(m.id) + '" data-e="' + escHtml(ci.id) + '">' + escHtml(ci.title) + '</a>'
@@ -5376,12 +5388,7 @@
     });
     out.push('</div>');
     el.innerHTML = out.join('');
-    el.querySelectorAll('.prev-link').forEach(function (a) {
-      a.addEventListener('click', function (e) { e.preventDefault(); previewItem(itemById(this.dataset.id)); });
-    });
-    el.querySelectorAll('.prev-entry').forEach(function (a) {
-      a.addEventListener('click', function (e) { e.preventDefault(); previewEntry(entryById(this.dataset.m, this.dataset.e)); });
-    });
+    wirePreviewLinks(el);
     if (!kit.contents) loadContents().then(function () { if (J.screen === 'preview') renderContentsPreview(); });
   }
   function renderGenerate() {
@@ -6811,6 +6818,12 @@
           return !!ci;
         });
         if (!hit) { res.page = null; return; }
+        // The dates/publishing and gradebook lists link ungraded pages and graded items too.
+        renderDates(); renderGradebook();
+        var dl = $('dates-panel').querySelector('.prev-entry[data-e="' + hit.entry.id + '"]');
+        res.datesPageLink = !!(dl && entryById(dl.dataset.m, dl.dataset.e));
+        res.gradebookLinks = !kit.graded_items || !kit.graded_items.length || !!$('gradebook-panel').querySelector('.prev-link');
+        res.ok = res.ok && res.datesPageLink && res.gradebookLinks;
         return previewEntry(hit).then(function (doc) {
           var good = doc.length > 400 && doc.indexOf(escHtml(hit.entry.title)) >= 0 && doc.indexOf('Lesson page') >= 0
             && $('preview').querySelector('iframe.itemframe') != null && !$('preview-home').hidden;
