@@ -2806,7 +2806,8 @@
   // Picture cards for live classes. A lesson folder on GitHub Pages may carry a
   // take-into-vr/index.json beside its lesson pages (built by _shared/vr-pack in the
   // lesson repo). This finds the lesson pages embedded in the modules the teacher kept,
-  // looks for that index beside each one, and zips the card PDFs by week and lesson.
+  // looks for that index beside each one, and zips the card PDFs by lesson and activity
+  // (Week N / Lesson N, or the row's own heading and folder for a course built in Modules).
   // Works the same for a store kit and for a teacher's own Canvas export.
   var VR_LESSON_HOST = /^https:\/\/[a-z0-9-]+\.github\.io\//i;
   var vrIndexCache = {}, vrFound = { key: '', promise: null };
@@ -2942,7 +2943,7 @@
       if (!found.cards) { box.hidden = true; box.innerHTML = ''; return found; }
       var h = '<h3>VR picture cards <span class="n">' + found.cards + '</span></h3>';
       found.lessons.forEach(function (l) {
-        h += '<div class="vl">' + escHtml('Week ' + l.row.week + ' \u00b7 Lesson ' + l.row.lesson + ' \u00b7 ' + l.row.title) + '</div>';
+        h += '<div class="vl">' + escHtml((l.row.heading ? l.row.heading : 'Week ' + l.row.week + ' \u00b7 Lesson ' + l.row.lesson) + ' \u00b7 ' + l.row.title) + '</div>';
         var act = null;
         l.row.files.forEach(function (f) {
           if (f.activity !== act) { if (act !== null) h += '</div>'; act = f.activity; h += '<div class="va">' + escHtml(act) + '</div><div class="vg">'; }
@@ -2995,7 +2996,7 @@
       return vrPackZip(found, function (n, of) { pstatus('Collecting the picture cards: ' + n + ' of ' + of, '', 'status'); }).then(function (zip) {
         return zip.generateAsync({ type: 'blob' }).then(function (blob) {
           saveBlob(blob, vrPackFilename());
-          pstatus((auto ? 'Downloaded the course file and ' : 'Downloaded ') + found.cards + ' picture cards for ' + found.lessons.length + ' lesson' + (found.lessons.length === 1 ? '' : 's') + ', in folders by week and lesson.', 'ok', 'status');
+          pstatus((auto ? 'Downloaded the course file and ' : 'Downloaded ') + found.cards + ' picture cards for ' + found.lessons.length + ' lesson' + (found.lessons.length === 1 ? '' : 's') + ', in folders by lesson and activity.', 'ok', 'status');
         });
       });
     }).catch(function (e) { pstatus('Could not collect the picture cards: ' + e.message, 'err', 'status'); })
@@ -3012,7 +3013,7 @@
         var names = Object.keys(zip.files).filter(function (n) { return !zip.files[n].dir; });
         var pdfs = names.filter(function (n) { return /\.pdf$/.test(n); });
         res.files = names.length; res.sample = pdfs[0];
-        res.foldered = pdfs.every(function (n) { return /(^|\/)Week \d+\/Lesson \d+ - [^/]+\//.test(n); });
+        res.foldered = pdfs.every(function (n) { return /(^|\/)Week \d+\/Lesson \d+ - [^/]+\//.test(n) || found.lessons.some(function (l) { return l.row.heading && n.indexOf(l.row.folder + '/') >= 0; }); });
         res.combined = pdfs.filter(function (n) { return / - all cards\.pdf$/.test(n); }).length === res.lessons;
         return zip.file(pdfs[0]).async('uint8array').then(function (u) {
           res.pdfHead = String.fromCharCode(u[0], u[1], u[2], u[3]);
