@@ -342,6 +342,50 @@
   .tile.course, .tile.kit { position:relative; }
   .tile .newpill { position:absolute; top:10px; right:10px; margin:0; font-size:11px; font-weight:600; letter-spacing:.9px; padding:3px 9px; border-radius:10px; background:var(--gold); color:var(--navy); box-shadow:0 1px 3px rgba(14,28,66,.15); }
   .tile.course .tt, .tile.kit .tt { padding-right:52px; }
+  /* Module list: an original module is a white tile, a Sparkle version a blue one. */
+  .tile.modtile .ttl { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+  .tile.modtile .tick { font-weight:800; color:var(--navy); min-width:16px; text-align:right; }
+  .tile.modtile.sparkle { background:linear-gradient(135deg, #1F5FA8, #2B7BD0); border-color:#1F5FA8; color:#fff; }
+  .tile.modtile.sparkle .ts, .tile.modtile.sparkle .tick { color:#fff; }
+  .tile.modtile.sparkle .tv { color:#DCEBFB; }
+  .tile.modtile .tv { font-size:12px; font-weight:700; letter-spacing:.9px; text-transform:uppercase; color:var(--mute); }
+  .tile.modtile.on { border-color:var(--gold); box-shadow:0 0 0 3px rgba(199,146,44,.55); }
+  .modkey { display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center; font-size:14px; margin:6px 0 4px; }
+  .modkey span { display:inline-flex; align-items:center; gap:7px; }
+  .modkey i { width:22px; height:14px; border-radius:4px; border:1.5px solid var(--line); background:#fff; display:inline-block; }
+  .modkey i.sp { background:linear-gradient(135deg, #1F5FA8, #2B7BD0); border-color:#1F5FA8; }
+  .tiles .grp .sm { margin-left:10px; text-transform:none; letter-spacing:0; }
+  .order { margin-top:22px; background:#fff; border:1.5px solid var(--line); border-radius:var(--r-md); padding:16px 18px; box-shadow:var(--sh-1); }
+  .order h3 { margin:0; font-size:17px; }
+  .order .tot { font-size:14px; color:var(--mute); margin:2px 0 10px; font-variant-numeric:tabular-nums; }
+  .order ol { list-style:none; margin:0; padding:0; display:grid; gap:6px; }
+  .order li { display:grid; grid-template-columns:auto 26px minmax(0,1fr) auto auto; gap:10px; align-items:center; background:var(--soft); border:1px solid var(--line); border-left:6px solid #B9C4D8; border-radius:var(--r-sm); padding:8px 10px; cursor:grab; }
+  .order li.sparkle { border-left-color:#2B7BD0; background:#EEF5FD; }
+  .order li.dragging { opacity:.4; }
+  .order li.over { outline:2px dashed var(--cyan-ink); outline-offset:2px; }
+  .order .grip { color:#8E9BB5; font-size:18px; line-height:1; user-select:none; }
+  .order .n { font-family:var(--f-display); font-weight:800; color:var(--navy); text-align:right; font-variant-numeric:tabular-nums; }
+  .order .nm { font-weight:600; min-width:0; }
+  .order .nm small { display:block; font-weight:400; font-size:12.5px; color:var(--mute); }
+  .order .wk { font-size:13.5px; color:var(--mute); white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .order .mv { display:flex; gap:4px; }
+  .order .mv button { padding:3px 9px; min-width:32px; }
+  .order .inc { display:flex; gap:10px; align-items:flex-start; margin-top:14px; padding-top:12px; border-top:1px solid var(--line); font-size:15px; }
+  .order .inc input { width:18px; height:18px; margin-top:3px; accent-color:var(--navy); }
+  .order .inc small { display:block; color:var(--mute); font-size:13px; }
+  @media (max-width:640px) { .order li { grid-template-columns:auto 22px minmax(0,1fr); } .order .wk, .order .mv { grid-column:3; } }
+  /* Gradebooks from more than one source: the teacher decides what combines. */
+  .gbmerge { border:1.5px solid var(--gold); border-radius:var(--r-md); padding:14px 16px; margin:12px 0 16px; background:#FFFBF2; }
+  .gbmerge h3 { margin:0 0 4px; font-size:17px; }
+  .gbrows { display:grid; gap:8px; margin-top:10px; }
+  .gbrow { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; align-items:center; background:#fff; border:1px solid var(--line); border-radius:var(--r-sm); padding:9px 12px; }
+  .gbrow .gbsrc b { display:block; font-size:15px; }
+  .gbrow .gbsrc span { display:block; font-size:13px; color:var(--mute); }
+  .gbrow select { width:100%; min-width:0; }
+  @media (max-width:700px) { .gbrow { grid-template-columns:minmax(0,1fr); } }
+  .gbmerge .warn { color:#8A4B00; font-weight:600; font-size:14px; margin-top:8px; }
+  .screen.mixgb .skiptop, .screen.mixgb button.skip { display:none; }
+  .gbmerge label.ok { display:flex; gap:8px; align-items:center; margin-top:10px; font-weight:600; }
   .tile.big { padding:24px 22px 22px; min-height:132px; gap:8px; }
   .tile.big .tt { font-size:20px; }
   /* The second answer on a yes/skip question sits back a step. */
@@ -614,8 +658,9 @@
 
     <section class="screen" data-screen="modules" hidden>
       <h2 class="q">Select modules</h2>
-      <div class="hint">One or more from the same semester. Other modules are left out of the file.</div>
+      <div class="modkey" id="j-modkey" hidden><span><i></i> Original</span><span><i class="sp"></i> Sparkle</span></div>
       <div id="t-modules"><div class="hint">Loading the module list&hellip;</div></div>
+      <div class="order" id="j-order" hidden></div>
       <div class="actions"><button type="button" id="j-modules-go" disabled>Continue</button></div>
     </section>
 
@@ -2669,8 +2714,6 @@
         '<span class="ts">' + escHtml(s) + '</span>' + (ready ? '' : '<span class="pill grey">PENDING</span>'),
         ' data-part="kit" data-kit="' + escHtml(k.id) + '"', !ready));
     });
-    var modOn = kit && home.onlyModules && home.onlyModules.length;
-    if (!piecesPath()) out.push(tile('kit' + (modOn ? ' on' : ''), '<span class="tt">Selected modules</span><span class="ts">One or more modules from one semester. Other modules are left out of the file.</span>', ' data-part="module"', !anyReady));
     var grid = document.createElement('div'); grid.className = 'tiles kits'; grid.innerHTML = out.join('');
     el.appendChild(grid);
     grid.querySelectorAll('.tile[data-part="kit"]').forEach(function (b) {
@@ -2679,8 +2722,6 @@
         if (k) chooseWholeKit(k).catch(function () { /* shown in status */ });
       });
     });
-    var modTile = grid.querySelector('.tile[data-part="module"]');
-    if (modTile) modTile.addEventListener('click', function () { J.scope = 'modules'; J.modSel = null; saveJourney(); go('modules'); });
   }
   // A store built for 130+ courses (optima-courses-2026-27) publishes a LIGHT
   // catalog.json: each kit row names its `sidecar` (cartridges/<kit>.json) and the
@@ -3390,6 +3431,7 @@
       el.innerHTML = '<div class="hint">This kit has no schedule data yet.</div>'; return;
     }
     var out = [];
+    if (mixNeedsMerge()) out.push(gbMergeHtml());
     out.push('<div class="hint">Set how much each part of the grade counts. If you rename or add groups, a brand-new Canvas course also keeps its own empty Assignments group at 0%; delete that one in Canvas after import.</div>');
     out.push('<label style="display:flex;align-items:center;gap:8px;margin-top:10px;"><input type="checkbox" id="gb-weighted"' + (home.weighted ? ' checked' : '') + '> Weight by group</label>');
     out.push('<div class="dtable"><table class="sched"><thead><tr><th>Group</th><th>Weight %</th></tr></thead><tbody>');
@@ -3434,7 +3476,61 @@
     wireGradebook();
     renderGbSummary();
   }
+  // ---- gradebooks from more than one source ------------------------------------------
+  // Every source kit's groups are listed as they were built. Nothing is combined until
+  // the teacher picks "Combine into" on a row; "Keep as its own category" undoes it.
+  function gbResolve(id) {
+    var seen = {};
+    while (home.groupsGone && home.groupsGone[id] && !seen[id]) { seen[id] = true; id = home.groupsGone[id]; }
+    return id;
+  }
+  function gbDuplicateNames() {
+    var count = {}, out = [];
+    (home.groups || []).forEach(function (g) { var k = String(g.title || '').trim().toLowerCase(); count[k] = (count[k] || 0) + 1; if (count[k] === 2) out.push(g.title); });
+    return out;
+  }
+  function gbMergeHtml() {
+    var live = {}; home.groups.forEach(function (g) { live[g.id] = g; });
+    var srcOf = {}; kit.groups.forEach(function (g) { srcOf[g.id] = g.src; });
+    var graded = activeGraded().filter(function (it) { var m = moduleById(it.module); return m && moduleKept(m); });
+    var rows = kit.groups.map(function (g) {
+      var n = graded.filter(function (it) { return it.group === g.id; }).length;
+      var cur = live[g.id] ? '' : gbResolve(g.id);
+      var opts = '<option value="">Keep as its own category</option>' + home.groups.filter(function (t) { return t.id !== g.id; }).map(function (t) {
+        return '<option value="' + escHtml(t.id) + '"' + (cur === t.id ? ' selected' : '') + '>Combine into ' + escHtml(t.title) + (srcOf[t.id] ? ' (' + escHtml(srcLabel(srcOf[t.id])) + ')' : '') + '</option>';
+      }).join('');
+      return '<div class="gbrow"><div class="gbsrc"><b>' + escHtml(g.title) + '</b><span>' + escHtml(srcLabel(g.src)) + ' · ' + n + ' graded item' + (n === 1 ? '' : 's') + ' · ' + (g.srcWeighted ? escHtml(fmtPoints(g.weight)) + '% of the grade there' : 'points there') + '</span></div>' +
+        '<select class="gb-merge" data-g="' + escHtml(g.id) + '" aria-label="' + escHtml(g.title + ', ' + srcLabel(g.src)) + '">' + opts + '</select></div>';
+    }).join('');
+    var dup = gbDuplicateNames();
+    return '<div class="gbmerge"><h3>Combine the gradebooks</h3>' +
+      '<div class="hint">These modules come from ' + kit.mix.length + ' sources. Each category stays separate until you combine it.</div>' +
+      '<div class="gbrows">' + rows + '</div>' +
+      (dup.length ? '<div class="warn">' + dup.map(function (t) { return 'Two categories are named "' + escHtml(t) + '". Combine them or rename one.'; }).join('<br>') + '</div>' : '') +
+      '<label class="ok"><input type="checkbox" id="gb-reviewed"' + (home.gbReviewed ? ' checked' : '') + '> Gradebook is set for this course</label></div>';
+  }
+  function gbCombine(id, target) {
+    home.groupsGone = home.groupsGone || {};
+    var srcG = kit.groups.filter(function (g) { return g.id === id; })[0];
+    if (!srcG) return;
+    if (!target) {
+      if (!home.groups.some(function (g) { return g.id === id; })) home.groups.push({ id: id, title: srcG.title, weight: srcG.weight, position: home.groups.length + 1 });
+      delete home.groupsGone[id];
+      kit.graded_items.forEach(function (it) { if (it.group === id) ensureOverride(it).group = id; });
+    } else {
+      kit.graded_items.forEach(function (it) { if (effItem(it).group === id) ensureOverride(it).group = target; });
+      home.groups = home.groups.filter(function (g) { return g.id !== id; });
+      Object.keys(home.groupsGone).forEach(function (k) { if (home.groupsGone[k] === id) home.groupsGone[k] = target; });
+      home.groupsGone[id] = target;
+    }
+    home.gbReviewed = false;
+    save(); syncSyllabusGrading(); renderGradebook();
+  }
   function wireGradebook() {
+    document.querySelectorAll('.gb-merge').forEach(function (sel) {
+      sel.addEventListener('change', function () { gbCombine(this.dataset.g, this.value); });
+    });
+    if ($('gb-reviewed')) $('gb-reviewed').addEventListener('change', function () { home.gbReviewed = this.checked; save(); });
     $('gb-weighted').addEventListener('change', function () { home.weighted = this.checked; save(); renderGbSummary(); });
     document.querySelectorAll('.gb-gtitle').forEach(function (inp) {
       inp.addEventListener('change', function () { home.groups[+this.dataset.gi].title = this.value; save(); renderGradebook(); });
@@ -3450,7 +3546,7 @@
       });
     });
     $('gb-addgroup').addEventListener('click', function () {
-      home.groups.push({ id: 'g' + randHex(32), title: 'New group', weight: 0, position: home.groups.length + 1 });
+      home.groups.push({ id: 'g' + randHex(32), title: 'New group', weight: 0, position: home.groups.length + 1, added: true });
       save(); renderGradebook();
     });
     document.querySelectorAll('.gb-group').forEach(function (sel) {
@@ -3634,11 +3730,137 @@
     if (!kit) return Promise.reject(new Error('choose a kit first'));
     if (kitZipCache[kit.id]) return kitZipCache[kit.id];
     if (kit.upload) return (kitZipCache[kit.id] = JSZip.loadAsync(kit.blob));
-    kitZipCache[kit.id] = fetch(BASE + kit.file).then(function (r) {
-      if (!r.ok) throw new Error('could not fetch ' + kit.file + ' (' + r.status + ')');
+    var id = kit.id;
+    kitZipCache[id] = kitBuffer().then(function (buf) { return JSZip.loadAsync(buf); }).catch(function (e) { delete kitZipCache[id]; throw e; });
+    return kitZipCache[id];
+  }
+  function fetchKitBuffer(k) {
+    return fetch(BASE + k.file, { cache: 'no-store' }).then(function (r) {
+      if (!r.ok) throw new Error('could not fetch ' + k.file + ' (' + r.status + ')');
       return r.arrayBuffer();
-    }).then(function (buf) { return JSZip.loadAsync(buf); }).catch(function (e) { delete kitZipCache[kit.id]; throw e; });
-    return kitZipCache[kit.id];
+    });
+  }
+  // The cartridge behind the current kit: one store file, or several merged into one.
+  function kitBuffer() {
+    if (!kit.mix) return fetchKitBuffer(kit);
+    var v = kit;
+    if (!v._buf) {
+      v._buf = Promise.all(v.mix.map(fetchKitBuffer))
+        .then(function (bufs) { return Promise.all(bufs.map(function (b) { return JSZip.loadAsync(b); })); })
+        .then(function (zips) { return mergeZips(zips, v.mix); })
+        .then(function (zip) { return zip.generateAsync({ type: 'arraybuffer', compression: 'DEFLATE' }); })
+        .catch(function (e) { delete v._buf; throw e; });
+    }
+    return v._buf;
+  }
+  // ---- merging cartridges ------------------------------------------------------------
+  // The first zip is the base. From each later one come the resources, files, module
+  // blocks, organization entries, assignment groups and rubrics the base does not already
+  // hold (same identifier = same thing, kept once). A new file whose path is already
+  // taken by a different item is stored under a suffixed name.
+  function xmlBlocks(text, tag) {
+    var re = new RegExp('[ \\t]*<' + tag + ' identifier="([^"]+)"[^>]*?(?:/>|>[\\s\\S]*?</' + tag + '>)[ \\t]*\\r?\\n?', 'g'), out = [], m;
+    while ((m = re.exec(text))) out.push({ id: m[1], text: m[0], index: m.index });
+    return out;
+  }
+  function xmlItemSpan(text, id) {
+    var start = text.indexOf('<item identifier="' + id + '"');
+    if (start < 0) return null;
+    var re = /<item\b|<\/item>/g, depth = 0, m;
+    re.lastIndex = start;
+    while ((m = re.exec(text))) {
+      depth += m[0] === '<item' ? 1 : -1;
+      if (depth === 0) return [start, m.index + m[0].length];
+    }
+    return null;
+  }
+  function insertBefore(text, marker, add) {
+    var i = text.lastIndexOf(marker);
+    if (i < 0) return text;
+    var ls = text.lastIndexOf('\n', i) + 1;
+    return text.slice(0, ls) + add + text.slice(ls);
+  }
+  function mergeZips(zips, kits) {
+    var base = zips[0];
+    var NAMES = ['imsmanifest.xml', 'course_settings/module_meta.xml', 'course_settings/assignment_groups.xml', 'course_settings/rubrics.xml'];
+    var read = function (z, n) { var f = z.file(n); return f ? f.async('string') : Promise.resolve(null); };
+    return Promise.all(zips.map(function (z) { return Promise.all(NAMES.map(function (n) { return read(z, n); })); })).then(function (T) {
+      var man = T[0][0], meta = T[0][1], grp = T[0][2], rub = T[0][3];
+      if (!man || !meta) throw new Error('the first kit has no manifest or module list');
+      var have = { res: {}, mod: {}, grp: {}, rub: {} }, taken = {}, copies = [];
+      xmlBlocks(man, 'resource').forEach(function (b) { have.res[b.id] = true; });
+      xmlBlocks(meta, 'module').forEach(function (b) { have.mod[b.id] = true; });
+      xmlBlocks(grp || '', 'assignmentGroup').forEach(function (b) { have.grp[b.id] = true; });
+      xmlBlocks(rub || '', 'rubric').forEach(function (b) { have.rub[b.id] = true; });
+      Object.keys(base.files).forEach(function (n) { taken[n] = true; });
+      for (var i = 1; i < zips.length; i++) {
+        (function (z, t, k) {
+          if (!t[0] || !t[1]) throw new Error(k.id + ' has no manifest or module list');
+          var tag = '-' + k.id.replace(/^.*?-/, ''), handled = {}, addRes = '';
+          xmlBlocks(t[0], 'resource').forEach(function (b) {
+            var txt = b.text, hrefs = [], hm, hre = /href="([^"]+)"/g;
+            while ((hm = hre.exec(b.text))) { if (hrefs.indexOf(hm[1]) < 0) hrefs.push(hm[1]); }
+            hrefs.forEach(function (h) { handled[unescapeXml(h)] = true; });
+            if (have.res[b.id]) return;
+            have.res[b.id] = true;
+            hrefs.forEach(function (h) {
+              var p = unescapeXml(h), src = z.file(p);
+              if (!src) return;
+              var dest = p;
+              if (taken[p]) {
+                var dot = p.lastIndexOf('.'), slash = p.lastIndexOf('/');
+                dest = dot > slash ? p.slice(0, dot) + tag + p.slice(dot) : p + tag;
+                var n = 2; while (taken[dest]) { dest = (dot > slash ? p.slice(0, dot) + tag + '-' + n + p.slice(dot) : p + tag + '-' + n); n++; }
+                txt = txt.split('href="' + h + '"').join('href="' + xmlEsc(dest) + '"');
+              }
+              taken[dest] = true;
+              copies.push(src.async('uint8array').then(function (d) { base.file(dest, d); }));
+            });
+            addRes += /\n$/.test(txt) ? txt : txt + '\n';
+          });
+          man = insertBefore(man, '</resources>', addRes);
+          // files no resource lists (question banks and the like): copied when the name is free
+          Object.keys(z.files).forEach(function (n) {
+            if (z.files[n].dir || handled[n] || taken[n] || n === 'imsmanifest.xml' || n.indexOf('course_settings/') === 0) return;
+            taken[n] = true;
+            copies.push(z.file(n).async('uint8array').then(function (d) { base.file(n, d); }));
+          });
+          var addMod = '', addOrg = '';
+          xmlBlocks(t[1], 'module').forEach(function (b) {
+            if (have.mod[b.id]) return;
+            have.mod[b.id] = true;
+            addMod += /\n$/.test(b.text) ? b.text : b.text + '\n';
+            var sp = xmlItemSpan(t[0], b.id);
+            if (sp) addOrg += '        ' + t[0].slice(sp[0], sp[1]) + '\n';
+          });
+          meta = insertBefore(meta, '</modules>', addMod);
+          var lm = xmlItemSpan(man, 'LearningModules');
+          if (lm && addOrg) {
+            var close = lm[1] - '</item>'.length, ls = man.lastIndexOf('\n', close) + 1;
+            man = man.slice(0, ls) + addOrg + man.slice(ls);
+          }
+          var addGrp = '';
+          xmlBlocks(t[2] || '', 'assignmentGroup').forEach(function (b) { if (have.grp[b.id]) return; have.grp[b.id] = true; addGrp += /\n$/.test(b.text) ? b.text : b.text + '\n'; });
+          if (grp && addGrp) grp = insertBefore(grp, '</assignmentGroups>', addGrp);
+          if (t[3]) {
+            if (!rub) {
+              rub = t[3];
+              xmlBlocks(rub, 'rubric').forEach(function (b) { have.rub[b.id] = true; });
+              if (man.indexOf('href="course_settings/rubrics.xml"') < 0) man = man.replace('<file href="course_settings/module_meta.xml"/>', '<file href="course_settings/module_meta.xml"/>\n      <file href="course_settings/rubrics.xml"/>');
+            } else {
+              var addRub = '';
+              xmlBlocks(t[3], 'rubric').forEach(function (b) { if (have.rub[b.id]) return; have.rub[b.id] = true; addRub += /\n$/.test(b.text) ? b.text : b.text + '\n'; });
+              rub = insertBefore(rub, '</rubrics>', addRub);
+            }
+          }
+        })(zips[i], T[i], kits[i]);
+      }
+      base.file('imsmanifest.xml', man);
+      base.file('course_settings/module_meta.xml', meta);
+      if (grp) base.file('course_settings/assignment_groups.xml', grp);
+      if (rub) base.file('course_settings/rubrics.xml', rub);
+      return Promise.all(copies).then(function () { return base; });
+    });
   }
   function unescapeXml(s) {
     return String(s || '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&amp;/g, '&');
@@ -4114,10 +4336,7 @@
     if (!kit || !course) return Promise.reject(new Error('choose a kit first'));
     var html = currentHtml();
     if (kit.upload) return loadContents().then(function () { return JSZip.loadAsync(kit.blob); }).then(function (zip) { return patchUpload(zip, html, type); });
-    return loadContents().then(function () { return fetch(BASE + kit.file, { cache: 'no-store' }); }).then(function (r) {
-      if (!r.ok) throw new Error('could not fetch ' + kit.file + ' (' + r.status + ')');
-      return r.arrayBuffer();
-    }).then(function (buf) { return JSZip.loadAsync(buf); }).then(function (zip) {
+    return loadContents().then(function () { return kitBuffer(); }).then(function (buf) { return JSZip.loadAsync(buf); }).then(function (zip) {
       if (!kit.front_page) throw new Error('This kit has no home page to customize. It needs to be rebuilt; tell the curriculum team which course and semester.');
       var fp = zip.file(kit.front_page);
       if (!fp) throw new Error('The home page listed for this kit (' + kit.front_page + ') is missing from the cartridge. It needs to be rebuilt.');
@@ -4278,7 +4497,32 @@
       });
       text = text.slice(0, openIdx) + block + text.slice(end);
     });
-    return text;
+    return customOrder() ? reorderModuleMeta(text) : text;
+  }
+  // The teacher's module order: blocks re-sequenced and their <position> renumbered.
+  function reorderModuleMeta(text) {
+    var blocks = xmlBlocks(text, 'module');
+    if (blocks.length < 2) return text;
+    var byId = {}; blocks.forEach(function (b) { byId[b.id] = b; });
+    var order = [];
+    keptModules().forEach(function (m) { if (byId[m.gid]) { order.push(byId[m.gid]); delete byId[m.gid]; } });
+    blocks.forEach(function (b) { if (byId[b.id]) order.push(b); });
+    var first = blocks[0].index, rest = text;
+    for (var i = blocks.length - 1; i >= 0; i--) rest = rest.slice(0, blocks[i].index) + rest.slice(blocks[i].index + blocks[i].text.length);
+    var body = order.map(function (b, i) {
+      var t = b.text.replace(/<position>[^<]*<\/position>/, '<position>' + (i + 1) + '</position>');
+      return /\n$/.test(t) ? t : t + '\n';
+    }).join('');
+    return rest.slice(0, first) + body + rest.slice(first);
+  }
+  function reorderOrganization(text) {
+    var spans = [];
+    keptModules().forEach(function (m) { var sp = xmlItemSpan(text, m.gid); if (sp) spans.push({ gid: m.gid, a: sp[0], b: sp[1] }); });
+    if (spans.length < 2) return text;
+    var slots = spans.slice().sort(function (x, y) { return x.a - y.a; }), out = text;
+    // fill the existing slots, last first, with the items in the teacher's order
+    for (var i = slots.length - 1; i >= 0; i--) out = out.slice(0, slots[i].a) + text.slice(spans[i].a, spans[i].b) + out.slice(slots[i].b);
+    return out;
   }
   // imsmanifest.xml: removed module items leave the organization; a graded item no
   // module points at any more loses its resource, the resources that one depends on,
@@ -4341,6 +4585,7 @@
   }
   function groupsChanged() {
     if (!home.groups || !kit.groups) return false;
+    if (kit.mix) return true;
     var orig = {};
     kit.groups.forEach(function (g) { orig[g.id] = g; });
     return home.groups.some(function (g) {
@@ -4365,6 +4610,11 @@
           '  </assignmentGroup>\n';
         text = text.replace('</assignmentGroups>', block + '</assignmentGroups>');
       }
+    });
+    // A group the teacher combined into another one is gone from the gradebook.
+    Object.keys(home.groupsGone || {}).forEach(function (id) {
+      if (home.groups.some(function (g) { return g.id === id; })) return;
+      text = text.replace(new RegExp('[ \\t]*<assignmentGroup identifier="' + id + '">[\\s\\S]*?<\\/assignmentGroup>[ \\t]*\\r?\\n?'), '');
     });
     return text;
   }
@@ -4507,7 +4757,7 @@
     });
     var modChanged = (kit.modules || []).some(function (m) { return modulePublished(m) !== m.published; });
     var pubChanged = (kit.graded_items || []).some(function (it) { return effItem(it).published !== it.published; });
-    if (modChanged || pubChanged || anyRemoved) {
+    if (modChanged || pubChanged || anyRemoved || customOrder()) {
       tasks.push(function () {
         var path = (kit.settings && kit.settings.module_meta) || ((kit.modules || [])[0] || {}).xml || 'course_settings/module_meta.xml';
         var f = zip.file(path);
@@ -4516,6 +4766,10 @@
       });
     }
     if (anyRemoved) tasks.push(function () { return removeFromZip(zip, gone); });
+    if (customOrder()) tasks.push(function () {
+      var f = zip.file('imsmanifest.xml');
+      return f ? f.async('string').then(function (text) { zip.file('imsmanifest.xml', reorderOrganization(text)); }) : null;
+    });
     if (kit.settings && kit.settings.assignment_groups && groupsChanged()) {
       tasks.push(function () {
         var f = zip.file(kit.settings.assignment_groups);
@@ -5017,7 +5271,7 @@
   // off (both remembered on this computer), or the link on the welcome screen.
   // REVIEW_FORCE lets the self-test pin either flow.
   var REVIEW_FORCE = null;
-  function reviewFlow() { return REVIEW_FORCE != null ? REVIEW_FORCE : !!uiPref().review; }
+  function reviewFlow() { if (kit && kit.mix) return false; return REVIEW_FORCE != null ? REVIEW_FORCE : !!uiPref().review; }
   function setReviewFlow(on) { try { var u = uiPref(); u.review = !!on; localStorage.setItem(UI_STORE, JSON.stringify(u)); } catch (e) { /* ignore */ } }
   (function () { var m = /[?&]review=([01])(?:&|$)/.exec(location.search); if (m) setReviewFlow(m[1] === '1'); })();
 
@@ -5066,7 +5320,8 @@
     // A reload keeps the course but not the kit, so kit screens fall back to the choice before them.
     // A teacher's own file is never stored, so a reload asks for it again.
     if (J.path === 'upload' && (NEEDS_KIT[s] || NEEDS_COURSE[s]) && !kit) s = 'upload';
-    if (NEEDS_KIT[s] && !kit) s = course ? 'part' : 'welcome';
+    if (NEEDS_KIT[s] && !kit) s = course ? (j.path === 'pieces' ? 'part' : 'modules') : 'welcome';
+    if (s === 'part' && j.path !== 'pieces') s = course ? 'modules' : 'welcome';
     if (NEEDS_COURSE[s] && !course) s = 'welcome';
     if (s !== 'welcome' && !J.path) J.path = 'customize';
     // a journey saved in the classic flow lands on the review when the beta is on, and back
@@ -5077,15 +5332,17 @@
   // The screens a teacher will pass through, given the answers so far. Unanswered
   // questions count as one screen (the question itself).
   function sequence() {
-    var seq = uploadPath() ? ['welcome', 'upload'] : finder.by === 'subject' ? ['welcome', 'grade', 'course', 'mode', 'part'] : ['welcome', 'grade', 'subject', 'course', 'mode', 'part'];
-    if (!uploadPath() && (J.scope === 'modules' || J.screen === 'modules')) seq.push('modules');
+    // One screen picks the content: the module list (every semester and Sparkle version).
+    // Only the home page / syllabus / tile path still picks a single semester kit.
+    var pick = piecesPath() ? 'part' : 'modules';
+    var seq = uploadPath() ? ['welcome', 'upload'] : finder.by === 'subject' ? ['welcome', 'grade', 'course', 'mode', pick] : ['welcome', 'grade', 'subject', 'course', 'mode', pick];
     if (J.mode === 'preview' || J.screen === 'preview') seq.push('preview');
     if (J.path === 'fetch') { seq.push('generate'); return seq; }
     // Home page, syllabus and tile only: straight from the semester to those three panels.
     if (piecesPath()) { seq.splice(seq.indexOf('mode'), 1); seq.push('details', 'home', 'tile', 'syllabus', 'generate'); return seq; }
     // A module-only file is an add-on to a course the teacher already has: it never
     // touches the home page or the syllabus, so those steps (and the details behind them) go.
-    var addon = J.scope === 'modules';
+    var addon = kit ? moduleAddon() : J.scope === 'modules';
     if (!addon) seq.push('details');
     // Review flow: one screen for dates, publishing and gradebook. Home page, tile and
     // syllabus open from it and come back to it, so they only count while open.
@@ -5096,6 +5353,9 @@
     }
     ['home', 'tile', 'syllabus', 'dates', 'publish', 'names', 'gradebook'].forEach(function (q) {
       if (addon && (q === 'home' || q === 'tile' || q === 'syllabus')) return;
+      // Gradebooks from more than one source are never combined for the teacher: the
+      // gradebook step is part of the path, with no question in front of it.
+      if (q === 'gradebook' && mixNeedsMerge()) { seq.push(q); return; }
       seq.push(Q_OF[q]);
       if (J.want[q] || J.screen === q) seq.push(q);
     });
@@ -5139,7 +5399,8 @@
     wrap.classList.toggle('wide', J.screen === 'review');
     wrap.classList.toggle('pieces', piecesPath());
     $('preview-note').textContent = piecesPath() ? 'Links work once the page is in Canvas.' : 'Links work after import, not here.';
-    document.querySelector('.screen[data-screen="part"] h2.q').textContent = piecesPath() ? 'Select a semester' : 'Select the scope';
+    document.querySelector('.screen[data-screen="part"] h2.q').textContent = 'Select a semester';
+    document.querySelector('.screen[data-screen="gradebook"]').classList.toggle('mixgb', mixNeedsMerge());
     syncPreviewButton();
     renderTrail();
     var panel = $('dates-panel');
@@ -5177,7 +5438,7 @@
       + '<span class="lbl">Step ' + i + ' of ' + (seq.length - 1) + '</span>';
   }
   function refreshTiles() {
-    if (J.screen === 'grade' || J.screen === 'subject' || J.screen === 'course' || J.screen === 'part') renderScreen();
+    if (J.screen === 'grade' || J.screen === 'subject' || J.screen === 'course' || J.screen === 'part' || J.screen === 'modules') renderScreen();
   }
   function tile(cls, inner, attrs, disabled) {
     return '<button type="button" class="tile ' + cls + '"' + (attrs || '') + (disabled ? ' disabled' : '') + '>' + inner + '</button>';
@@ -5285,62 +5546,337 @@
       b.addEventListener('click', function () { chooseCourse(findCourse(this.dataset.code)); go(nextScreen('course')); });
     });
   }
-  // After the course: whole semester = a kit; a module = a kit plus a scope.
-  function afterScope() { return J.mode === 'preview' ? 'preview' : nextScreen(J.scope === 'modules' ? 'modules' : 'part'); }
-  function moduleAddon() { return !!(kit && home.onlyModules && home.onlyModules.length); }
+  // After the course: the module list. Every module of every ready kit is offered in one
+  // list (Semester 1, Semester 2, and each Sparkle version beside the original it stands
+  // in for); the teacher picks any of them, puts them in order, and says whether the file
+  // carries a home page, syllabus and course tile or only adds modules to a course.
+  function afterScope() { return J.mode === 'preview' ? 'preview' : nextScreen(piecesPath() ? 'part' : 'modules'); }
+  // Add-on = no home page, syllabus or tile in the file. The teacher's choice on the module
+  // list; a home saved before that choice existed keeps the old rule (a subset is an add-on).
+  function moduleAddon() {
+    if (!kit) return false;
+    return home.addon == null ? !!(home.onlyModules && home.onlyModules.length) : !!home.addon;
+  }
   function chooseWholeKit(k) {
     return selectKit(k).then(function () {
       J.scope = 'all'; J.modSel = null;
-      if (home.onlyModules) { home.onlyModules = null; save(); refreshKitPanels(); }
+      restoreModuleOrder();
+      if (home.onlyModules || home.modOrder || home.addon) { home.onlyModules = null; home.modOrder = null; home.addon = false; save(); }
+      renumberWeeks(); refreshKitPanels();
       go(afterScope());
     });
   }
   function refreshKitPanels() { fillPrintScope(); renderMods(); renderSyllabus(); renderDates(); renderGradebook(); renderPreview(); }
-  function renderModuleTiles() {
-    var el = $('t-modules'); if (!course) { el.innerHTML = ''; return Promise.resolve(); }
+
+  // ---- units: what a teacher thinks of as "a module" -------------------------------
+  // Many kits make each WEEK its own Canvas module ("Module 4: Robin Hood - Week 1").
+  // The list shows one tile per unit and counts its weeks; a Sparkle kit is one unit.
+  // Unit numbers and week counts are planning labels: shown here, never written to a file.
+  var WEEK_RX = /\bWeek\s+\d+/i;
+  function isSparkle(k) { return k.edition === 'sparkle' || /-sparkle$/.test(k.id); }
+  function unitNum(s) { var m = /^\s*(?:Module|Unit)\s+(\d+[A-Z]?)\b/i.exec(s || ''); return m ? m[1].toUpperCase() : ''; }
+  function kitModules0(k) { return k.modules0 || k.modules || []; }
+  function unitsOfKit(k) {
+    var mods = kitModules0(k), out = [];
+    if (isSparkle(k)) {
+      var n = (/(\d+[A-Z]?)/.exec(k.replaces || '') || /-m(\d+)/.exec(k.id) || [])[1] || '';
+      out.push({ kit: k, key: k.id + '|all', title: k.unit || k.label, num: String(n).toUpperCase(), mods: mods.slice(), sparkle: true, replaces: k.replaces || (n ? 'Module ' + n : '') });
+    } else {
+      mods.forEach(function (m) {
+        var num = unitNum(m.title), wk = WEEK_RX.test(m.title), last = out[out.length - 1];
+        if (num && wk && last && last.grouped && last.num === num) { last.mods.push(m); return; }
+        var title = m.title;
+        if (num && wk) title = m.title.replace(/\s*[·–—:,-]?\s*Week\s+\d+.*$/i, '').trim() || m.title;
+        out.push({ kit: k, key: k.id + '|' + m.id, title: title, num: num, mods: [m], grouped: !!(num && wk), sparkle: false });
+      });
+    }
+    out.forEach(function (u) {
+      var ids = {}, w = {};
+      u.mods.forEach(function (m) { ids[m.id] = true; });
+      var graded = (k.graded_items || []).filter(function (it) { return ids[it.module]; });
+      graded.forEach(function (it) { var wk = it.week0 !== undefined ? it.week0 : it.week; if (wk != null) w[wk] = true; });
+      u.graded = graded.length;
+      u.weeks = Math.max(u.mods.filter(function (m) { return WEEK_RX.test(m.title); }).length, Object.keys(w).length);
+      u.published = u.mods.some(function (m) { return m.published; });
+    });
+    return out;
+  }
+  var PART_ORDER = { s1: 1, q1: 2, q2: 3, t1: 4, s2: 5, q3: 6, q4: 7, t2: 8, t3: 9, full: 10 };
+  function kitPartKey(k) { var m = /-(s[12]|q[1-4]|t[1-3]|full)(?:-|$)/.exec(k.id); return m ? PART_ORDER[m[1]] : 99; }
+  // Sections in calendar order; each Sparkle unit sits right after the original it replaces.
+  function moduleSections(kits) {
+    var originals = kits.filter(function (k) { return !isSparkle(k); }).map(function (k, i) { return { k: k, i: i }; })
+      .sort(function (a, b) { return (kitPartKey(a.k) - kitPartKey(b.k)) || (a.i - b.i); }).map(function (x) { return x.k; });
+    var secs = originals.map(function (k) { return { kit: k, label: k.label, units: unitsOfKit(k) }; }), loose = [];
+    kits.filter(isSparkle).forEach(function (k) {
+      var u = unitsOfKit(k)[0], placed = false;
+      if (u.num) placed = secs.some(function (s) {
+        var idx = -1;
+        s.units.forEach(function (x, i) { if (!x.sparkle && x.num === u.num) idx = i; });
+        if (idx < 0) return false;
+        var j = idx + 1; while (j < s.units.length && s.units[j].sparkle) j++;
+        s.units.splice(j, 0, u);
+        return true;
+      });
+      if (!placed) loose.push(u);
+    });
+    if (loose.length) secs.push({ kit: null, label: 'Sparkle', units: loose });
+    return secs;
+  }
+  function listedKits() {
+    if (!course) return [];
     var modes = {}; course.kits.forEach(function (k) { var m = kitMode(k); if (m) modes[m] = true; });
     var hasModes = !!(modes.live || modes.od);
-    var kits = course.kits.filter(function (k) { return k.status === 'ready' && !(hasModes && kitMode(k) && kitMode(k) !== finder.mode); });
-    if (!J.modSel && kit) J.modSel = { kitId: kit.id, ids: (home.onlyModules || []).slice() };
-    if (!J.modSel) J.modSel = { kitId: '', ids: [] };
-    el.innerHTML = '<div class="hint">Loading the module list…</div>';
+    if (hasModes && (!finder.mode || !modes[finder.mode])) finder.mode = modes.live ? 'live' : 'od';
+    return course.kits.filter(function (k) { return k.status === 'ready' && !(hasModes && kitMode(k) && kitMode(k) !== finder.mode); });
+  }
+  // Live / On-Demand switch, for a course whose kits are built per section type.
+  function modeSwitchHtml() {
+    var modes = {}; course.kits.forEach(function (k) { var m = kitMode(k); if (m) modes[m] = true; });
+    if (!(modes.live || modes.od)) return '';
+    return '<div class="seg" role="group" aria-label="Section type">' + ['live', 'od'].filter(function (m) { return modes[m]; }).map(function (m) {
+      return '<button type="button" data-secmode="' + m + '" class="' + (finder.mode === m ? 'on' : '') + '" aria-pressed="' + (finder.mode === m ? 'true' : 'false') + '">' + escHtml(MODE_LABEL[m]) + '</button>';
+    }).join('') + '</div>';
+  }
+  var modSections = [];
+  function allUnits() { var out = []; modSections.forEach(function (s) { s.units.forEach(function (u) { out.push(u); }); }); return out; }
+  function unitByKey(key) { return allUnits().filter(function (u) { return u.key === key; })[0]; }
+  function selectedUnits() { return (J.modSel ? J.modSel.keys : []).map(unitByKey).filter(Boolean); }
+  // A selection that holds every module of a semester (or everything listed) starts with the
+  // home page, syllabus and tile included; a smaller pick starts as an add-on. The teacher's
+  // own tick, once made, wins.
+  function wantsPieces() {
+    if (!J.modSel) return true;
+    if (J.modSel.pieces != null) return J.modSel.pieces;
+    var keys = J.modSel.keys;
+    return modSections.some(function (s) { return s.kit && s.units.filter(function (u) { return !u.sparkle; }).every(function (u) { return keys.indexOf(u.key) >= 0; }) && s.units.some(function (u) { return !u.sparkle; }); });
+  }
+  function naturalSort(keys) {
+    var pos = {}; allUnits().forEach(function (u, i) { pos[u.key] = i; });
+    return keys.slice().sort(function (a, b) { return pos[a] - pos[b]; });
+  }
+  function toggleUnit(key) {
+    var s = J.modSel, i = s.keys.indexOf(key);
+    if (i >= 0) s.keys.splice(i, 1);
+    else { s.keys.push(key); if (!s.manual) s.keys = naturalSort(s.keys); }
+    if (!s.keys.length) s.manual = false;
+  }
+  function moveUnit(from, to) {
+    var k = J.modSel.keys;
+    if (from === to || from < 0 || to < 0 || from >= k.length || to >= k.length) return;
+    k.splice(to, 0, k.splice(from, 1)[0]);
+    J.modSel.manual = true;
+  }
+  function weeksText(n) { return n ? n + ' week' + (n === 1 ? '' : 's') : ''; }
+  // The selection a loaded kit already stands for, so Back lands on the same picks.
+  function selectionFromKit() {
+    var s = { keys: [], pieces: null, manual: false };
+    if (!kit || kit.upload) return s;
+    var kept = {}, order = {};
+    keptModules().forEach(function (m, i) { kept[m.gid] = true; order[m.gid] = i; });
+    var src = kit.mix ? kit.mix.map(function (k) { return k.id; }) : [kit.id];
+    var units = allUnits().filter(function (u) { return src.indexOf(u.kit.id) >= 0 && u.mods.every(function (m) { return kept[m.gid]; }); });
+    units.sort(function (a, b) { return order[a.mods[0].gid] - order[b.mods[0].gid]; });
+    s.keys = units.map(function (u) { return u.key; });
+    s.manual = !!(home.modOrder && home.modOrder.length);
+    if (s.keys.length) s.pieces = !moduleAddon();
+    return s;
+  }
+  function renderModuleTiles() {
+    var el = $('t-modules'); if (!course) { el.innerHTML = ''; return Promise.resolve(); }
+    var kits = listedKits();
+    if (!modSections.length) el.innerHTML = '<div class="hint">Loading the module list…</div>';
     return Promise.all(kits.map(loadKitDetail)).then(function () {
-      var out = [];
-      kits.forEach(function (k) {
-        if (kits.length > 1) out.push('<div class="grp">' + escHtml(k.label) + '</div>');
-        (k.modules || []).forEach(function (m) {
-          var on = J.modSel.kitId === k.id && J.modSel.ids.indexOf(m.id) >= 0;
-          var n = (k.graded_items || []).filter(function (it) { return it.module === m.id; }).length;
-          out.push(tile('modtile' + (on ? ' on' : ''),
-            '<span class="ttl"><span class="tt">' + escHtml(m.title) + '</span><span class="tick">' + (on ? '✓' : '') + '</span></span>' +
-            '<span class="ts">' + (n ? n + ' graded item' + (n === 1 ? '' : 's') : 'No graded items') + (m.published ? '' : ' · unpublished in the kit') + '</span>',
-            ' data-kit="' + escHtml(k.id) + '" data-m="' + escHtml(m.id) + '"'));
+      modSections = moduleSections(kits);
+      if (!J.modSel) J.modSel = selectionFromKit();
+      J.modSel.keys = J.modSel.keys.filter(unitByKey);
+      var out = [], anySparkle = allUnits().some(function (u) { return u.sparkle; });
+      $('j-modkey').hidden = !anySparkle;
+      modSections.forEach(function (s, si) {
+        var allOn = s.units.length && s.units.every(function (u) { return J.modSel.keys.indexOf(u.key) >= 0; });
+        out.push('<div class="grp">' + escHtml(s.label) + (s.kit && isNewKit(s.kit) ? ' ' + newPill() : '') +
+          '<button type="button" class="sm alt selall" data-s="' + si + '">' + (allOn ? 'Clear' : 'Select all') + '</button></div>');
+        s.units.forEach(function (u) {
+          var on = J.modSel.keys.indexOf(u.key) >= 0;
+          var facts = [weeksText(u.weeks), u.graded ? u.graded + ' graded item' + (u.graded === 1 ? '' : 's') : 'No graded items', u.published ? '' : 'unpublished in the kit'].filter(Boolean).join(' · ');
+          out.push(tile('modtile' + (u.sparkle ? ' sparkle' : '') + (on ? ' on' : ''),
+            (u.sparkle ? '<span class="tv">Sparkle' + (u.replaces ? ' version of ' + escHtml(u.replaces) : '') + '</span>' : '') +
+            '<span class="ttl"><span class="tt">' + escHtml(u.title) + '</span><span class="tick">' + (on ? '✓' : '') + '</span></span>' +
+            '<span class="ts">' + escHtml(facts) + '</span>',
+            ' data-u="' + escHtml(u.key) + '" aria-pressed="' + (on ? 'true' : 'false') + '"'));
         });
       });
-      el.innerHTML = '<div class="tiles mods">' + (out.join('') || '<div class="hint">This course has no modules listed yet.</div>') + '</div>';
-      el.querySelectorAll('.tile').forEach(function (b) {
+      el.innerHTML = modeSwitchHtml() + '<div class="tiles mods">' + (out.join('') || '<div class="hint">This course has no modules listed yet.</div>') + '</div>';
+      el.querySelectorAll('button[data-secmode]').forEach(function (b) {
         b.addEventListener('click', function () {
-          var kid = this.dataset.kit, mid = this.dataset.m;
-          if (J.modSel.kitId !== kid) J.modSel = { kitId: kid, ids: [] };
-          var i = J.modSel.ids.indexOf(mid);
-          if (i >= 0) J.modSel.ids.splice(i, 1); else J.modSel.ids.push(mid);
+          if (finder.mode === this.dataset.secmode) return;
+          finder.mode = this.dataset.secmode; saveFinder();
+          J.modSel = { keys: [], pieces: null, manual: false };
           renderModuleTiles();
         });
       });
-      var n = J.modSel.ids.length, btn = $('j-modules-go');
-      btn.disabled = !n;
-      btn.textContent = n ? 'Continue with ' + n + ' module' + (n === 1 ? '' : 's') : 'Continue';
+      el.querySelectorAll('.tile').forEach(function (b) {
+        b.addEventListener('click', function () { toggleUnit(this.dataset.u); renderModuleTiles(); });
+      });
+      el.querySelectorAll('.selall').forEach(function (b) {
+        b.addEventListener('click', function () {
+          var s = modSections[+this.dataset.s], keys = J.modSel.keys;
+          var allOn = s.units.every(function (u) { return keys.indexOf(u.key) >= 0; });
+          s.units.forEach(function (u) {
+            var i = keys.indexOf(u.key);
+            if (allOn && i >= 0) keys.splice(i, 1);
+            // "Select all" takes the originals; a Sparkle version is the teacher's own pick.
+            if (!allOn && i < 0 && (!u.sparkle || !s.kit)) keys.push(u.key);
+          });
+          if (!J.modSel.manual) J.modSel.keys = naturalSort(keys);
+          if (!J.modSel.keys.length) J.modSel.manual = false;
+          renderModuleTiles();
+        });
+      });
+      renderOrder();
     }).catch(function (e) { el.innerHTML = '<div class="hint">Could not load the module list: ' + escHtml(e.message) + '</div>'; });
   }
+  // The picked modules in the order they will appear in Canvas. Drag a row, or use the arrows.
+  function renderOrder() {
+    var el = $('j-order'), sel = selectedUnits(), n = sel.length, btn = $('j-modules-go');
+    btn.disabled = !n;
+    btn.textContent = n ? 'Continue with ' + n + ' module' + (n === 1 ? '' : 's') : 'Continue';
+    el.hidden = !n;
+    if (!n) { el.innerHTML = ''; return; }
+    var weeks = 0, unknown = 0;
+    sel.forEach(function (u) { weeks += u.weeks; if (!u.weeks) unknown++; });
+    var pieces = wantsPieces();
+    var rows = sel.map(function (u, i) {
+      return '<li draggable="true" data-i="' + i + '" class="' + (u.sparkle ? 'sparkle' : '') + '"><span class="grip" aria-hidden="true">⠿</span><span class="n">' + (i + 1) + '</span>' +
+        '<span class="nm">' + escHtml(u.title) + '<small>' + escHtml(u.sparkle ? 'Sparkle' + (u.replaces ? ' version of ' + u.replaces : '') : (u.kit.label || '')) + '</small></span>' +
+        '<span class="wk">' + escHtml(weeksText(u.weeks)) + '</span>' +
+        '<span class="mv"><button type="button" class="sm alt" data-mv="-1" data-i="' + i + '" aria-label="Move ' + escHtml(u.title) + ' up"' + (i === 0 ? ' disabled' : '') + '>↑</button>' +
+        '<button type="button" class="sm alt" data-mv="1" data-i="' + i + '" aria-label="Move ' + escHtml(u.title) + ' down"' + (i === n - 1 ? ' disabled' : '') + '>↓</button>' +
+        '<button type="button" class="sm alt" data-rm="' + i + '" aria-label="Remove ' + escHtml(u.title) + '">✕</button></span></li>';
+    }).join('');
+    el.innerHTML = '<h3>Order in Canvas</h3><div class="tot">' + n + ' module' + (n === 1 ? '' : 's') + (weeks ? ' · ' + weeks + ' week' + (weeks === 1 ? '' : 's') : '') + (unknown && weeks ? ' · ' + unknown + ' with no week count' : '') + '</div>' +
+      '<ol>' + rows + '</ol>' +
+      '<label class="inc"><input type="checkbox" id="j-pieces"' + (pieces ? ' checked' : '') + '><span>Include a home page, syllabus and course tile' +
+      '<small>Unticked: the file only adds these modules to a course already in Canvas.</small></span></label>';
+    $('j-pieces').addEventListener('change', function () { J.modSel.pieces = this.checked; });
+    el.querySelectorAll('button[data-mv]').forEach(function (b) {
+      b.addEventListener('click', function () { var i = +this.dataset.i; moveUnit(i, i + (+this.dataset.mv)); renderOrder(); });
+    });
+    el.querySelectorAll('button[data-rm]').forEach(function (b) {
+      b.addEventListener('click', function () { toggleUnit(J.modSel.keys[+this.dataset.rm]); renderModuleTiles(); });
+    });
+    var dragFrom = -1;
+    el.querySelectorAll('li').forEach(function (li) {
+      li.addEventListener('dragstart', function (e) { dragFrom = +this.dataset.i; this.classList.add('dragging'); try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(dragFrom)); } catch (x) { /* ignore */ } });
+      li.addEventListener('dragend', function () { this.classList.remove('dragging'); el.querySelectorAll('li.over').forEach(function (x) { x.classList.remove('over'); }); });
+      li.addEventListener('dragover', function (e) { if (dragFrom < 0) return; e.preventDefault(); this.classList.add('over'); });
+      li.addEventListener('dragleave', function () { this.classList.remove('over'); });
+      li.addEventListener('drop', function (e) { e.preventDefault(); var to = +this.dataset.i; if (dragFrom >= 0) { moveUnit(dragFrom, to); dragFrom = -1; renderOrder(); } });
+    });
+  }
+  // ---- more than one kit in a pick: one virtual kit ---------------------------------
+  // Modules, graded items and gradebook groups of every source kit side by side (an id two
+  // kits share is the same thing and appears once). Nothing is combined: the gradebook
+  // step shows each source's groups and the teacher decides. The first kit supplies the
+  // course settings and the home page.
+  var mixCache = {};
+  function mixKit(kits) {
+    var id = course.code + '-mix', sig = kits.map(function (k) { return k.id; }).join('+');
+    if (mixCache[id] && mixCache[id].sig === sig) return mixCache[id];
+    delete kitZipCache[id];
+    var v = { id: id, sig: sig, mix: kits.slice(), label: 'Custom course', status: 'ready', modules: [], graded_items: [], groups: [], weighted: false,
+      settings: kits[0].settings, front_page: kits[0].front_page, version: kits[0].version, bytes: 0, items: 0, file: null };
+    var seenM = {}, seenI = {}, seenG = {}, modIds = {};
+    kits.forEach(function (k) {
+      v.bytes += k.bytes || 0; v.items += k.items || 0;
+      kitModules0(k).forEach(function (m) { if (seenM[m.gid]) return; seenM[m.gid] = true; modIds[m.id] = true; v.modules.push(Object.assign({}, m, { src: k.id })); });
+      (k.graded_items || []).forEach(function (it) {
+        if (seenI[it.gid]) return; seenI[it.gid] = true;
+        v.graded_items.push(Object.assign({}, it, { src: k.id, week0: it.week0 !== undefined ? it.week0 : it.week }));
+      });
+      (k.groups || []).forEach(function (g) { if (seenG[g.id]) return; seenG[g.id] = true; v.groups.push({ id: g.id, title: g.title, weight: g.weight, position: v.groups.length + 1, src: k.id, srcWeighted: !!k.weighted }); });
+    });
+    return (mixCache[id] = v);
+  }
+  function mixNeedsMerge() { return !!(kit && kit.mix && (kit.groups || []).length > 1); }
+  function srcLabel(kitId) { var k = course && course.kits.filter(function (x) { return x.id === kitId; })[0]; return k ? k.label : kitId; }
+  // A saved gradebook for an earlier mix: add the groups of a newly added source, drop the
+  // groups of a source that left, and send any item pointing at a missing group home.
+  function reconcileMixGroups() {
+    home.groupsGone = home.groupsGone || {};
+    var src = {}; kit.groups.forEach(function (g) { src[g.id] = g; });
+    Object.keys(home.groupsGone).forEach(function (id) { if (!src[id]) delete home.groupsGone[id]; });
+    home.groups = (home.groups || []).filter(function (g) { return src[g.id] || g.added; });
+    var have = {}; home.groups.forEach(function (g) { have[g.id] = true; });
+    kit.groups.forEach(function (g) { if (!have[g.id] && !home.groupsGone[g.id]) { home.groups.push({ id: g.id, title: g.title, weight: g.weight, position: home.groups.length + 1 }); have[g.id] = true; } });
+    Object.keys(home.groupsGone).forEach(function (id) { if (!have[home.groupsGone[id]]) { delete home.groupsGone[id]; home.groups.push({ id: id, title: src[id].title, weight: src[id].weight, position: home.groups.length + 1 }); have[id] = true; } });
+    (kit.graded_items || []).forEach(function (it) {
+      var o = home.itemOverrides[it.id];
+      if (o && !have[o.group]) o.group = have[it.group] ? it.group : (home.groupsGone[it.group] || home.groups[0].id);
+      else if (!o && !have[it.group]) ensureOverride(it).group = home.groupsGone[it.group] || home.groups[0].id;
+    });
+  }
+  // Teacher order: kit.modules itself is put in the chosen order (kept modules first), so
+  // every panel, the printable course and the file follow it. modules0 keeps the built order.
+  function restoreModuleOrder() { if (kit && kit.modules0) kit.modules = kit.modules0.slice(); }
+  function applyModuleOrder() {
+    if (!kit) return;
+    if (!kit.modules0) kit.modules0 = (kit.modules || []).slice();
+    var base = kit.modules0, pos = {};
+    (home.modOrder || []).forEach(function (id, i) { pos[id] = i; });
+    var idx = {}; base.forEach(function (m, i) { idx[m.id] = i; });
+    kit.modules = base.slice().sort(function (a, b) {
+      var pa = pos[a.id], pb = pos[b.id];
+      if (pa == null && pb == null) return idx[a.id] - idx[b.id];
+      if (pa == null) return 1;
+      if (pb == null) return -1;
+      return pa - pb;
+    });
+    if (home.modules && home.modules.length) {
+      var gpos = {}; kit.modules.forEach(function (m, i) { gpos[m.gid] = i; });
+      home.modules.sort(function (a, b) { return (gpos[a.gid] == null ? 1e6 : gpos[a.gid]) - (gpos[b.gid] == null ? 1e6 : gpos[b.gid]); });
+    }
+  }
+  function customOrder() { return !!(kit && (kit.mix || (home.modOrder && home.modOrder.length))); }
+  // Week numbers follow the teacher's order: the first kept module starts at week 1 and
+  // each module's weeks run on from the one before. An untouched whole kit keeps its own.
+  function renumberWeeks() {
+    if (!kit) return;
+    var items = kit.graded_items || [];
+    items.forEach(function (it) { if (it.week0 === undefined) it.week0 = it.week; });
+    if (!(kit.mix || (home.modOrder && home.modOrder.length) || (home.onlyModules && home.onlyModules.length))) { items.forEach(function (it) { it.week = it.week0; }); return; }
+    var n = 0;
+    keptModules().forEach(function (m) {
+      var mine = items.filter(function (it) { return it.module === m.id && it.week0 != null; }), ws = [];
+      mine.forEach(function (it) { if (ws.indexOf(it.week0) < 0) ws.push(it.week0); });
+      ws.sort(function (a, b) { return a - b; });
+      mine.forEach(function (it) { it.week = n + ws.indexOf(it.week0) + 1; });
+      n += ws.length;
+    });
+  }
   function chooseModules() {
-    if (!J.modSel || !J.modSel.ids.length) return Promise.resolve();
-    var k = course.kits.filter(function (x) { return x.id === J.modSel.kitId; })[0];
-    if (!k) return Promise.resolve();
-    var ids = J.modSel.ids.slice();
-    return selectKit(k).then(function () {
-      // keep the kit's own order
-      home.onlyModules = (kit.modules || []).filter(function (m) { return ids.indexOf(m.id) >= 0; }).map(function (m) { return m.id; });
-      J.scope = 'modules'; save(); refreshKitPanels();
+    var sel = selectedUnits();
+    if (!sel.length) return Promise.resolve();
+    var kits = [];
+    sel.forEach(function (u) { if (kits.indexOf(u.kit) < 0) kits.push(u.kit); });
+    // An original kit goes first so its course settings and home page are the base.
+    kits.sort(function (a, b) { return (isSparkle(a) - isSparkle(b)) || (kitPartKey(a) - kitPartKey(b)) || (course.kits.indexOf(a) - course.kits.indexOf(b)); });
+    var pieces = wantsPieces(), ids = [];
+    sel.forEach(function (u) { u.mods.forEach(function (m) { if (ids.indexOf(m.id) < 0) ids.push(m.id); }); });
+    var target = kits.length === 1 ? kits[0] : mixKit(kits);
+    return selectKit(target).then(function () {
+      restoreModuleOrder();
+      var all = (kit.modules || []).map(function (m) { return m.id; });
+      ids = ids.filter(function (id) { return all.indexOf(id) >= 0; });
+      home.onlyModules = ids.length < all.length ? ids.slice() : null;
+      var natural = all.filter(function (id) { return ids.indexOf(id) >= 0; });
+      home.modOrder = natural.join('|') === ids.join('|') ? null : ids.slice();
+      home.addon = !pieces;
+      if (kit.mix) reconcileMixGroups();
+      applyModuleOrder(); renumberWeeks();
+      J.scope = home.addon ? 'modules' : 'all';
+      if (mixNeedsMerge()) J.want.gradebook = true;
+      save(); saveJourney(); refreshKitPanels();
       go(afterScope());
     });
   }
@@ -5420,7 +5956,7 @@
     var addon = moduleAddon();
     if (addon && !fetchOnly) $('j-generate-hint').textContent = 'One file with ' + scopeLabel() + '. Import it into the course you already have: it adds the module and its assignments, quizzes and discussions, and leaves your home page, syllabus and other modules as they are.';
     $('dl').hidden = fetchOnly; $('copy').hidden = fetchOnly || addon; $('pdf').hidden = false; $('copy').textContent = 'Copy home page HTML only';
-    $('dl-plain').hidden = (!fetchOnly && !!home.onlyModules && home.onlyModules.length > 0) || !!(kit && kit.upload);
+    $('dl-plain').hidden = (!fetchOnly && ((!!home.onlyModules && home.onlyModules.length > 0) || !!(kit && kit.mix) || customOrder())) || !!(kit && kit.upload);
     if (kit && kit.upload) $('j-generate-hint').textContent = 'One file with your own course in it. ' + (uploadWantsHome() ? 'An Optima home page is set as the front page (your old home page stays as a page). ' : 'Your home page stays as it is. ') + (uploadWantsSyllabus() ? 'Your syllabus fills the Syllabus page.' : 'Your Syllabus page stays as it is.');
     $('dl-plain').textContent = fetchOnly ? 'Download the course file (.imscc)' : 'Original kit, no customization';
     $('j-customize-instead').hidden = !fetchOnly;
@@ -5439,7 +5975,8 @@
       chips.push(on('Dates', panelChanged('dates'), 'none set'));
       chips.push(on('Publishing', panelChanged('publish'), 'as built'));
       chips.push(on('Names', panelChanged('names'), 'as built'));
-      chips.push(on('Gradebook', panelChanged('gradebook'), 'as built'));
+      if (mixNeedsMerge()) chips.push('<span class="chipx' + (home.gbReviewed ? '' : ' off') + '">Gradebook: ' + home.groups.length + ' categor' + (home.groups.length === 1 ? 'y' : 'ies') + (home.gbReviewed ? ', set' : ', not confirmed') + '</span>');
+      else chips.push(on('Gradebook', panelChanged('gradebook'), 'as built'));
     }
     $('j-summary').innerHTML = chips.join('');
   }
@@ -5985,7 +6522,7 @@
       }
       else if (ds.rvAct === 'pub-all' || ds.rvAct === 'unpub-all') { setAllPublished(ds.rvAct === 'pub-all'); rvPaint(['cards', 'map']); }
       else if (ds.rvAct === 'add-group') {
-        home.groups.push({ id: 'g' + randHex(32), title: 'New group', weight: 0, position: home.groups.length + 1 });
+        home.groups.push({ id: 'g' + randHex(32), title: 'New group', weight: 0, position: home.groups.length + 1, added: true });
         save(); syncSyllabusGrading(); rvPaint(['cards', 'editor', 'map']);
       }
       else if (ds.rvShift) {
@@ -6103,7 +6640,7 @@
     $('j-back').addEventListener('click', back);
     $('j-restart').addEventListener('click', function () { startOver('welcome'); });
     $('t-mode').querySelectorAll('.tile').forEach(function (b) {
-      b.addEventListener('click', function () { J.mode = this.dataset.mode; saveJourney(); go('part'); });
+      b.addEventListener('click', function () { J.mode = this.dataset.mode; saveJourney(); go(nextScreen('mode')); });
     });
     $('j-modules-go').addEventListener('click', function () { chooseModules(); });
     $('j-preview-configure').addEventListener('click', function () { if (!uploadPath()) J.path = 'customize'; var nx = nextScreen('preview'); J.mode = 'configure'; saveJourney(); go(nx); });
@@ -6140,7 +6677,7 @@
     });
     $('j-another').addEventListener('click', function () { startOver('grade'); });
     wireTilePanel();
-    $('j-customize-instead').addEventListener('click', function () { J.path = 'customize'; J.mode = 'configure'; saveJourney(); go(nextScreen(J.scope === 'modules' ? 'modules' : 'part')); });
+    $('j-customize-instead').addEventListener('click', function () { J.path = 'customize'; J.mode = 'configure'; saveJourney(); go(nextScreen('modules')); });
     $('dl-pieces').addEventListener('click', function () {
       var btn = this; btn.disabled = true; status('Building the three files\u2026');
       buildPieces().then(function (r) { saveBlob(r.blob, r.names.zip); status('Downloaded ' + r.names.zip + '.', 'ok'); })
@@ -6198,6 +6735,12 @@
     $('preview').addEventListener('click', function (e) { if (e.target.closest('a')) e.preventDefault(); });
     FIELDS.forEach(function (f) { $('f-' + f).addEventListener('input', function () { readForm(); save(); saveProfile(); renderPreview(); if (kit) renderSyllabus(); }); });
     $('dl').addEventListener('click', function () {
+      // Gradebooks from several sources: the teacher confirms the result before the file is made.
+      if (mixNeedsMerge() && !home.gbReviewed) {
+        go('gradebook');
+        status('Combine the gradebooks, then tick "Gradebook is set for this course".', 'err');
+        return;
+      }
       status('Building your kit…');
       patchedKit('blob').then(function (r) {
         saveBlob(r.data, kitFilename());
@@ -6205,6 +6748,14 @@
       }).catch(function (e) { status('Could not build the kit: ' + e.message, 'err'); });
     });
     $('dl-plain').addEventListener('click', function () {
+      // A pick that is not one whole kit as built (some modules, a new order, several kits)
+      // has no ready-made file: it is assembled here.
+      if (kit.mix || customOrder() || (home.onlyModules && home.onlyModules.length)) {
+        status('Building the course file…');
+        patchedKit('blob').then(function (r) { saveBlob(r.data, kitFilename()); status('Downloaded ' + kitFilename() + ' (' + r.entries + ' files inside).', 'ok'); })
+          .catch(function (e) { status('Could not build the file: ' + e.message, 'err'); });
+        return;
+      }
       status('Fetching the original kit…');
       fetch(BASE + kit.file, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
         .then(function (buf) { return JSZip.loadAsync(buf); })
@@ -6236,9 +6787,10 @@
     var c = code ? findCourse(code) : course;
     if (c) chooseCourse(c);
     var k = c ? c.kits.filter(function (x) { return x.status === 'ready' && (!kitId || x.id === kitId); })[0] : null;
-    var p = k ? selectKit(k) : Promise.resolve();
+    // the module list starts from an empty pick, so no kit is loaded for it
+    var p = k && screen !== 'modules' ? selectKit(k) : Promise.resolve();
     return p.then(function () {
-      if (NEEDS_KIT[screen] && !kit) screen = c ? 'part' : 'welcome';
+      if (NEEDS_KIT[screen] && !kit) screen = c ? (piecesPath() ? 'part' : 'modules') : 'welcome';
       if (NEEDS_COURSE[screen] && !course) screen = 'welcome';
       J.screen = screen; renderScreen();
     }, function () { J.screen = 'welcome'; renderScreen(); });
@@ -6615,7 +7167,7 @@
         document.title = 'Optima Course Kit [selftest done]';
       });
     }).catch(function (e) {
-      $('selftest-out').textContent = JSON.stringify({ ok: false, error: String(e && e.message || e) });
+      $('selftest-out').textContent = JSON.stringify({ ok: false, error: String(e && e.message || e), stack: String(e && e.stack || '') });
       document.title = 'Optima Course Kit [selftest failed]';
     });
     }).catch(function (e) {
@@ -6655,32 +7207,37 @@
       res.courseTile = !ct.disabled;
       res.modeScreen = J.screen === 'mode' && course === c;
       pick('#t-mode .tile[data-mode="configure"]');
-      res.partScreen = J.screen === 'part' && $('kits').querySelectorAll('.tile').length === c.kits.length + 1;
-      pick('#kits .tile[data-part="module"]');
+      // configure leads straight to the module list; the old scope screen is gone from this path
+      res.partScreen = J.screen === 'modules' && sequence().indexOf('part') < 0;
       res.modulesScreen = J.screen === 'modules';
+      J.modSel = { keys: [], pieces: null, manual: false };
     } catch (e) { res.error = 'flow: ' + String(e && e.message || e); return Promise.resolve(res); }
-    var target = null, other = null;
+    var target = null, other = null, tu = null;
     return renderModuleTiles().then(function () {
       var withGraded = function (m) { return (k.graded_items || []).some(function (it) { return it.module === m.id; }); };
       target = (k.modules || []).filter(withGraded)[0];
-      other = (k.modules || []).filter(function (m) { return m !== target && withGraded(m); })[0] || null;
       if (!target) throw new Error('no module with graded items');
-      pick('#t-modules .tile[data-kit="' + k.id + '"][data-m="' + target.id + '"]');
+      // the unit (one tile) the target module sits in; a unit may hold several week modules
+      tu = allUnits().filter(function (u) { return u.kit === k && u.mods.some(function (m) { return m.id === target.id; }); })[0];
+      if (!tu) throw new Error('no tile for ' + target.title);
+      other = (k.modules || []).filter(function (m) { return tu.mods.indexOf(m) < 0 && withGraded(m); })[0] || null;
+      pick('#t-modules .tile[data-u="' + tu.key + '"]');
       return renderModuleTiles();
     }).then(function () {
-      res.continueLabel = $('j-modules-go').textContent === 'Continue with 1 module' && !$('j-modules-go').disabled;
+      res.continueLabel = $('j-modules-go').textContent === 'Continue with 1 module' && !$('j-modules-go').disabled
+        && $('j-order').querySelectorAll('li').length === 1 && !$('j-pieces').checked;
       return chooseModules();
     }).then(function () {
-      res.afterModules = J.screen === 'q-dates' && J.scope === 'modules' && !!home.onlyModules && home.onlyModules.length === 1 && home.onlyModules[0] === target.id;
+      res.afterModules = J.screen === 'q-dates' && J.scope === 'modules' && moduleAddon() && (tu.mods.length === (k.modules || []).length ? !home.onlyModules : (!!home.onlyModules && home.onlyModules.length === tu.mods.length && home.onlyModules[0] === target.id));
       var sq = sequence();
       res.scopeFlow = sq.indexOf('details') < 0 && sq.indexOf('q-home') < 0 && sq.indexOf('q-syllabus') < 0 && sq.indexOf('q-dates') >= 0 && sq.indexOf('q-gradebook') >= 0;
       go('generate', true);
       res.scopeGenerate = $('copy').hidden && /leaves your home page/.test($('j-generate-hint').textContent) && $('j-summary').querySelectorAll('.chipx').length === 7
         && $('preview').textContent.indexOf('module-only file') >= 0;
       go('q-dates', true);
-      res.homeCards = (currentHtml().match(/\$CANVAS_OBJECT_REFERENCE\$\/modules\//g) || []).length === 1;
-      res.printScope = $('print-scope').options.length === 2;
-      res.filename = kitFilename().indexOf(slug(target.title)) >= 0;
+      res.homeCards = (currentHtml().match(/\$CANVAS_OBJECT_REFERENCE\$\/modules\//g) || []).length === tu.mods.filter(function (m) { return m.published; }).length;
+      res.printScope = $('print-scope').options.length === tu.mods.length + 1;
+      res.filename = tu.mods.length === (k.modules || []).length || kitFilename().indexOf(tu.mods.length === 1 ? slug(target.title) : tu.mods.length + '-modules') >= 0;
       return patchedKit('base64');
     }).then(function (r) {
       $('selftest-scoped-b64').textContent = r.data;
@@ -6690,7 +7247,7 @@
         return Promise.all([zip2.file(metaName).async('string'), zip2.file('imsmanifest.xml').async('string'), zip2.file(csName) ? zip2.file(csName).async('string') : Promise.resolve('')]).then(function (tt) {
           var meta = tt[0], man = tt[1], cs = tt[2];
           res.addonClean = !zip2.file(k.front_page) && man.indexOf('href="' + k.front_page + '"') < 0 && !zip2.file('course_settings/syllabus.html') && cs.indexOf('<default_view>') < 0 && man.indexOf('course_settings/syllabus.html') < 0;
-          res.metaOnlyTarget = (meta.match(/<module identifier=/g) || []).length === 1 && meta.indexOf('identifier="' + target.gid + '"') >= 0;
+          res.metaOnlyTarget = (meta.match(/<module identifier=/g) || []).length === tu.mods.length && meta.indexOf('identifier="' + target.gid + '"') >= 0;
           res.orgOnlyTarget = !other || (man.indexOf('<item identifier="' + other.gid + '"') < 0 && man.indexOf('<item identifier="' + target.gid + '"') >= 0);
           var otherItem = other ? (k.graded_items || []).filter(function (it) { return it.module === other.id; })[0] : null;
           var keptItem = (k.graded_items || []).filter(function (it) { return it.module === target.id; })[0];
@@ -6702,7 +7259,8 @@
       });
     }).then(function () {
       // back to the whole kit and the configure path for the gate checks and the rest of the test
-      J.path = 'customize'; home.onlyModules = null; J.scope = 'all'; save(); refreshKitPanels();
+      J.path = 'customize'; home.onlyModules = null; home.modOrder = null; home.addon = false; J.scope = 'all'; J.modSel = null;
+      restoreModuleOrder(); renumberWeeks(); save(); refreshKitPanels();
       res.restoredScope = keptModules().length === (k.modules || []).length && $('print-scope').options.length === (k.modules || []).length + 1 && sequence().indexOf('details') >= 0;
       J.want = {}; go('q-home', true);
       ['home', 'syllabus', 'dates', 'publish', 'names', 'gradebook'].forEach(function (q) { pick('.screen[data-screen="' + Q_OF[q] + '"] .tile[data-v="0"]'); });
@@ -6877,7 +7435,7 @@
       $('selftest-out').textContent = JSON.stringify(pr);
       document.title = 'Optima Course Kit [printtest ' + (pr.ok ? 'done' : 'failed') + ']';
     }).catch(function (e) {
-      $('selftest-out').textContent = JSON.stringify({ ok: false, error: String(e && e.message || e) });
+      $('selftest-out').textContent = JSON.stringify({ ok: false, error: String(e && e.message || e), stack: String(e && e.stack || '') });
       document.title = 'Optima Course Kit [printtest failed]';
     });
   }
@@ -7022,8 +7580,115 @@
     });
   }
 
+  // #mixtest=CODE:PICKS[;pieces=1]  PICKS = comma list, in the order wanted, of KIT-ID (all
+  // its units) or KIT-ID~N (its unit numbered N). Drives the module list the way a teacher
+  // would (tiles, arrows, the gradebook step), builds the file and reads it back.
+  function mixtest(arg) {
+    var out = { ok: false }, i = arg.indexOf(':'), c = findCourse(i > 0 ? arg.slice(0, i) : arg);
+    var rest = i > 0 ? arg.slice(i + 1) : '', wantPieces = /;pieces=1/.test(rest), picks = rest.split(';')[0].split(',').filter(Boolean);
+    var done = function () { $('selftest-out').textContent = JSON.stringify(out); };
+    if (!c) { out.error = 'no course'; done(); return; }
+    REVIEW_FORCE = false;
+    course = c; kit = null; renderCourse();
+    J.path = 'customize'; J.mode = 'configure'; J.want = {}; J.modSel = { keys: [], pieces: null, manual: false };
+    go('modules', true);
+    renderModuleTiles().then(function () {
+      out.sections = modSections.map(function (s) { return s.label + ': ' + s.units.map(function (u) { return (u.sparkle ? '*' : '') + u.title + ' [' + u.weeks + 'w]'; }).join(' | '); });
+      var sp = document.querySelector('#t-modules .tile.sparkle'), og = document.querySelector('#t-modules .tile.modtile:not(.sparkle)');
+      out.sparkleTiles = document.querySelectorAll('#t-modules .tile.sparkle').length;
+      out.sparkleDistinct = !sp || !og || (getComputedStyle(sp).backgroundImage !== getComputedStyle(og).backgroundImage && !sp.querySelector('.pill'));
+      out.noModuleNumberOnSparkle = Array.prototype.every.call(document.querySelectorAll('#t-modules .tile.sparkle .tt'), function (e) { return !/Module\s+\d/.test(e.textContent); });
+      picks.forEach(function (p) {
+        var kid = p.split('~')[0], num = p.split('~')[1];
+        allUnits().filter(function (u) { return u.kit.id === kid && (!num || u.num === num); }).forEach(function (u) {
+          var b = document.querySelector('#t-modules .tile[data-u="' + u.key + '"]');
+          if (b && J.modSel.keys.indexOf(u.key) < 0) { J.modSel.manual = true; toggleUnit(u.key); }
+        });
+      });
+      return renderModuleTiles();
+    }).then(function () {
+      var rows = $('j-order').querySelectorAll('li');
+      out.picked = selectedUnits().map(function (u) { return (u.sparkle ? '*' : '') + u.title; });
+      out.orderRows = rows.length; out.total = ($('j-order').querySelector('.tot') || {}).textContent;
+      out.piecesDefault = $('j-pieces').checked;
+      // the arrows: last row up one, then back down
+      if (rows.length > 1) {
+        var before = J.modSel.keys.join();
+        rows[rows.length - 1].querySelector('button[data-mv="-1"]').click();
+        var moved = J.modSel.keys.join() !== before;
+        $('j-order').querySelectorAll('li')[rows.length - 2].querySelector('button[data-mv="1"]').click();
+        out.arrows = moved && J.modSel.keys.join() === before;
+      } else out.arrows = true;
+      if (wantPieces !== $('j-pieces').checked) $('j-pieces').click();
+      out.pieces = $('j-pieces').checked;
+      return chooseModules();
+    }).then(function () {
+      out.kit = kit.id; out.mix = kit.mix ? kit.mix.map(function (k) { return k.id; }) : null; out.screen = J.screen; out.seq = sequence();
+      out.addon = moduleAddon();
+      out.piecesFlow = out.addon ? out.seq.indexOf('details') < 0 && out.seq.indexOf('q-home') < 0 : out.seq.indexOf('details') >= 0 && out.seq.indexOf('q-home') >= 0 && out.seq.indexOf('q-tile') >= 0 && out.seq.indexOf('q-syllabus') >= 0;
+      out.needsMerge = mixNeedsMerge();
+      out.gradebookForced = !out.needsMerge || (out.seq.indexOf('gradebook') >= 0 && out.seq.indexOf('q-gradebook') < 0);
+      out.groupsBefore = home.groups.map(function (g) { return g.title; });
+      out.weeks = keptModules().map(function (m) { var w = {}; kit.graded_items.forEach(function (it) { if (it.module === m.id && it.week != null) w[it.week] = 1; }); return Object.keys(w).join('/'); }).join(',');
+      home.teacherName = home.teacherName || 'Ms. Rivera';
+      if (out.needsMerge) {
+        go('gradebook', true);
+        out.mergeRows = document.querySelectorAll('.gb-merge').length;
+        out.nothingAutoCombined = home.groups.length === kit.groups.length && !Object.keys(home.groupsGone || {}).length;
+        out.skipHidden = Array.prototype.every.call(document.querySelectorAll('.screen[data-screen="gradebook"] button.skip'), function (b) { return getComputedStyle(b).display === 'none' || getComputedStyle(b.parentNode).display === 'none'; });
+        out.dupWarn = !!document.querySelector('.gbmerge .warn') === (gbDuplicateNames().length > 0);
+        // the download is held until the teacher confirms
+        go('generate', true); $('dl').click(); out.heldForGradebook = J.screen === 'gradebook';
+        // a teacher combines every other category into the first, through the selects
+        var first = home.groups[0].id, guard = 0;
+        while (home.groups.length > 1 && guard++ < 20) {
+          var sel = Array.prototype.filter.call(document.querySelectorAll('.gb-merge'), function (x) { return x.dataset.g !== first && !x.value; })[0];
+          if (!sel) break;
+          sel.value = first; sel.dispatchEvent(new Event('change'));
+        }
+        out.groupsAfter = home.groups.map(function (g) { return g.title; });
+        out.itemsMoved = kit.graded_items.every(function (it) { return effItem(it).group === first; });
+        $('gb-reviewed').click(); out.reviewed = home.gbReviewed === true;
+      }
+      return patchedKit('base64');
+    }).then(function (r) {
+      $('selftest-b64').textContent = r.data; out.entries = r.entries; out.filename = kitFilename();
+      return JSZip.loadAsync(r.data, { base64: true }).then(function (zip) {
+        var rd = function (n) { var f = zip.file(n); return f ? f.async('string') : Promise.resolve(''); };
+        return Promise.all([rd('course_settings/module_meta.xml'), rd('imsmanifest.xml'), rd('course_settings/assignment_groups.xml'), rd('course_settings/course_settings.xml')]).then(function (tt) {
+          var meta = tt[0], man = tt[1], kept = keptModules();
+          var blocks = xmlBlocks(meta, 'module');
+          out.modules = blocks.length;
+          out.orderOk = blocks.map(function (b) { return b.id; }).join() === kept.map(function (m) { return m.gid; }).join();
+          out.positionsOk = blocks.every(function (b, n) { return b.text.slice(0, b.text.indexOf('<items>')).indexOf('<position>' + (n + 1) + '</position>') >= 0; });
+          var at = kept.map(function (m) { return man.indexOf('<item identifier="' + m.gid + '"'); });
+          out.orgOrderOk = at.every(function (p, n) { return p >= 0 && (n === 0 || p > at[n - 1]); });
+          var ids = {}, dup = 0;
+          xmlBlocks(man, 'resource').forEach(function (b) { if (ids[b.id]) dup++; ids[b.id] = true; });
+          out.resources = Object.keys(ids).length; out.dupResources = dup;
+          var missing = [], fm, fre = /<file href="([^"]+)"/g;
+          while ((fm = fre.exec(man))) { if (!zip.file(unescapeXml(fm[1]))) missing.push(fm[1]); }
+          out.missingFiles = missing.slice(0, 5);
+          var dangling = 0, rm, rre = /<identifierref>([^<]+)</g;
+          while ((rm = rre.exec(meta))) { if (!ids[rm[1]]) dangling++; }
+          out.danglingRefs = dangling;
+          out.groupsInFile = (tt[2].match(/<assignmentGroup /g) || []).length;
+          out.groupsOk = out.groupsInFile === home.groups.length;
+          out.frontPage = !!zip.file(kit.front_page); out.syllabus = !!zip.file('course_settings/syllabus.html'); out.defaultView = tt[3].indexOf('<default_view>') >= 0;
+          out.piecesOk = out.addon ? (!out.frontPage && !out.syllabus && !out.defaultView) : (out.frontPage && out.syllabus && out.defaultView);
+          out.homeCards = (currentHtml().match(/\$CANVAS_OBJECT_REFERENCE\$\/modules\//g) || []).length;
+          out.ok = out.orderOk && out.positionsOk && out.orgOrderOk && !dup && !missing.length && out.groupsOk && out.piecesOk && out.piecesFlow && out.gradebookForced && out.arrows && out.sparkleDistinct
+            && (!out.needsMerge || (out.nothingAutoCombined && out.skipHidden && out.heldForGradebook && out.itemsMoved && out.reviewed && out.groupsAfter.length === 1));
+          done();
+        });
+      });
+    }).catch(function (e) { out.error = String(e && e.message || e); out.stack = String(e && e.stack || ''); done(); });
+  }
+
   loadCatalog().then(function (c) {
     catalog = c; wire(); wireCatalogRefresh();
+    var xm = /^#mixtest=(.+)$/.exec(location.hash || '');
+    if (xm) mixtest(decodeURIComponent(xm[1]));
     var m = /^#selftest(?:=(.+))?$/.exec(location.hash || '');
     if (m) selftest(m[1] ? decodeURIComponent(m[1]) : null);
     var pm = /^#printtest=(.+)$/.exec(location.hash || '');
