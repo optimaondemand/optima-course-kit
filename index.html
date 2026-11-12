@@ -371,6 +371,16 @@
   .order .wk { font-size:13.5px; color:var(--mute); white-space:nowrap; font-variant-numeric:tabular-nums; }
   .order .mv { display:flex; gap:4px; }
   .order .mv button { padding:3px 9px; min-width:32px; }
+  .vrcards { margin-top:18px; padding-top:14px; border-top:1px solid var(--line); }
+  .vrcards h3 { margin:0 0 4px; font-size:17px; }
+  .vrcards h3 .n { color:var(--mute); font-weight:600; }
+  .vrcards .vl { font-weight:700; font-size:15px; margin:14px 0 2px; }
+  .vrcards .va { font-size:12px; color:var(--mute); text-transform:uppercase; letter-spacing:.06em; margin:10px 0 6px; }
+  .vrcards .vg { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px; }
+  .vrcards .vg a { display:block; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:#F7EFD9; }
+  .vrcards .vg a:hover, .vrcards .vg a:focus-visible { border-color:var(--navy); }
+  .vrcards .vg img { display:block; width:100%; height:110px; object-fit:contain; }
+  .vrcards .nt { display:block; padding:10px; font-size:13px; color:var(--navy); }
   .order .inc { display:flex; gap:10px; align-items:flex-start; margin-top:14px; padding-top:12px; border-top:1px solid var(--line); font-size:15px; }
   .order .inc input { width:18px; height:18px; margin-top:3px; accent-color:var(--navy); }
   .order .inc small { display:block; color:var(--mute); font-size:13px; }
@@ -669,6 +679,7 @@
       <h2 class="q">Course preview</h2>
       <div class="hint">Click any page, assignment, discussion or quiz below to read it on the right.</div>
       <div id="j-contents"></div>
+      <div id="j-vrcards" class="vrcards" hidden></div>
       <div class="printrow">
         <div><b>Printable course.</b> One document with the course in module order, as students will see it in Canvas: the home page, every lesson page, assignment, discussion and quiz (questions without answers).</div>
         <div class="actions">
@@ -2920,6 +2931,30 @@
       return found;
     });
   }
+  // Preview step: a small picture of every card in the kept modules, by lesson and activity.
+  // A card opens its PDF in a new tab.
+  function renderVrCards() {
+    var box = $('j-vrcards');
+    if (!kit) { box.hidden = true; return Promise.resolve(null); }
+    var key = vrPackKey();
+    return vrPackFind().then(function (found) {
+      if (key !== vrPackKey()) return found;
+      if (!found.cards) { box.hidden = true; box.innerHTML = ''; return found; }
+      var h = '<h3>VR picture cards <span class="n">' + found.cards + '</span></h3>';
+      found.lessons.forEach(function (l) {
+        h += '<div class="vl">' + escHtml('Week ' + l.row.week + ' \u00b7 Lesson ' + l.row.lesson + ' \u00b7 ' + l.row.title) + '</div>';
+        var act = null;
+        l.row.files.forEach(function (f) {
+          if (f.activity !== act) { if (act !== null) h += '</div>'; act = f.activity; h += '<div class="va">' + escHtml(act) + '</div><div class="vg">'; }
+          h += '<a href="' + escHtml(vrPackUrl(l.dir, f.path)) + '" target="_blank" rel="noopener" title="' + escHtml(f.label || '') + '">' +
+            (f.thumb ? '<img loading="lazy" src="' + escHtml(vrPackUrl(l.dir, f.thumb)) + '" alt="' + escHtml(f.label || '') + '">' : '<span class="nt">' + escHtml(f.label || 'Card') + '</span>') + '</a>';
+        });
+        if (act !== null) h += '</div>';
+      });
+      box.innerHTML = h; box.hidden = false;
+      return found;
+    });
+  }
   function vrPackUrl(dir, path) { return dir + 'take-into-vr/' + path.split('/').map(encodeURIComponent).join('/'); }
   function vrPackZip(found, onProgress) {
     var zip = new JSZip(), jobs = [], done = 0;
@@ -2983,9 +3018,12 @@
           res.pdfHead = String.fromCharCode(u[0], u[1], u[2], u[3]);
           res.ok = res.button && res.files === res.cards + res.lessons && res.foldered && res.combined && res.pdfHead === '%PDF'
             && $('vrpack').textContent.indexOf(String(res.cards)) >= 0;
-          if (kit.mix || kit.upload || (home.onlyModules && home.onlyModules.length)) return res;
-          var whole = unitsOfKit(kit);
-          return vrUnitsFind(whole).then(function (up) { res.upfront = up.cards; res.ok = res.ok && up.cards === res.cards; return res; });
+          return renderVrCards().then(function () {
+            res.previewCards = $('j-vrcards').querySelectorAll('.vg a img').length;
+            res.ok = res.ok && !$('j-vrcards').hidden && res.previewCards === res.cards;
+            if (kit.mix || kit.upload || (home.onlyModules && home.onlyModules.length)) return res;
+            return vrUnitsFind(unitsOfKit(kit)).then(function (up) { res.upfront = up.cards; res.ok = res.ok && up.cards === res.cards; return res; });
+          });
         });
       });
     }).catch(function (e) { return { ok: false, error: String(e && e.message || e) }; });
@@ -5678,7 +5716,7 @@
     if (J.screen === 'course') renderCourseTiles();
     if (J.screen === 'part') renderKits();
     if (J.screen === 'modules') renderModuleTiles();
-    if (J.screen === 'preview') renderContentsPreview();
+    if (J.screen === 'preview') { renderContentsPreview(); renderVrCards(); }
     if (J.screen === 'generate') renderGenerate();
     if (J.screen === 'upload') renderUpload();
     if (J.screen === 'review') renderReview();
