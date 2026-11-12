@@ -1,0 +1,33 @@
+{
+ "cartridge": "C:/Users/JorgeAcevedo/Documents/OAO-Science/source/sci7/_export/2002070-q2-kit-input.imscc",
+ "code": "2002070",
+ "kit": "2002070-q2",
+ "course_title": "M/J Comprehensive Science 2 Q2",
+ "course": {
+  "title": "M/J Comprehensive Science 2",
+  "grade": "7",
+  "subject": "Science",
+  "label": "Quarter 2 (Weeks 1-9)"
+ },
+ "media": {
+  "mode": "pack",
+  "pack_out": "C:/Users/JorgeAcevedo/Documents/Course Kit Media Packs"
+ },
+ "weeks": {
+  "mode": "list",
+  "starts": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9
+  ],
+  "relative": false
+ },
+ "completion": true,
+ "note": "Quarter 2 Weeks 1-9 from OAO-Science tools/sci_q2_kit_cartridge.py: OAO-Science tools/specs/sci7_q2.py, built from the section da77 Sem 1 export (rebuilt pages, the export's assignments and quizzes), plus Saving Grace from source/sci7/q2-w09. Every page is an iframe to its rebuilt page on optimaondemand.github.io/OAO-Science."
+}

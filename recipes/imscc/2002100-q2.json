@@ -1,0 +1,33 @@
+{
+ "cartridge": "C:/Users/JorgeAcevedo/Documents/OAO-Science/source/sci8/_export/2002100-q2-kit-input.imscc",
+ "code": "2002100",
+ "kit": "2002100-q2",
+ "course_title": "M/J Comprehensive Science 3 Q2",
+ "course": {
+  "title": "M/J Comprehensive Science 3",
+  "grade": "8",
+  "subject": "Science",
+  "label": "Quarter 2 (Weeks 1-9)"
+ },
+ "media": {
+  "mode": "pack",
+  "pack_out": "C:/Users/JorgeAcevedo/Documents/Course Kit Media Packs"
+ },
+ "weeks": {
+  "mode": "list",
+  "starts": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9
+  ],
+  "relative": false
+ },
+ "completion": true,
+ "note": "Quarter 2 Weeks 1-9 from OAO-Science tools/sci_q2_kit_cartridge.py: OAO-Science tools/specs/sci8_q2.py (Weeks 1-2), sci8_q2w03_05.py and sci8_q2w06_09.py (Weeks 3-9, the section 81AL export's assignments and quizzes), plus the Week 1-2 Overviews from the export with the Optima VR wording rule. Every page is an iframe to its rebuilt page on optimaondemand.github.io/OAO-Science."
+}

@@ -1,0 +1,33 @@
+{
+ "cartridge": "C:/Users/JorgeAcevedo/Documents/OAO-Science/source/sci6/_export/2002040-q2-kit-input.imscc",
+ "code": "2002040",
+ "kit": "2002040-q2",
+ "course_title": "M/J Comprehensive Science 1 Q2",
+ "course": {
+  "title": "M/J Comprehensive Science 1",
+  "grade": "6",
+  "subject": "Science",
+  "label": "Quarter 2 (Weeks 1-9)"
+ },
+ "media": {
+  "mode": "pack",
+  "pack_out": "C:/Users/JorgeAcevedo/Documents/Course Kit Media Packs"
+ },
+ "weeks": {
+  "mode": "list",
+  "starts": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9
+  ],
+  "relative": false
+ },
+ "completion": true,
+ "note": "Quarter 2 Weeks 1-9 from OAO-Science tools/sci_q2_kit_cartridge.py: Section 62AL Sem 1 export (quizzes, Saving Grace) plus OAO-Science tools/specs/sci6_q2.py (rebuilt pages and assignments). Every page is an iframe to its rebuilt page on optimaondemand.github.io/OAO-Science."
+}
