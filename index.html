@@ -1021,6 +1021,7 @@
           <button type="button" id="dl" disabled>Generate the course file (.imscc)</button>
           <button type="button" id="dl-plain" class="alt" disabled>Original kit, no customization</button>
           <button type="button" id="pdf" class="alt" disabled>Download PDF</button>
+          <button type="button" id="vrpack" class="alt" hidden>Take into VR (.zip)</button>
           <button type="button" id="copy" class="alt" disabled>Copy home page HTML only</button>
           <button type="button" id="copy-syl" class="alt" hidden>Copy syllabus HTML</button>
         </div>
@@ -2788,6 +2789,149 @@
            : 'Ask the curriculum team for it; it lives on the signed-in staff SharePoint, not on this site. ') +
       'Until it is imported, those artwork slots show as missing images.';
     box.hidden = false;
+  }
+
+  // ------------------------------------------------------------ Take into VR
+  // Picture cards for live classes. A lesson folder on GitHub Pages may carry a
+  // take-into-vr/index.json beside its lesson pages (built by _shared/vr-pack in the
+  // lesson repo). This finds the lesson pages embedded in the modules the teacher kept,
+  // looks for that index beside each one, and zips the card PDFs by week and lesson.
+  // Works the same for a store kit and for a teacher's own Canvas export.
+  var VR_LESSON_HOST = /^https:\/\/[a-z0-9-]+\.github\.io\//i;
+  var vrIndexCache = {}, vrFound = { key: '', promise: null };
+  function vrPackKey() {
+    return kit ? [kit.id, (home.onlyModules || []).join(','), Object.keys(home.removed || {}).filter(function (k) { return home.removed[k]; }).sort().join(',')].join('|') : '';
+  }
+  function vrLessonFrames() {
+    return loadKitZip().then(function (zip) {
+      var metaName = (kit.settings && kit.settings.module_meta) || 'course_settings/module_meta.xml';
+      var metaFile = zip.file(metaName), manFile = zip.file('imsmanifest.xml');
+      if (!metaFile || !manFile) return [];
+      return Promise.all([metaFile.async('string'), manFile.async('string')]).then(function (r) {
+        var mods = readModuleMeta(r[0]), hrefs = readManifestHrefs(r[1]), exGid = excludedGids(), reads = [];
+        mods.filter(function (m) { return !exGid[m.gid]; }).forEach(function (m) {
+          m.items.forEach(function (it) {
+            if (isRemoved(it) || !it.ref) return;
+            var files = [];
+            if (it.type === 'WikiPage') { if (hrefs[it.ref] && zip.file(hrefs[it.ref])) files.push(zip.file(hrefs[it.ref])); }
+            else if (it.type === 'Assignment') files = zip.file(new RegExp('^' + it.ref.replace(/[^\w-]/g, '') + '/[^/]+\\.html$'));
+            files.forEach(function (f) {
+              reads.push(f.async('string').then(function (doc) {
+                var out = [], re = /<iframe\b[^>]*\bsrc=("|')([^"']+)\1/gi, x;
+                while ((x = re.exec(doc))) { var u = unescapeXml(x[2]); if (VR_LESSON_HOST.test(u)) out.push({ url: u.split('#')[0].split('?')[0], module: m.title, item: it.title }); }
+                return out;
+              }));
+            });
+          });
+        });
+        return Promise.all(reads).then(function (lists) { return [].concat.apply([], lists); });
+      });
+    });
+  }
+  function vrIndexFor(dir) {
+    if (!(dir in vrIndexCache)) {
+      vrIndexCache[dir] = fetch(dir + 'take-into-vr/index.json', { cache: 'no-cache' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) { return j && j.lessons ? j : null; })
+        .catch(function () { return null; });
+    }
+    return vrIndexCache[dir];
+  }
+  // -> { lessons: [{ dir, module, row }], cards: n, bytes: n }
+  function vrPackFind() {
+    var key = vrPackKey();
+    if (vrFound.key === key && vrFound.promise) return vrFound.promise;
+    vrFound.key = key;
+    vrFound.promise = vrLessonFrames().then(function (frames) {
+      var dirs = {}, order = [];
+      frames.forEach(function (f) {
+        var cut = f.url.lastIndexOf('/'), dir = f.url.slice(0, cut + 1), page = decodeURIComponent(f.url.slice(cut + 1));
+        if (!dirs[dir]) { dirs[dir] = {}; order.push(dir); }
+        dirs[dir][page] = true;
+      });
+      return Promise.all(order.map(vrIndexFor)).then(function (idx) {
+        var res = { lessons: [], cards: 0, bytes: 0 };
+        order.forEach(function (dir, n) {
+          if (!idx[n]) return;
+          idx[n].lessons.forEach(function (row) {
+            if (!dirs[dir][row.page] || !row.files || !row.files.length) return;
+            res.lessons.push({ dir: dir, module: idx[n].module || '', row: row });
+            res.cards += row.files.length;
+            row.files.forEach(function (f) { res.bytes += f.bytes || 0; });
+            if (row.combined) res.bytes += row.combined.bytes || 0;
+          });
+        });
+        return res;
+      });
+    }).catch(function () { vrFound.key = ''; return { lessons: [], cards: 0, bytes: 0 }; });
+    return vrFound.promise;
+  }
+  function vrPackUrl(dir, path) { return dir + 'take-into-vr/' + path.split('/').map(encodeURIComponent).join('/'); }
+  function vrPackZip(found, onProgress) {
+    var zip = new JSZip(), jobs = [], done = 0;
+    found.lessons.forEach(function (l) {
+      var root = l.module ? l.module.replace(/[\\/:*?"<>|]/g, '') + '/' : '';
+      l.row.files.concat(l.row.combined ? [l.row.combined] : []).forEach(function (f) { jobs.push({ url: vrPackUrl(l.dir, f.path), name: root + f.path }); });
+    });
+    var cursor = 0;
+    function lane() {
+      if (cursor >= jobs.length) return Promise.resolve();
+      var j = jobs[cursor++];
+      return fetch(j.url).then(function (r) {
+        if (!r.ok) throw new Error('could not fetch ' + j.name + ' (' + r.status + ')');
+        return r.arrayBuffer();
+      }).then(function (buf) { zip.file(j.name, buf); done++; if (onProgress) onProgress(done, jobs.length); return lane(); });
+    }
+    var lanes = []; for (var i = 0; i < 6; i++) lanes.push(lane());
+    return Promise.all(lanes).then(function () { return zip; });
+  }
+  function vrPackFilename() { return slug((course && course.title) || 'course') + '-' + slug(kit && kit.mix ? 'selected-modules' : scopeLabel() || 'kit') + '-take-into-vr.zip'; }
+  function renderVrPack() {
+    var btn = $('vrpack');
+    if (!kit || piecesPath()) { btn.hidden = true; return Promise.resolve(null); }
+    var key = vrPackKey();
+    return vrPackFind().then(function (found) {
+      if (key !== vrPackKey()) return found;
+      btn.hidden = !found.cards || piecesPath();
+      btn.textContent = 'Take into VR: ' + found.cards + ' picture card' + (found.cards === 1 ? '' : 's') + ' (.zip)';
+      return found;
+    });
+  }
+  function downloadVrPack() {
+    var btn = $('vrpack'); btn.disabled = true;
+    pstatus('Collecting the picture cards\u2026', '', 'status');
+    return vrPackFind().then(function (found) {
+      if (!found.cards) throw new Error('these modules have no picture cards yet');
+      return vrPackZip(found, function (n, of) { pstatus('Collecting the picture cards: ' + n + ' of ' + of, '', 'status'); }).then(function (zip) {
+        return zip.generateAsync({ type: 'blob' }).then(function (blob) {
+          saveBlob(blob, vrPackFilename());
+          pstatus('Downloaded ' + found.cards + ' picture cards for ' + found.lessons.length + ' lesson' + (found.lessons.length === 1 ? '' : 's') + ', in folders by week and lesson.', 'ok', 'status');
+        });
+      });
+    }).catch(function (e) { pstatus('Could not collect the picture cards: ' + e.message, 'err', 'status'); })
+      .then(function () { btn.disabled = false; });
+  }
+  // Self-test: a kit with bundles shows the button and zips real PDFs under week and
+  // lesson folders; a kit without bundles keeps the button hidden.
+  function vrPackSelfTest() {
+    go('generate', true);
+    return renderVrPack().then(function (found) {
+      var res = { lessons: found ? found.lessons.length : 0, cards: found ? found.cards : 0, button: !$('vrpack').hidden, ok: true };
+      if (!res.cards) { res.ok = !res.button; return res; }
+      return vrPackZip(found).then(function (zip) {
+        var names = Object.keys(zip.files).filter(function (n) { return !zip.files[n].dir; });
+        var pdfs = names.filter(function (n) { return /\.pdf$/.test(n); });
+        res.files = names.length; res.sample = pdfs[0];
+        res.foldered = pdfs.every(function (n) { return /(^|\/)Week \d+\/Lesson \d+ - [^/]+\//.test(n); });
+        res.combined = pdfs.filter(function (n) { return / - all cards\.pdf$/.test(n); }).length === res.lessons;
+        return zip.file(pdfs[0]).async('uint8array').then(function (u) {
+          res.pdfHead = String.fromCharCode(u[0], u[1], u[2], u[3]);
+          res.ok = res.button && res.files === res.cards + res.lessons && res.foldered && res.combined && res.pdfHead === '%PDF'
+            && $('vrpack').textContent.indexOf(String(res.cards)) >= 0;
+          return res;
+        });
+      });
+    }).catch(function (e) { return { ok: false, error: String(e && e.message || e) }; });
   }
 
   // ------------------------------------------------------------ dates + gradebook state helpers
@@ -6012,7 +6156,7 @@
     ['dl-pieces', 'copy-syl'].forEach(function (id) { $(id).hidden = !pieces; $(id).disabled = !(course && kit); });
     $('j-customize-instead').hidden = true;
     if (pieces) {
-      ['dl', 'dl-plain', 'pdf'].forEach(function (id) { $(id).hidden = true; });
+      ['dl', 'dl-plain', 'pdf', 'vrpack'].forEach(function (id) { $(id).hidden = true; });
       $('copy').hidden = false; $('copy').textContent = 'Copy home page HTML';
       $('j-generate-title').textContent = 'Download the home page, syllabus and course tile';
       $('j-generate-hint').textContent = 'One .zip with three files: the home page and the syllabus as HTML to paste into Canvas, and the course tile image to upload.'
@@ -6057,6 +6201,7 @@
       else chips.push(on('Gradebook', panelChanged('gradebook'), 'as built'));
     }
     $('j-summary').innerHTML = chips.join('');
+    renderVrPack();
   }
   // Import checklist switch: whole file (All content) or some modules (Select specific content).
   function setImportScope(v) {
@@ -6769,6 +6914,7 @@
       else { fallbackCopy(html); done(); }
     });
     $('pdf').addEventListener('click', function () { openPrintable('all', 'status').catch(function () { /* shown in status */ }); });
+    $('vrpack').addEventListener('click', function () { downloadVrPack(); });
     wireReview();
     renderGreeting();
   }
@@ -7241,6 +7387,9 @@
         return piecesSelfTest();
       }).then(function (pc) {
         out.pieces = pc; out.ok = out.ok && pc.ok;
+        return vrPackSelfTest();
+      }).then(function (vr) {
+        out.vrPack = vr; out.ok = out.ok && vr.ok;
         $('selftest-out').textContent = JSON.stringify(out);
         document.title = 'Optima Course Kit [selftest done]';
       });
