@@ -10,8 +10,7 @@
   "label": "Quarter 2 (Weeks 1-9)"
  },
  "media": {
-  "mode": "pack",
-  "pack_out": "C:/Users/JorgeAcevedo/Documents/Course Kit Media Packs"
+  "mode": "error"
  },
  "weeks": {
   "mode": "list",
