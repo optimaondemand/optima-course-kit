@@ -459,7 +459,6 @@
   .contents-tree summary .pill { margin-left:8px; }
   /* Dates and publishing share one panel; each question shows only its own controls. */
   #dates-panel.mode-dates .gb-pub, #dates-panel.mode-dates .gb-modall, #dates-panel.mode-dates .gb-modpub, #dates-panel.mode-dates #gb-pub-all, #dates-panel.mode-dates #gb-unpub-all,
-  #dates-panel.mode-publish tr.entryrow, #dates-panel.mode-publish .dtable.undated { display:none; }
   #dates-panel.mode-dates details.contents, #dates-panel.mode-dates details.nodates, #dates-panel.mode-dates .h-pub, #dates-panel.mode-dates table.sched th:nth-child(7), #dates-panel.mode-dates table.sched td:nth-child(7) { display:none; }
   #dates-panel.mode-publish .batchrow, #dates-panel.mode-publish .dates-top, #dates-panel.mode-publish .wk-tools, #dates-panel.mode-publish .h-dates,
   #dates-panel.mode-publish table.sched th:nth-child(4), #dates-panel.mode-publish table.sched td:nth-child(4), #dates-panel.mode-publish table.sched th:nth-child(5), #dates-panel.mode-publish table.sched td:nth-child(5),
@@ -3488,12 +3487,33 @@
     (kit.modules || []).forEach(function (m) {
       if (!moduleKept(m)) return;
       var items = graded.filter(function (it) { return it.module === m.id && !(it.type === 'quiz' && it.quiz_type === 'survey'); });
-      if (!items.length) return;
+      // Rows in Canvas order: pages, links, files, surveys and ungraded discussions sit beside
+      // the graded items so each opens in the preview; only graded rows carry a group and points.
+      var cont = contentsOf(m), rows = [], seenIt = {};
+      if (cont) cont.items.forEach(function (ci) {
+        if (isRemoved(ci)) return;
+        var g = items.filter(function (it) { return it.gid === ci.ref; })[0];
+        if (g) { if (!seenIt[g.id]) { seenIt[g.id] = true; rows.push({ it: g }); } return; }
+        var other = graded.filter(function (it) { return it.gid === ci.ref; })[0];
+        if (other) rows.push({ other: other, ci: ci });
+        else if (entryViewable(ci)) rows.push({ ci: ci });
+      });
+      items.forEach(function (it) { if (!seenIt[it.id]) rows.push({ it: it }); });
+      if (!rows.length) return;
       out.push('<details class="modblock" open>');
       out.push('<summary>' + escHtml(modName(m.gid, m.title)) + (modulePublished(m) ? '' : ' <span class="pill grey">UNPUBLISHED</span>') + '</summary>');
-      out.push(gbBatchRow(m.id, 'Every graded item in this module', 'Apply to this module'));
+      if (items.length) out.push(gbBatchRow(m.id, 'Every graded item in this module', 'Apply to this module'));
       out.push('<div class="dtable"><table class="sched"><thead><tr><th>Item</th><th>Group</th><th>Points</th></tr></thead><tbody>');
-      items.forEach(function (it) {
+      rows.forEach(function (r) {
+        if (!r.it) {
+          var lbl = r.other ? (r.other.type === 'quiz' && r.other.quiz_type === 'survey' ? 'Survey' : TYPE_LABEL[r.ci.type] || r.ci.type) : (TYPE_LABEL[r.ci.type] || r.ci.type);
+          out.push('<tr class="entryrow"><td>' + (r.other
+            ? '<a href="#" class="prev-link" data-id="' + escHtml(r.other.id) + '" title="Preview this item">' + escHtml(gradedName(r.other)) + '</a>'
+            : '<a href="#" class="prev-entry" data-m="' + escHtml(m.id) + '" data-e="' + escHtml(r.ci.id) + '" title="Preview this item">' + escHtml(itemName(nameKey(r.ci), r.ci.title)) + '</a>') +
+            '</td><td colspan="2"><span class="pill grey">' + escHtml(lbl) + '</span></td></tr>');
+          return;
+        }
+        var it = r.it;
         var eff = effItem(it);
         out.push('<tr><td><a href="#" class="prev-link" data-id="' + escHtml(it.id) + '" title="Preview this item">' + escHtml(gradedName(it)) + '</a></td>');
         out.push('<td><select data-id="' + escHtml(it.id) + '" class="gb-group">' + home.groups.map(function (g) {
@@ -7702,10 +7722,11 @@
         document.querySelectorAll('#dates-panel details, #j-contents details').forEach(function (d) { d.open = true; });
         out.panes[s] = vis('#j-contents .prev-link, #j-contents .prev-entry, #dates-panel table.sched .prev-link, #dates-panel table.sched .prev-entry');
       });
+      go('gradebook', true);
+      out.panes.gradebook = document.querySelectorAll('#gradebook-panel table.sched .prev-link, #gradebook-panel table.sched .prev-entry').length;
       go('names', true);
       out.panes.names = document.querySelectorAll('#names-panel li[data-e] input.nm-in').length;
-      // the publish table lists graded items only; its Module contents list carries the rest
-      out.panesOk = out.panes.preview >= want && out.panes.dates >= want && out.panes.names >= want;
+      out.panesOk = out.panes.preview >= want && out.panes.dates >= want && out.panes.publish >= want && out.panes.gradebook >= want && out.panes.names >= want;
       // a lesson page opens from the dates table, and from its name field
       var pg = document.querySelector('#dates-panel table.sched .prev-entry'), nmIn = document.querySelector('#names-panel input.nm-in[data-type="WikiPage"]');
       if (!pg || !nmIn) { out.pageOpens = 'no pages'; return; }
