@@ -2802,16 +2802,16 @@
   function vrPackKey() {
     return kit ? [kit.id, (home.onlyModules || []).join(','), Object.keys(home.removed || {}).filter(function (k) { return home.removed[k]; }).sort().join(',')].join('|') : '';
   }
-  function vrLessonFrames() {
-    return loadKitZip().then(function (zip) {
-      var metaName = (kit.settings && kit.settings.module_meta) || 'course_settings/module_meta.xml';
+  function vrFramesIn(zip, metaName, keepMod, dropItem) {
+    return Promise.resolve(zip).then(function (zip) {
+      metaName = metaName || 'course_settings/module_meta.xml';
       var metaFile = zip.file(metaName), manFile = zip.file('imsmanifest.xml');
       if (!metaFile || !manFile) return [];
       return Promise.all([metaFile.async('string'), manFile.async('string')]).then(function (r) {
-        var mods = readModuleMeta(r[0]), hrefs = readManifestHrefs(r[1]), exGid = excludedGids(), reads = [];
-        mods.filter(function (m) { return !exGid[m.gid]; }).forEach(function (m) {
+        var mods = readModuleMeta(r[0]), hrefs = readManifestHrefs(r[1]), reads = [];
+        mods.filter(keepMod).forEach(function (m) {
           m.items.forEach(function (it) {
-            if (isRemoved(it) || !it.ref) return;
+            if (dropItem(it) || !it.ref) return;
             var files = [];
             if (it.type === 'WikiPage') { if (hrefs[it.ref] && zip.file(hrefs[it.ref])) files.push(zip.file(hrefs[it.ref])); }
             else if (it.type === 'Assignment') files = zip.file(new RegExp('^' + it.ref.replace(/[^\w-]/g, '') + '/[^/]+\\.html$'));
@@ -2828,6 +2828,20 @@
       });
     });
   }
+  function vrLessonFrames() {
+    return loadKitZip().then(function (zip) {
+      var exGid = excludedGids();
+      return vrFramesIn(zip, kit.settings && kit.settings.module_meta, function (m) { return !exGid[m.gid]; }, isRemoved);
+    });
+  }
+  // A store kit's cartridge, shared with loadKitZip's cache so nothing is fetched twice.
+  function vrKitZip(k) {
+    if (!kitZipCache[k.id]) {
+      kitZipCache[k.id] = fetchKitBuffer(k).then(function (buf) { return JSZip.loadAsync(buf); })
+        .catch(function (e) { delete kitZipCache[k.id]; throw e; });
+    }
+    return kitZipCache[k.id];
+  }
   function vrIndexFor(dir) {
     if (!(dir in vrIndexCache)) {
       vrIndexCache[dir] = fetch(dir + 'take-into-vr/index.json', { cache: 'no-cache' })
@@ -2842,7 +2856,11 @@
     var key = vrPackKey();
     if (vrFound.key === key && vrFound.promise) return vrFound.promise;
     vrFound.key = key;
-    vrFound.promise = vrLessonFrames().then(function (frames) {
+    vrFound.promise = vrLessonFrames().then(vrCollect).catch(function () { vrFound.key = ''; return { lessons: [], cards: 0, bytes: 0 }; });
+    return vrFound.promise;
+  }
+  function vrCollect(frames) {
+    {
       var dirs = {}, order = [];
       frames.forEach(function (f) {
         var cut = f.url.lastIndexOf('/'), dir = f.url.slice(0, cut + 1), page = decodeURIComponent(f.url.slice(cut + 1));
@@ -2863,8 +2881,44 @@
         });
         return res;
       });
-    }).catch(function () { vrFound.key = ''; return { lessons: [], cards: 0, bytes: 0 }; });
-    return vrFound.promise;
+    }
+  }
+  // Before a kit is chosen: the bundles behind the modules ticked on the module list.
+  var vrUnitsMemo = { key: '', promise: null };
+  function vrUnitsKey(units) { return units.map(function (u) { return u.key; }).join('|'); }
+  function vrUnitsFind(units) {
+    var key = vrUnitsKey(units);
+    if (vrUnitsMemo.key === key && vrUnitsMemo.promise) return vrUnitsMemo.promise;
+    var groups = [];
+    units.forEach(function (u) {
+      if (!u.kit || !u.kit.file) return;
+      var g = groups.filter(function (x) { return x.kit === u.kit; })[0];
+      if (!g) { g = { kit: u.kit, gids: {} }; groups.push(g); }
+      u.mods.forEach(function (m) { g.gids[m.gid] = true; });
+    });
+    vrUnitsMemo.key = key;
+    vrUnitsMemo.promise = Promise.all(groups.map(function (g) {
+      return vrKitZip(g.kit).then(function (zip) {
+        return vrFramesIn(zip, g.kit.settings && g.kit.settings.module_meta, function (m) { return !!g.gids[m.gid]; }, function () { return false; });
+      });
+    })).then(function (lists) { return vrCollect([].concat.apply([], lists)); })
+      .catch(function () { vrUnitsMemo.key = ''; return { lessons: [], cards: 0, bytes: 0 }; });
+    return vrUnitsMemo.promise;
+  }
+  // The "Include VR bundle" tick box under the module order. Shown only when the ticked modules have cards.
+  function wireVrRow() {
+    var box = $('j-vr'); if (!box) return;
+    var sel = selectedUnits(), key = vrUnitsKey(sel);
+    box.checked = !!(J.modSel && J.modSel.vr);
+    box.addEventListener('change', function () { J.modSel.vr = this.checked; });
+    return vrUnitsFind(sel).then(function (found) {
+      var row = $('j-vr-row');
+      if (!row || vrUnitsKey(selectedUnits()) !== key) return found;
+      row.hidden = !found.cards;
+      if (!found.cards && J.modSel) J.modSel.vr = false;
+      $('j-vr-count').textContent = found.cards + ' picture card' + (found.cards === 1 ? '' : 's') + ' for live classes \u00b7 separate .zip';
+      return found;
+    });
   }
   function vrPackUrl(dir, path) { return dir + 'take-into-vr/' + path.split('/').map(encodeURIComponent).join('/'); }
   function vrPackZip(found, onProgress) {
@@ -2893,19 +2947,20 @@
     return vrPackFind().then(function (found) {
       if (key !== vrPackKey()) return found;
       btn.hidden = !found.cards || piecesPath();
+      if ($('j-vrchip')) $('j-vrchip').hidden = !found.cards;
       btn.textContent = 'Take into VR: ' + found.cards + ' picture card' + (found.cards === 1 ? '' : 's') + ' (.zip)';
       return found;
     });
   }
-  function downloadVrPack() {
+  function downloadVrPack(auto) {
     var btn = $('vrpack'); btn.disabled = true;
     pstatus('Collecting the picture cards\u2026', '', 'status');
     return vrPackFind().then(function (found) {
-      if (!found.cards) throw new Error('these modules have no picture cards yet');
+      if (!found.cards) { if (auto) return null; throw new Error('these modules have no picture cards yet'); }
       return vrPackZip(found, function (n, of) { pstatus('Collecting the picture cards: ' + n + ' of ' + of, '', 'status'); }).then(function (zip) {
         return zip.generateAsync({ type: 'blob' }).then(function (blob) {
           saveBlob(blob, vrPackFilename());
-          pstatus('Downloaded ' + found.cards + ' picture cards for ' + found.lessons.length + ' lesson' + (found.lessons.length === 1 ? '' : 's') + ', in folders by week and lesson.', 'ok', 'status');
+          pstatus((auto ? 'Downloaded the course file and ' : 'Downloaded ') + found.cards + ' picture cards for ' + found.lessons.length + ' lesson' + (found.lessons.length === 1 ? '' : 's') + ', in folders by week and lesson.', 'ok', 'status');
         });
       });
     }).catch(function (e) { pstatus('Could not collect the picture cards: ' + e.message, 'err', 'status'); })
@@ -2928,7 +2983,9 @@
           res.pdfHead = String.fromCharCode(u[0], u[1], u[2], u[3]);
           res.ok = res.button && res.files === res.cards + res.lessons && res.foldered && res.combined && res.pdfHead === '%PDF'
             && $('vrpack').textContent.indexOf(String(res.cards)) >= 0;
-          return res;
+          if (kit.mix || kit.upload || (home.onlyModules && home.onlyModules.length)) return res;
+          var whole = unitsOfKit(kit);
+          return vrUnitsFind(whole).then(function (up) { res.upfront = up.cards; res.ok = res.ok && up.cards === res.cards; return res; });
         });
       });
     }).catch(function (e) { return { ok: false, error: String(e && e.message || e) }; });
@@ -5979,8 +6036,10 @@
     el.innerHTML = '<h3>Order in Canvas</h3><div class="tot">' + n + ' module' + (n === 1 ? '' : 's') + (weeks ? ' · ' + weeks + ' week' + (weeks === 1 ? '' : 's') : '') + (unknown && weeks ? ' · ' + unknown + ' with no week count' : '') + '</div>' +
       '<ol>' + rows + '</ol>' +
       '<label class="inc"><input type="checkbox" id="j-pieces"' + (pieces ? ' checked' : '') + '><span>Include a home page, syllabus and course tile' +
-      '<small>Unticked: the file only adds these modules to a course already in Canvas.</small></span></label>';
+      '<small>Unticked: the file only adds these modules to a course already in Canvas.</small></span></label>' +
+      '<label class="inc" id="j-vr-row" hidden><input type="checkbox" id="j-vr"><span>Include VR bundle<small id="j-vr-count"></small></span></label>';
     $('j-pieces').addEventListener('change', function () { J.modSel.pieces = this.checked; });
+    wireVrRow();
     el.querySelectorAll('button[data-mv]').forEach(function (b) {
       b.addEventListener('click', function () { var i = +this.dataset.i; moveUnit(i, i + (+this.dataset.mv)); renderOrder(); });
     });
@@ -6094,6 +6153,7 @@
       var natural = all.filter(function (id) { return ids.indexOf(id) >= 0; });
       home.modOrder = natural.join('|') === ids.join('|') ? null : ids.slice();
       home.addon = !pieces;
+      home.vrBundle = !!(J.modSel && J.modSel.vr);
       if (kit.mix) reconcileMixGroups();
       applyModuleOrder(); renumberWeeks();
       J.scope = home.addon ? 'modules' : 'all';
@@ -6200,6 +6260,7 @@
       if (mixNeedsMerge()) chips.push('<span class="chipx' + (home.gbReviewed ? '' : ' off') + '">Gradebook: ' + home.groups.length + ' categor' + (home.groups.length === 1 ? 'y' : 'ies') + (home.gbReviewed ? ', set' : ', not confirmed') + '</span>');
       else chips.push(on('Gradebook', panelChanged('gradebook'), 'as built'));
     }
+    if (home.vrBundle) chips.push('<span class="chipx" id="j-vrchip">VR bundle: included</span>');
     $('j-summary').innerHTML = chips.join('');
     renderVrPack();
   }
@@ -6969,6 +7030,7 @@
       patchedKit('blob').then(function (r) {
         saveBlob(r.data, kitFilename());
         status('Downloaded ' + kitFilename() + ' (' + r.entries + ' files inside). Now import it into your Canvas course.', 'ok');
+        if (home.vrBundle) downloadVrPack(true);
       }).catch(function (e) { status('Could not build the kit: ' + e.message, 'err'); });
     });
     $('dl-plain').addEventListener('click', function () {
@@ -6976,7 +7038,7 @@
       // has no ready-made file: it is assembled here.
       if (kit.mix || customOrder() || (home.onlyModules && home.onlyModules.length)) {
         status('Building the course file…');
-        patchedKit('blob').then(function (r) { saveBlob(r.data, kitFilename()); status('Downloaded ' + kitFilename() + ' (' + r.entries + ' files inside).', 'ok'); })
+        patchedKit('blob').then(function (r) { saveBlob(r.data, kitFilename()); status('Downloaded ' + kitFilename() + ' (' + r.entries + ' files inside).', 'ok'); if (home.vrBundle) downloadVrPack(true); })
           .catch(function (e) { status('Could not build the file: ' + e.message, 'err'); });
         return;
       }
@@ -6984,7 +7046,7 @@
       fetch(BASE + kit.file, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
         .then(function (buf) { return JSZip.loadAsync(buf); })
         .then(function (zip) { return applyMissingZero(zip).then(function () { return zip.generateAsync({ type: 'blob', compression: 'DEFLATE' }); }); })
-        .then(function (b) { saveBlob(b, kit.file.split('/').pop()); status('Downloaded the original kit. Its home page is the generic one.', 'ok'); })
+        .then(function (b) { saveBlob(b, kit.file.split('/').pop()); status('Downloaded the original kit. Its home page is the generic one.', 'ok'); if (home.vrBundle) downloadVrPack(true); })
         .catch(function (e) { status('Could not fetch the kit: ' + e.message, 'err'); });
     });
     $('print-open').addEventListener('click', function () { openPrintable().catch(function () { /* shown in status */ }); });
