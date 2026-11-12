@@ -351,7 +351,8 @@
   .tile.modtile .tv { font-size:12px; font-weight:700; letter-spacing:.9px; text-transform:uppercase; color:var(--mute); }
   .tile.modtile.on { border-color:var(--gold); box-shadow:0 0 0 3px rgba(199,146,44,.55); }
   .modkey { display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center; font-size:14px; margin:6px 0 4px; }
-  .modkey span { display:inline-flex; align-items:center; gap:7px; }
+  .modkey button { display:inline-flex; align-items:center; gap:7px; }
+  .modkey button[aria-pressed="true"] { border-color:var(--navy); box-shadow:inset 0 0 0 1.5px var(--navy); }
   .modkey i { width:22px; height:14px; border-radius:4px; border:1.5px solid var(--line); background:#fff; display:inline-block; }
   .modkey i.sp { background:linear-gradient(135deg, #1F5FA8, #2B7BD0); border-color:#1F5FA8; }
   .tiles .grp .sm { margin-left:10px; text-transform:none; letter-spacing:0; }
@@ -658,7 +659,7 @@
 
     <section class="screen" data-screen="modules" hidden>
       <h2 class="q">Select modules</h2>
-      <div class="modkey" id="j-modkey" hidden><span><i></i> Original</span><span><i class="sp"></i> Sparkle</span></div>
+      <div class="modkey" id="j-modkey" role="group" aria-label="Choose every module of one version" hidden></div>
       <div id="t-modules"><div class="hint">Loading the module list&hellip;</div></div>
       <div class="order" id="j-order" hidden></div>
       <div class="actions"><button type="button" id="j-modules-go" disabled>Continue</button></div>
@@ -5661,6 +5662,16 @@
     else { s.keys.push(key); if (!s.manual) s.keys = naturalSort(s.keys); }
     if (!s.keys.length) s.manual = false;
   }
+  // The colour key doubles as the two whole-version picks: every original, or every Sparkle module.
+  function versionKeys(sparkle) { return allUnits().filter(function (u) { return !!u.sparkle === sparkle; }).map(function (u) { return u.key; }); }
+  function versionIsOn(sparkle) {
+    var want = versionKeys(sparkle), keys = J.modSel ? J.modSel.keys : [];
+    return want.length > 0 && keys.length === want.length && want.every(function (k) { return keys.indexOf(k) >= 0; });
+  }
+  function pickVersion(sparkle) {
+    J.modSel.keys = versionIsOn(sparkle) ? [] : versionKeys(sparkle);
+    J.modSel.manual = false;
+  }
   function moveUnit(from, to) {
     var k = J.modSel.keys;
     if (from === to || from < 0 || to < 0 || from >= k.length || to >= k.length) return;
@@ -5691,7 +5702,14 @@
       if (!J.modSel) J.modSel = selectionFromKit();
       J.modSel.keys = J.modSel.keys.filter(unitByKey);
       var out = [], anySparkle = allUnits().some(function (u) { return u.sparkle; });
-      $('j-modkey').hidden = !anySparkle;
+      var key = $('j-modkey');
+      key.hidden = !anySparkle;
+      key.innerHTML = [[false, 'All original'], [true, 'All Sparkle']].map(function (v) {
+        return '<button type="button" class="sm alt" data-all="' + (v[0] ? 'sp' : 'orig') + '" aria-pressed="' + (versionIsOn(v[0]) ? 'true' : 'false') + '"><i' + (v[0] ? ' class="sp"' : '') + '></i> ' + v[1] + '</button>';
+      }).join('');
+      key.querySelectorAll('button').forEach(function (b) {
+        b.addEventListener('click', function () { pickVersion(this.dataset.all === 'sp'); renderModuleTiles(); });
+      });
       modSections.forEach(function (s, si) {
         var allOn = s.units.length && s.units.every(function (u) { return J.modSel.keys.indexOf(u.key) >= 0; });
         out.push('<div class="grp">' + escHtml(s.label) + (s.kit && isNewKit(s.kit) ? ' ' + newPill() : '') +
@@ -7221,6 +7239,16 @@
       tu = allUnits().filter(function (u) { return u.kit === k && u.mods.some(function (m) { return m.id === target.id; }); })[0];
       if (!tu) throw new Error('no tile for ' + target.title);
       other = (k.modules || []).filter(function (m) { return tu.mods.indexOf(m) < 0 && withGraded(m); })[0] || null;
+      // the colour key picks every module of one version, and a second click clears it
+      if (!$('j-modkey').hidden) {
+        var allBtn = function (v) { return document.querySelector('#j-modkey button[data-all="' + v + '"]'); };
+        allBtn('orig').click();
+        res.allOriginal = J.modSel.keys.length === versionKeys(false).length && selectedUnits().every(function (u) { return !u.sparkle; });
+        allBtn('sp').click();
+        res.allSparkle = J.modSel.keys.length === versionKeys(true).length && selectedUnits().every(function (u) { return u.sparkle; });
+        allBtn('sp').click();
+        res.allCleared = !J.modSel.keys.length;
+      }
       pick('#t-modules .tile[data-u="' + tu.key + '"]');
       return renderModuleTiles();
     }).then(function () {
