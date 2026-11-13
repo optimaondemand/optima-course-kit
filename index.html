@@ -47,6 +47,8 @@
   .top .brand small { display:block; font-size:11.5px; font-weight:500; color:var(--cyan); }
   .top .title { text-align:center; margin-top:30px; }
   .top h1 { margin:0; font-size:clamp(38px, 5.4vw, 60px); font-weight:800; letter-spacing:-1.2px; line-height:1.05; }
+  .top h1 button { font:inherit; letter-spacing:inherit; line-height:inherit; color:inherit; background:none; border:0; padding:0 10px; border-radius:12px; cursor:pointer; }
+  .top h1 button:hover:not(:disabled) { background-image:none; opacity:.86; }
   .top h1 span { background:linear-gradient(90deg, #8FDDF2, var(--cyan)); -webkit-background-clip:text; background-clip:text; color:transparent; }
   .top .sub { margin:10px auto 0; max-width:620px; font-size:17px; color:rgba(255,255,255,.76); }
   .wrap { position:relative; z-index:1; display:grid; grid-template-columns: minmax(340px, 680px) 1fr; gap:22px; padding:0 28px 28px; max-width:1500px; margin:-64px auto 0; }
@@ -282,6 +284,11 @@
   /* Progress: a floating bar above the screen card, one segment per step. */
   .jnav { display:flex; align-items:center; gap:14px; margin-bottom:14px; background:#fff; border:1px solid var(--line); border-radius:999px; padding:7px 18px 7px 7px; box-shadow:var(--sh-2); }
   .jnav[hidden] { display:none; }
+  .jcourse { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px; margin:0 0 14px; padding:9px 18px; background:#fff; border:1px solid var(--line); border-left:5px solid var(--cyan); border-radius:10px; box-shadow:var(--sh-2); font-family:var(--f-display); }
+  .jcourse[hidden] { display:none; }
+  .jcourse .k { font-size:12px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; color:var(--mute); }
+  .jcourse .t { font-size:17px; font-weight:700; color:var(--navy); }
+  .jcourse .m { font-size:14px; color:var(--mute); }
   .jtrail { flex:1; min-width:0; display:flex; align-items:center; gap:4px; font-size:12.5px; color:var(--mute); }
   .jtrail .dot { flex:1 1 0; max-width:42px; min-width:6px; height:6px; border-radius:3px; background:#E3E8F1; transition:background-color .3s; }
   .jtrail .dot.done { background:var(--cyan); }
@@ -303,9 +310,6 @@
   @media (max-width: 640px) { .tiles.four { grid-template-columns:1fr; } }
   /* Home page, syllabus and tile only: no course file, so no module list on the home page. */
   .pieces-only { display:none; }
-  .ready-note { margin:22px 0 4px; padding:16px 20px; background:var(--soft); border-left:6px solid var(--navy); border-radius:4px; }
-  .ready-note b { display:block; font-size:21px; line-height:1.3; color:var(--navy); }
-  .ready-note span { display:block; font-size:16px; color:var(--ink); margin-top:4px; }
   .policy-note { font-size:21px; font-weight:700; line-height:1.35; color:var(--navy); background:var(--soft); border-left:6px solid var(--gold); padding:14px 18px; margin:14px 0; }
   .pieces .pieces-only { display:revert; }
   .pieces .no-pieces { display:none; }
@@ -570,7 +574,7 @@
       </nav>
     </div>
     <div class="title">
-      <h1>Course <span>Optimizer</span></h1>
+      <h1><button type="button" id="home-link" title="Course Optimizer home">Course <span>Optimizer</span></button></h1>
       <p class="sub">Prepare a course for import into Canvas, from the Optima curriculum store or from a Canvas export.</p>
     </div>
   </div>
@@ -583,6 +587,7 @@
       <div class="jtrail" id="j-trail" aria-label="Progress"></div>
       <button type="button" class="link" id="j-restart">Start over</button>
     </nav>
+    <div class="jcourse" id="j-course" hidden></div>
 
     <section class="screen" data-screen="welcome">
       <h2 class="q">Select a starting point</h2>
@@ -598,7 +603,6 @@
       <div class="video welcome-video"><h3>Course Optimizer introduction</h3><video controls preload="metadata" playsinline src="videos/course-optimizer-intro.mp4" title="Course Optimizer introduction"></video></div>
       <div class="hint center">Dashboard tiles for several sections at once: <button type="button" class="link" id="j-tiles">Course tiles</button>.</div>
       <div class="hint center" id="j-beta"></div>
-      <div class="ready-note"><b>Your curriculum is ready for you.</b><span>You are in control of when and how curriculum is added to your course shells.</span></div>
     </section>
 
     <section class="screen" data-screen="grade" hidden>
@@ -5704,6 +5708,7 @@
     document.querySelector('.screen[data-screen="gradebook"]').classList.toggle('mixgb', mixNeedsMerge());
     syncPreviewButton();
     renderTrail();
+    renderCourseNote();
     var panel = $('dates-panel');
     if (J.screen === 'dates' || J.screen === 'publish') {
       $('slot-' + (J.screen === 'dates' ? 'dates' : 'publish')).appendChild($('step4'));
@@ -5731,6 +5736,17 @@
     else if (!ITEM_PANE[J.screen] && J.screen !== 'review' && previewItemId && previewItemId !== '__syllabus__') leaveItemPreview();
     if (ITEM_PANE[J.screen]) $('preview-home').hidden = true;
     if (J.screen === 'tile') renderTilePanel();
+  }
+  // Which course is being configured, on every screen after the course is chosen.
+  function renderCourseNote() {
+    var el = $('j-course'), finding = { welcome: 1, grade: 1, subject: 1, course: 1, upload: 1 };
+    if (!course || finding[J.screen]) { el.hidden = true; el.innerHTML = ''; return; }
+    var meta = [];
+    if (course.code && !course.upload) meta.push(course.code);
+    if (course.upload) { if (kit && kit.file) meta.push(kit.file); }
+    else if (kit && kit.label && kit.label !== course.title) meta.push(kit.label);
+    el.innerHTML = '<span class="k">Course</span><span class="t">' + escHtml(course.title || '') + '</span>' + (meta.length ? '<span class="m">' + escHtml(meta.join(' · ')) + '</span>' : '');
+    el.hidden = false;
   }
   function renderTrail() {
     var seq = sequence(), i = seq.indexOf(J.screen), el = $('j-trail');
@@ -6962,6 +6978,7 @@
     $('j-tiles').addEventListener('click', function () { setTab('tiles'); });
     $('j-back').addEventListener('click', back);
     $('j-restart').addEventListener('click', function () { startOver('welcome'); });
+    $('home-link').addEventListener('click', function () { setTab('kit'); go('welcome'); });
     $('t-mode').querySelectorAll('.tile').forEach(function (b) {
       b.addEventListener('click', function () { J.mode = this.dataset.mode; saveJourney(); go(nextScreen('mode')); });
     });
