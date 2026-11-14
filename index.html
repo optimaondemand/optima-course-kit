@@ -345,7 +345,19 @@
   /* NEW: a kit that reached the store in the last three days. Sits in the tile's corner. */
   .tile.course, .tile.kit { position:relative; }
   .tile .newpill { position:absolute; top:10px; right:10px; margin:0; font-size:11px; font-weight:600; letter-spacing:.9px; padding:3px 9px; border-radius:10px; background:var(--gold); color:var(--navy); box-shadow:0 1px 3px rgba(14,28,66,.15); }
-  .tile.course .tt, .tile.kit .tt { padding-right:52px; }
+  /* New modules on the starting screen: each course, then its new topics. */
+  .newmods { margin:26px 0 4px; border:1px solid var(--line); border-radius:var(--r-md); background:#fff; overflow:hidden; }
+  .newmods h3 { margin:0; padding:14px 18px; font-size:17px; font-weight:700; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--line); background:var(--soft); }
+  .newmods h3 .w { margin-left:auto; font-size:13px; font-weight:500; color:var(--mute); }
+  .newmods ol, .newmods ul { list-style:none; margin:0; padding:0; }
+  .newmods ol > li { padding:14px 18px; border-top:1px solid var(--line); }
+  .newmods ol > li:first-child { border-top:0; }
+  .newmods .cn { font-size:18px; font-weight:700; line-height:1.3; }
+  .newmods ul { margin-top:6px; }
+  .newmods ul li { display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; padding:3px 0; font-size:16px; line-height:1.4; }
+  .newmods .sp { font-size:11px; font-weight:600; letter-spacing:.5px; color:#fff; background:#2B7BD0; border-radius:999px; padding:2px 8px; }
+  .newmods .d { margin-left:auto; font-size:15px; color:var(--mute); white-space:nowrap; font-variant-numeric:tabular-nums; }
+  @media (max-width:640px) { .newmods ol > li { padding:12px 14px; } }
   /* Module list: an original module is a white tile, a Sparkle version a blue one. */
   .tile.modtile .ttl { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
   .tile.modtile .tick { font-weight:800; color:var(--navy); min-width:16px; text-align:right; }
@@ -600,6 +612,7 @@
         <button type="button" class="tile big" data-path="fetch"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="tt">Preview a course in the course catalogue</span><span class="ts">The course as the curriculum team built it, with no changes. Download available.</span></button>
         <button type="button" class="tile big" data-path="pieces"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M10 20v-5h4v5"/></svg></span><span class="tt">Create a home page, syllabus and course tile</span><span class="ts">For a Canvas course that already has its content. One .zip with the three files to paste and upload; no course file.</span></button>
       </div>
+      <section class="newmods" id="newmods" aria-labelledby="newmods-h" hidden></section>
       <div class="video welcome-video"><h3>Course Optimizer introduction</h3><video controls preload="metadata" playsinline src="videos/course-optimizer-intro.mp4" title="Course Optimizer introduction"></video></div>
       <div class="hint center">Dashboard tiles for several sections at once: <button type="button" class="link" id="j-tiles">Course tiles</button>.</div>
       <div class="hint center" id="j-beta"></div>
@@ -2419,6 +2432,52 @@
       save(); renderSyllabus();
     });
     loadSylCatalogue();
+  }
+
+  // ------------------------------------------------------------ new modules
+  // The starting screen lists the units added to the store in the last two weeks, courses
+  // each course with its new topics under it. whatsnew.json is kept by _build/whats_new.py (run
+  // hourly by .github/workflows/whats-new.yml), which records the day each module was
+  // first seen in the store; the list is hidden while it is empty.
+  var NEWMODS_DAYS = 14;
+  // One entry per course, the course with the newest topic first; under it, each new topic
+  // once, earliest addition first.
+  function newModsRows(data, now) {
+    var cut = new Date((now || Date.now()) - NEWMODS_DAYS * 86400000).toISOString().slice(0, 10), by = {}, rows = [];
+    ((data && data.units) || []).slice().reverse().forEach(function (u) {
+      if (!u || !u.date || !u.unit || u.date < cut) return;
+      var r = by[u.code];
+      if (!r) { r = by[u.code] = { course: u.course, latest: '', units: [] }; rows.push(r); }
+      if (u.date > r.latest) r.latest = u.date;
+      var same = r.units.filter(function (x) { return x.unit === u.unit; })[0];
+      if (same) { if (u.sparkle) same.sparkle = true; if (u.date > same.date) same.date = u.date; }
+      else r.units.push({ unit: u.unit, sparkle: !!u.sparkle, date: u.date });
+    });
+    rows.sort(function (a, b) { return (a.latest < b.latest ? 1 : a.latest > b.latest ? -1 : 0) || String(a.course).localeCompare(String(b.course)); });
+    return rows;
+  }
+  function newModsDate(d) {
+    var m = /^(\d{4})-(\d\d)-(\d\d)/.exec(d || '');
+    return m ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+m[2] - 1] + ' ' + (+m[3]) : '';
+  }
+  function renderNewMods(data, now) {
+    var el = $('newmods'); if (!el) return 0;
+    var rows = newModsRows(data, now);
+    el.hidden = !rows.length;
+    if (!rows.length) { el.innerHTML = ''; return 0; }
+    el.innerHTML = '<h3 id="newmods-h">New modules<span class="w">Last ' + NEWMODS_DAYS + ' days</span></h3><ol>' +
+      rows.map(function (r) {
+        return '<li><div class="cn">' + escHtml(r.course) + '</div><ul>' +
+          r.units.map(function (u) { return '<li><span>' + escHtml(u.unit) + '</span>' + (u.sparkle ? '<span class="sp">SPARKLE</span>' : '') + '<span class="d">' + newModsDate(u.date) + '</span></li>'; }).join('') +
+          '</ul></li>';
+      }).join('') + '</ol>';
+    return rows.length;
+  }
+  function loadNewMods() {
+    return fetch('whatsnew.json?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { renderNewMods(d); })
+      .catch(function () { renderNewMods(null); });
   }
 
   // ------------------------------------------------------------ catalog
@@ -5891,20 +5950,25 @@
   // Unit numbers and week counts are planning labels: shown here, never written to a file.
   var WEEK_RX = /\bWeek\s+\d+/i;
   function isSparkle(k) { return k.edition === 'sparkle' || /-sparkle$/.test(k.id); }
+  // Courses whose weekly modules are all Sparkle builds with no original beside them (M/J
+  // Comprehensive Science 1, 2 and 3). Their weeks show blue and stay ordinary units: picked
+  // one by one, counted by Select all. `blue` is the look; `sparkle` stays the stand-in kit.
+  var SPARKLE_COURSES = /^(2002040|2002070|2002100)-/;
+  function sparkleLook(k, m) { return SPARKLE_COURSES.test(k.id) && WEEK_RX.test((m && m.title) || ''); }
   function unitNum(s) { var m = /^\s*(?:Module|Unit)\s+(\d+[A-Z]?)\b/i.exec(s || ''); return m ? m[1].toUpperCase() : ''; }
   function kitModules0(k) { return k.modules0 || k.modules || []; }
   function unitsOfKit(k) {
     var mods = kitModules0(k), out = [];
     if (isSparkle(k)) {
       var n = (/(\d+[A-Z]?)/.exec(k.replaces || '') || /-m(\d+)/.exec(k.id) || [])[1] || '';
-      out.push({ kit: k, key: k.id + '|all', title: k.unit || k.label, num: String(n).toUpperCase(), mods: mods.slice(), sparkle: true, replaces: k.replaces || (n ? 'Module ' + n : '') });
+      out.push({ kit: k, key: k.id + '|all', title: k.unit || k.label, num: String(n).toUpperCase(), mods: mods.slice(), sparkle: true, blue: true, replaces: k.replaces || (n ? 'Module ' + n : '') });
     } else {
       mods.forEach(function (m) {
         var num = unitNum(m.title), wk = WEEK_RX.test(m.title), last = out[out.length - 1];
         if (num && wk && last && last.grouped && last.num === num) { last.mods.push(m); return; }
         var title = m.title;
         if (num && wk) title = m.title.replace(/\s*[·–—:,-]?\s*Week\s+\d+.*$/i, '').trim() || m.title;
-        out.push({ kit: k, key: k.id + '|' + m.id, title: title, num: num, mods: [m], grouped: !!(num && wk), sparkle: false });
+        out.push({ kit: k, key: k.id + '|' + m.id, title: title, num: num, mods: [m], grouped: !!(num && wk), sparkle: false, blue: sparkleLook(k, m) });
       });
     }
     out.forEach(function (u) {
@@ -5979,7 +6043,7 @@
     if (!s.keys.length) s.manual = false;
   }
   // The colour key doubles as the two whole-version picks: every original, or every Sparkle module.
-  function versionKeys(sparkle) { return allUnits().filter(function (u) { return !!u.sparkle === sparkle; }).map(function (u) { return u.key; }); }
+  function versionKeys(sparkle) { return allUnits().filter(function (u) { return !!u.blue === sparkle; }).map(function (u) { return u.key; }); }
   function versionIsOn(sparkle) {
     var want = versionKeys(sparkle), keys = J.modSel ? J.modSel.keys : [];
     return want.length > 0 && keys.length === want.length && want.every(function (k) { return keys.indexOf(k) >= 0; });
@@ -6017,7 +6081,7 @@
       modSections = moduleSections(kits);
       if (!J.modSel) J.modSel = selectionFromKit();
       J.modSel.keys = J.modSel.keys.filter(unitByKey);
-      var out = [], anySparkle = allUnits().some(function (u) { return u.sparkle; });
+      var out = [], anySparkle = allUnits().some(function (u) { return u.blue; });
       var key = $('j-modkey');
       key.hidden = !anySparkle;
       key.innerHTML = [[false, 'All original'], [true, 'All Sparkle']].map(function (v) {
@@ -6033,8 +6097,8 @@
         s.units.forEach(function (u) {
           var on = J.modSel.keys.indexOf(u.key) >= 0;
           var facts = [weeksText(u.weeks), u.graded ? u.graded + ' graded item' + (u.graded === 1 ? '' : 's') : 'No graded items', u.published ? '' : 'unpublished in the kit'].filter(Boolean).join(' · ');
-          out.push(tile('modtile' + (u.sparkle ? ' sparkle' : '') + (on ? ' on' : ''),
-            (u.sparkle ? '<span class="tv">Sparkle' + (u.replaces ? ' version of ' + escHtml(u.replaces) : '') + '</span>' : '') +
+          out.push(tile('modtile' + (u.blue ? ' sparkle' : '') + (on ? ' on' : ''),
+            (u.sparkle ? '<span class="tv">Sparkle' + (u.replaces ? ' version of ' + escHtml(u.replaces) : '') + '</span>' : u.blue ? '<span class="tv">Sparkle</span>' : '') +
             '<span class="ttl"><span class="tt">' + escHtml(u.title) + '</span><span class="tick">' + (on ? '✓' : '') + '</span></span>' +
             '<span class="ts">' + escHtml(facts) + '</span>',
             ' data-u="' + escHtml(u.key) + '" aria-pressed="' + (on ? 'true' : 'false') + '"'));
@@ -6081,8 +6145,8 @@
     sel.forEach(function (u) { weeks += u.weeks; if (!u.weeks) unknown++; });
     var pieces = wantsPieces();
     var rows = sel.map(function (u, i) {
-      return '<li draggable="true" data-i="' + i + '" class="' + (u.sparkle ? 'sparkle' : '') + '"><span class="grip" aria-hidden="true">⠿</span><span class="n">' + (i + 1) + '</span>' +
-        '<span class="nm">' + escHtml(u.title) + '<small>' + escHtml(u.sparkle ? 'Sparkle' + (u.replaces ? ' version of ' + u.replaces : '') : (u.kit.label || '')) + '</small></span>' +
+      return '<li draggable="true" data-i="' + i + '" class="' + (u.blue ? 'sparkle' : '') + '"><span class="grip" aria-hidden="true">⠿</span><span class="n">' + (i + 1) + '</span>' +
+        '<span class="nm">' + escHtml(u.title) + '<small>' + escHtml(u.sparkle ? 'Sparkle' + (u.replaces ? ' version of ' + u.replaces : '') : (u.blue ? 'Sparkle \u00b7 ' : '') + (u.kit.label || '')) + '</small></span>' +
         '<span class="wk">' + escHtml(weeksText(u.weeks)) + '</span>' +
         '<span class="mv"><button type="button" class="sm alt" data-mv="-1" data-i="' + i + '" aria-label="Move ' + escHtml(u.title) + ' up"' + (i === 0 ? ' disabled' : '') + '>↑</button>' +
         '<button type="button" class="sm alt" data-mv="1" data-i="' + i + '" aria-label="Move ' + escHtml(u.title) + ' down"' + (i === n - 1 ? ' disabled' : '') + '>↓</button>' +
@@ -8065,6 +8129,7 @@
     }).catch(function (e) { out.error = String(e && e.message || e); out.stack = String(e && e.stack || ''); done(); });
   }
 
+  loadNewMods();
   loadCatalog().then(function (c) {
     catalog = c; wire(); wireCatalogRefresh();
     var xm = /^#mixtest=(.+)$/.exec(location.hash || '');

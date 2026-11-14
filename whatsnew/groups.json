@@ -1,0 +1,92 @@
+{
+ "note": "Topical units for kits built week by week with no unit above the week. Used only by the New modules list on the Optimizer home page (_build/whats_new.py). Nothing here changes a kit, a week name or the module list. 'weeks' are the week numbers in the module titles; 'q' is the quarter when the title carries one.",
+ "kits": {
+  "2002040-q2": [
+   {"unit": "Scientists and the scientific method", "q": 2, "weeks": [1, 4, 7]},
+   {"unit": "Energy and its conservation", "q": 2, "weeks": [2, 3]},
+   {"unit": "Motion, forces and gravity", "q": 2, "weeks": [5, 6, 8, 9]}
+  ],
+  "2002040-s2": [
+   {"unit": "Landforms and a changing Earth", "q": 3, "weeks": [1, 2, 3]},
+   {"unit": "Atmosphere and Earth's spheres", "q": 3, "weeks": [4, 5, 6]},
+   {"unit": "Heat transfer", "q": 3, "weeks": [7, 8, 9]},
+   {"unit": "Weather, climate and the water cycle", "q": 4, "weeks": [1, 2, 3, 4, 5, 6]},
+   {"unit": "Natural disasters and safety", "q": 4, "weeks": [7, 8]},
+   {"unit": "Science showcase and reflection", "q": 4, "weeks": [9, 10, 11]}
+  ],
+  "2002070-q2": [
+   {"unit": "Scientists and the science fair", "q": 2, "weeks": [1, 7]},
+   {"unit": "Biotechnology, adaptation and evolution", "q": 2, "weeks": [2, 3, 4]},
+   {"unit": "Earth's layers and spheres", "q": 2, "weeks": [5, 6, 8, 9]}
+  ],
+  "2002070-s2": [
+   {"unit": "Plate tectonics and Earth's interior", "q": 3, "weeks": [1, 2, 3]},
+   {"unit": "The rock cycle and surface forces", "q": 3, "weeks": [4, 5]},
+   {"unit": "Earth's history and geologic time", "q": 3, "weeks": [6, 7]},
+   {"unit": "Earth's systems and human impact", "q": 3, "weeks": [8, 9]},
+   {"unit": "Heat and thermal equilibrium", "q": 4, "weeks": [1, 2]},
+   {"unit": "Conservation and transformation of energy", "q": 4, "weeks": [3, 4, 5]},
+   {"unit": "Light and waves", "q": 4, "weeks": [6, 7, 8]},
+   {"unit": "Science showcase and reflection", "q": 4, "weeks": [9, 10, 11]}
+  ],
+  "2002100-q2": [
+   {"unit": "Scientists and the scientific method", "q": 2, "weeks": [1, 4, 7]},
+   {"unit": "Properties and classification of matter", "q": 2, "weeks": [2, 3, 8]},
+   {"unit": "Mixtures, solutions and chemical change", "q": 2, "weeks": [5, 6, 9]}
+  ],
+  "2002100-s2": [
+   {"unit": "Distance, scale and structure of the universe", "q": 3, "weeks": [1, 2, 3, 4]},
+   {"unit": "Gravity and motion in space", "q": 3, "weeks": [5, 6]},
+   {"unit": "Stars", "q": 3, "weeks": [7, 8, 9]},
+   {"unit": "The Sun and Earth in the solar system", "q": 4, "weeks": [1, 2, 3]},
+   {"unit": "Models of the solar system", "q": 4, "weeks": [4, 5]},
+   {"unit": "Tools and technology of space exploration", "q": 4, "weeks": [6, 7, 8]},
+   {"unit": "Science showcase and reflection", "q": 4, "weeks": [9, 10, 11]}
+  ],
+  "2109010-s1": [
+   {"unit": "First farmers and Mesopotamia", "weeks": [1, 2, 3, 4]},
+   {"unit": "Ancient Egypt", "weeks": [5, 6]},
+   {"unit": "Bronze Age civilizations and their collapse", "weeks": [7, 8, 9]},
+   {"unit": "Late Egypt, Assyria and Babylon", "weeks": [10, 11, 12, 13]},
+   {"unit": "Phoenicia and early Greece", "weeks": [15, 16]},
+   {"unit": "The Medes and the Persian Empire", "weeks": [14, 17, 18]}
+  ],
+  "2109010-s2": [
+   {"unit": "The Greek polis", "weeks": [19, 20]},
+   {"unit": "The Persian Wars", "weeks": [21, 22]},
+   {"unit": "Classical Athens and the Peloponnesian War", "weeks": [23, 24, 25]},
+   {"unit": "Macedon and the Hellenistic world", "weeks": [26, 27]},
+   {"unit": "The Roman Republic and Carthage", "weeks": [28, 29, 30, 31]},
+   {"unit": "The fall of the Roman Republic", "weeks": [32, 33, 34]},
+   {"unit": "The Roman Empire and Christianity", "weeks": [35, 36]}
+  ],
+  "txhist7-s2": [
+   {"unit": "War with Mexico, secession and Reconstruction", "weeks": [19, 20, 21]},
+   {"unit": "The Texas Constitution and civic life", "weeks": [22, 23]},
+   {"unit": "The frontier and the cattle kingdom", "weeks": [24, 25, 26, 27]},
+   {"unit": "Reform, oil and the Great Depression", "weeks": [28, 29, 30, 31]},
+   {"unit": "World War II and post-war Texas", "weeks": [32, 33]},
+   {"unit": "Modern Texas", "weeks": [34, 35, 36]}
+  ],
+  "2100310-s1": [
+   {"unit": "Reconstruction and the West", "weeks": [1, 2]},
+   {"unit": "The Gilded Age", "weeks": [3, 4, 5, 6, 7]},
+   {"unit": "Religion, culture and empire", "weeks": [8, 9]},
+   {"unit": "Immigration and the cities", "weeks": [10, 11]},
+   {"unit": "The Progressive Era", "weeks": [12, 13, 14, 15]},
+   {"unit": "World War I and its era", "weeks": [16, 17, 18]}
+  ],
+  "2108300-full": [
+   {"unit": "Founders of sociology", "weeks": [1, 2, 3, 4]},
+   {"unit": "Family, religion, education and community", "weeks": [5, 6, 7, 8]},
+   {"unit": "Authority, class and deviance", "weeks": [9, 10, 11, 12]},
+   {"unit": "Modern life, media and culture", "weeks": [13, 14, 15]},
+   {"unit": "Community and capstone", "weeks": [16, 17]}
+  ],
+  "1004300-q1": [
+   {"unit": "Argument Basics", "weeks": [1, 2, 3]},
+   {"unit": "Informal Fallacies", "weeks": [4, 5, 6, 7]},
+   {"unit": "More on Arguments", "weeks": [8, 9]}
+  ]
+ }
+}

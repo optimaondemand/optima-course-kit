@@ -323,3 +323,12 @@ assignment. The widget's checklist tells teachers to leave that box unchecked.
   for the 2026-27 year. Move them to a signed-in store before that changes.
 - The front-page swap replaces the whole page body.
 - Quiz points are the sum of their questions and are not editable in the widget.
+
+## New modules list (starting screen)
+
+The starting screen lists units added to the store in the last 14 days, each course with its new topics under it. It is hidden while empty.
+
+- `_build/whats_new.py` reads the published store, records the day each module was first seen in `whatsnew/seen.json`, and writes `whatsnew.json`. It never writes to the store. Modules present on its first run have no date, so the list counts forward from that day.
+- `.github/workflows/whats-new.yml` runs it hourly and commits only when the list changed.
+- `whatsnew/groups.json` gives topical units to kits built week by week (M/J science, M/J World History, Texas History, HS U.S. History S1, Sociology, Semantics and Logic). It affects this list only; week names and the module list are untouched. A week not in the file lists under its own title.
+- Start Here, Teacher Resources, exams, appendices and other non-content modules are never listed.
