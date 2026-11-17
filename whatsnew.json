@@ -13,6 +13,28 @@
    "sparkle": true
   },
   {
+   "date": "2026-11-17",
+   "code": "1001040",
+   "course": "M/J Language Arts 2",
+   "grade": "7",
+   "subject": "English Language Arts",
+   "kit": "1001040-m4-sparkle",
+   "unit": "The Outsiders",
+   "modules": 1,
+   "sparkle": true
+  },
+  {
+   "date": "2026-11-17",
+   "code": "1001040",
+   "course": "M/J Language Arts 2",
+   "grade": "7",
+   "subject": "English Language Arts",
+   "kit": "1001040-m42-sparkle",
+   "unit": "A Midsummer Night's Dream",
+   "modules": 1,
+   "sparkle": true
+  },
+  {
    "date": "2026-11-13",
    "code": "1001070",
    "course": "M/J Language Arts 3",
