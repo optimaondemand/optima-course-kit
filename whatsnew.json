@@ -2,6 +2,17 @@
  "since": "2026-11-13",
  "units": [
   {
+   "date": "2026-11-17",
+   "code": "1205010",
+   "course": "M/J Grade 6 Mathematics",
+   "grade": "6",
+   "subject": "Mathematics",
+   "kit": "1205010-s2-sparkle",
+   "unit": "Semester 2",
+   "modules": 4,
+   "sparkle": true
+  },
+  {
    "date": "2026-11-13",
    "code": "1001070",
    "course": "M/J Language Arts 3",
