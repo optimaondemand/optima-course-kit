@@ -423,6 +423,7 @@ class Importer:
             self.errors.append('quiz %r: no QTI file in resource %s' % (item['title'], ident)); return None
         meta = parse_xml(self.cart.read(meta_path).encode('utf-8')) if meta_path in self.cart.names else None
         qtitle, qmeta, questions = qti_questions(self.cart.read(qti_files[0]), 'quiz %r' % item['title'], self.report)
+        self.restore_points(ident, res, meta, questions, item['title'])
         title = t(meta, 'title') or qtitle or item['title']
         qid = self.uid('q', title)
         q = {'id': qid, 'title': title, 'quiz_type': t(meta, 'quiz_type', 'assignment') or 'assignment',
@@ -446,6 +447,46 @@ class Importer:
         self.quizzes.append(q)
         self.by_ref[ident] = ('quiz', qid)
         return qid
+
+    def restore_points(self, ident, res, meta, questions, label):
+        """Canvas exports keep per-question points only in Canvas's own copy of the quiz
+        (non_cc_assessments/<ident>.xml.qti); the Common Cartridge assessment_qti.xml has none,
+        so every question would fall back to 1 point. Take the points from the Canvas copy
+        (items matched by position, checked by question text), else spread the quiz total
+        from assessment_meta.xml evenly when it divides cleanly."""
+        canvas = ['non_cc_assessments/%s.xml.qti' % ident]
+        for dep in res['deps']:
+            dr = self.cart.resources.get(dep) or {}
+            canvas += [f for f in [dr.get('href')] + dr.get('files', []) if f and f.endswith('.xml.qti')]
+        for path in dict.fromkeys(canvas):
+            if path not in self.cart.names:
+                continue
+            items = list(parse_xml(self.cart.read(path).encode('utf-8')).iter('item'))
+            pts = []
+            if len(items) == len(questions):
+                for it, q in zip(items, questions):
+                    im = {t(f, 'fieldlabel'): t(f, 'fieldentry') for f in it.findall('./itemmetadata/qtimetadata/qtimetadatafield')}
+                    if (it.findtext('./presentation/material/mattext') or '').strip() != q['text'] or not im.get('points_possible'):
+                        pts = None
+                        break
+                    pts.append(num(im['points_possible'], 1))
+            if pts:
+                for q, p in zip(questions, pts):
+                    q['points'] = p
+                return
+            self.report.append('quiz %r: Canvas copy %s does not line up with the cartridge questions; points not taken from it' % (label, path))
+            break
+        total = num(t(meta, 'points_possible', None), None)
+        have = sum(q['points'] for q in questions)
+        if total is None or not questions or total == have:
+            return
+        per = total / len(questions)
+        if per == int(per) and all(q['points'] == questions[0]['points'] for q in questions):
+            for q in questions:
+                q['points'] = int(per)
+            self.report.append('quiz %r: questions carried no points; spread the quiz total %s evenly (%d each)' % (label, total, per))
+        else:
+            self.report.append('quiz %r: questions sum to %s but the quiz is worth %s; check the points' % (label, have, total))
 
     def discussion(self, ident, item):
         if ident in self.by_ref:
