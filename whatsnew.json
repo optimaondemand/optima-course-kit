@@ -14,6 +14,17 @@
   },
   {
    "date": "2026-11-18",
+   "code": "1205070",
+   "course": "M/J Grade 8 Pre-Algebra",
+   "grade": "8",
+   "subject": "Mathematics",
+   "kit": "1205070-s2-sparkle",
+   "unit": "Semester 2",
+   "modules": 6,
+   "sparkle": true
+  },
+  {
+   "date": "2026-11-18",
    "code": "1001040",
    "course": "M/J Language Arts 2",
    "grade": "7",
