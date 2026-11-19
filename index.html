@@ -5971,7 +5971,7 @@
   // Courses whose weekly modules are all Sparkle builds with no original beside them (M/J
   // Comprehensive Science 1, 2 and 3). Their weeks show blue and stay ordinary units: picked
   // one by one, counted by Select all. `blue` is the look; `sparkle` stays the stand-in kit.
-  var SPARKLE_COURSES = /^(2002040|2002070|2002100)-/;
+  var SPARKLE_COURSES = /^(?:(?:2002040|2002070|2002100)-|2109010-s2$)/;
   function sparkleLook(k, m) { return SPARKLE_COURSES.test(k.id) && WEEK_RX.test((m && m.title) || ''); }
   function unitNum(s) { var m = /^\s*(?:Module|Unit)\s+(\d+[A-Z]?)\b/i.exec(s || ''); return m ? m[1].toUpperCase() : ''; }
   function kitModules0(k) { return k.modules0 || k.modules || []; }

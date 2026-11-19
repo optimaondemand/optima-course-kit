@@ -57,7 +57,7 @@ def is_sparkle(kit):
 
 
 # Courses whose weekly modules are all Sparkle builds (same list as SPARKLE_COURSES in index.html).
-SPARKLE_COURSES = re.compile(r'^(2002040|2002070|2002100)-')
+SPARKLE_COURSES = re.compile(r'^(?:(?:2002040|2002070|2002100)-|2109010-s2$)')
 
 
 def module_key(kit_id, mod):

@@ -2,6 +2,83 @@
  "since": "2026-11-13",
  "units": [
   {
+   "date": "2026-11-19",
+   "code": "2109010",
+   "course": "M/J World History",
+   "grade": "6",
+   "subject": "Social Studies",
+   "kit": "2109010-s2",
+   "unit": "Classical Athens and the Peloponnesian War",
+   "modules": 3,
+   "sparkle": true
+  },
+  {
+   "date": "2026-11-19",
+   "code": "2109010",
+   "course": "M/J World History",
+   "grade": "6",
+   "subject": "Social Studies",
+   "kit": "2109010-s2",
+   "unit": "Macedon and the Hellenistic world",
+   "modules": 2,
+   "sparkle": true
+  },
+  {
+   "date": "2026-11-19",
+   "code": "2109010",
+   "course": "M/J World History",
+   "grade": "6",
+   "subject": "Social Studies",
+   "kit": "2109010-s2",
+   "unit": "The Greek polis",
+   "modules": 2,
+   "sparkle": true
+  },
+  {
+   "date": "2026-11-19",
+   "code": "2109010",
+   "course": "M/J World History",
+   "grade": "6",
+   "subject": "Social Studies",
+   "kit": "2109010-s2",
+   "unit": "The Persian Wars",
+   "modules": 2,
+   "sparkle": true
+  },
+  {
+   "date": "2026-11-19",
+   "code": "2109010",
+   "course": "M/J World History",
+   "grade": "6",
+   "subject": "Social Studies",
+   "kit": "2109010-s2",
+   "unit": "The Roman Empire and Christianity",
+   "modules": 2,
+   "sparkle": true
+  },
+  {
+   "date": "2026-11-19",
+   "code": "2109010",
+   "course": "M/J World History",
+   "grade": "6",
+   "subject": "Social Studies",
+   "kit": "2109010-s2",
+   "unit": "The Roman Republic and Carthage",
+   "modules": 4,
+   "sparkle": true
+  },
+  {
+   "date": "2026-11-19",
+   "code": "2109010",
+   "course": "M/J World History",
+   "grade": "6",
+   "subject": "Social Studies",
+   "kit": "2109010-s2",
+   "unit": "The fall of the Roman Republic",
+   "modules": 3,
+   "sparkle": true
+  },
+  {
    "date": "2026-11-18",
    "code": "1001310",
    "course": "English 1",
