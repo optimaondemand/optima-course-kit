@@ -589,10 +589,6 @@
     <div class="bar">
       <div class="owl"><img src="https://raw.githubusercontent.com/optimaondemand/optima-assets/eeb0b335630058906d52f478028361d352253a93/images/Optima%20Final%20Circle%20-%20Owl%20Only.png" alt="Optima Academy"></div>
       <div class="brand">Optima Academy Online<small>An Education Experience Company</small></div>
-      <nav class="tabs" aria-label="Tools">
-        <button type="button" class="tab" data-tab="kit" aria-pressed="true">Course Optimizer</button>
-        <button type="button" class="tab" data-tab="tiles" aria-pressed="false">Course tiles</button>
-      </nav>
     </div>
     <div class="title">
       <h1><button type="button" id="home-link" title="Course Optimizer home">Course <span>Optimizer</span></button></h1>
@@ -672,7 +668,7 @@
           <input type="text" id="code" placeholder="e.g. English 1 or 1001310" autocomplete="off">
           <div class="hint">Enter the seven-digit course code or part of the course name, then select the course in the list. Honors and Standard versions have separate codes.</div>
           <div class="chips" id="grade-chips" role="group" aria-label="Grade"></div>
-          <div class="row2"><select id="subject-filter" aria-label="Subject"><option value="">All subjects</option></select><span class="hint" id="finder-count"></span></div>
+          <div class="row2"><select id="subject-filter" aria-label="Subject"><option value="">All subjects</option></select></div>
           <div class="clist" id="course-list" role="listbox" aria-label="Courses"></div>
           <div class="catstat"><span id="catalog-status">Course list loading&hellip;</span><button type="button" class="link" id="catalog-refresh">Check now</button></div>
         </details>
@@ -2306,9 +2302,11 @@
     s.meta.title = course.title || '';
     s.meta.band = gradeBand(course.grade);
     s.meta.grade = gradeText(course.grade);
-    s.meta.badge1 = kit.upload ? (course.term || '') : (kit.label || '');
+    // Home page / syllabus / tile path: no semester was picked, so none is printed.
+    var term = piecesPath() ? '' : (kit.label || '');
+    s.meta.badge1 = kit.upload ? (course.term || '') : term;
     s.meta.badge2 = gradeText(course.grade);
-    s.meta.code = kit.upload ? (course.code || '') : course.code + (kit.label ? ' \u00b7 ' + kit.label : '');
+    s.meta.code = kit.upload ? (course.code || '') : course.code + (term ? ' \u00b7 ' + term : '');
     Syl.setAiBand(s, s.meta.band);
     var c = sylCatalogue && sylCatalogue[course.code];
     if (c && c.desc) s.desc.text = c.desc;
@@ -2558,7 +2556,7 @@
         setCatalogStatus('<span class="new">Course list updated ' + timeShort(catalogCheckedAt) + (what ? ': ' + escHtml(what) : '') + '</span>');
         if (kit && kit.newer) status('A newer build of this kit (v' + kit.newer.version + ') is in the store. Reload the page to use it; your home page and settings are saved in this browser.', 'ok');
       } else {
-        setCatalogStatus((manual ? 'No changes. ' : '') + 'Course list checked ' + timeShort(catalogCheckedAt) + ' \u00b7 ' + catalog.courses.length + ' course' + (catalog.courses.length === 1 ? '' : 's'));
+        setCatalogStatus((manual ? 'No changes. ' : '') + 'Course list checked ' + timeShort(catalogCheckedAt));
       }
       return d;
     }).catch(function (e) {
@@ -2572,7 +2570,7 @@
   }
   function wireCatalogRefresh() {
     catalogCheckedAt = new Date();
-    setCatalogStatus('Course list loaded ' + timeShort(catalogCheckedAt) + ' \u00b7 ' + catalog.courses.length + ' course' + (catalog.courses.length === 1 ? '' : 's') + ' \u00b7 rechecks every minute');
+    setCatalogStatus('Course list loaded ' + timeShort(catalogCheckedAt) + ' \u00b7 rechecks every minute');
     $('catalog-refresh').addEventListener('click', function () { refreshCatalog(true); });
     document.addEventListener('visibilitychange', function () { if (!document.hidden) refreshCatalog(false); });
     window.addEventListener('focus', function () { refreshCatalog(false); });
@@ -2732,12 +2730,11 @@
       r.innerHTML = '<div><div class="t">' + escHtml(c.title) + (lvl ? ' <span class="pill' + (/honors/i.test(lvl) ? '' : ' grey') + '">' + escHtml(lvl.toUpperCase()) + '</span>' : '') + '</div>' +
         '<div class="m">' + escHtml(gradeText(c.grade)) + ' &middot; ' + escHtml(c.code) + '</div></div>' +
         '<div class="st">' + (ready ? ready + ' of ' + c.kits.length + ' kit' + (c.kits.length === 1 ? '' : 's') + ' ready' : (c.kits.length ? 'Coming' : 'No kits listed')) + '</div>';
-      var pick = function () { chooseCourse(c); if (J.screen === 'course') go(nextScreen('course')); };
+      var pick = function () { chooseCourse(c); if (J.screen === 'course') afterCourse(); };
       r.addEventListener('click', pick);
       r.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
       list.appendChild(r);
     });
-    $('finder-count').textContent = rows.length + ' of ' + catalog.courses.length + ' course' + (catalog.courses.length === 1 ? '' : 's');
     $('browse-label').textContent = course ? 'Search the full course list for a different course' : 'Search the full course list';
   }
 
@@ -5693,8 +5690,9 @@
     // A reload keeps the course but not the kit, so kit screens fall back to the choice before them.
     // A teacher's own file is never stored, so a reload asks for it again.
     if (J.path === 'upload' && (NEEDS_KIT[s] || NEEDS_COURSE[s]) && !kit) s = 'upload';
-    if (NEEDS_KIT[s] && !kit) s = course ? (j.path === 'pieces' ? 'part' : 'modules') : 'welcome';
-    if (s === 'part' && j.path !== 'pieces') s = course ? 'modules' : 'welcome';
+    if (NEEDS_KIT[s] && !kit) s = course ? (j.path === 'pieces' ? 'course' : 'modules') : 'welcome';
+    // The semester screen is retired: no path passes through it.
+    if (s === 'part') s = course ? (j.path === 'pieces' ? 'course' : 'modules') : 'welcome';
     if (NEEDS_COURSE[s] && !course) s = 'welcome';
     if (s !== 'welcome' && !J.path) J.path = 'customize';
     // a journey saved in the classic flow lands on the review when the beta is on, and back
@@ -5706,13 +5704,13 @@
   // questions count as one screen (the question itself).
   function sequence() {
     // One screen picks the content: the module list (every semester and Sparkle version).
-    // Only the home page / syllabus / tile path still picks a single semester kit.
-    var pick = piecesPath() ? 'part' : 'modules';
+    // The home page / syllabus / tile path picks no content at all: straight from the
+    // course to those three panels (the course's first ready kit is loaded behind it).
+    if (piecesPath()) return (finder.by === 'subject' ? ['welcome', 'grade', 'course'] : ['welcome', 'grade', 'subject', 'course']).concat(['details', 'home', 'tile', 'syllabus', 'generate']);
+    var pick = 'modules';
     var seq = uploadPath() ? ['welcome', 'upload'] : finder.by === 'subject' ? ['welcome', 'grade', 'course', 'mode', pick] : ['welcome', 'grade', 'subject', 'course', 'mode', pick];
     if (J.mode === 'preview' || J.screen === 'preview') seq.push('preview');
     if (J.path === 'fetch') { seq.push('generate'); return seq; }
-    // Home page, syllabus and tile only: straight from the semester to those three panels.
-    if (piecesPath()) { seq.splice(seq.indexOf('mode'), 1); seq.push('details', 'home', 'tile', 'syllabus', 'generate'); return seq; }
     // A module-only file is an add-on to a course the teacher already has: it never
     // touches the home page or the syllabus, so those steps (and the details behind them) go.
     var addon = kit ? moduleAddon() : J.scope === 'modules';
@@ -5812,7 +5810,7 @@
     var meta = [];
     if (course.code && !course.upload) meta.push(course.code);
     if (course.upload) { if (kit && kit.file) meta.push(kit.file); }
-    else if (kit && kit.label && kit.label !== course.title) meta.push(kit.label);
+    else if (kit && kit.label && kit.label !== course.title && !piecesPath()) meta.push(kit.label);
     el.innerHTML = '<span class="k">Course</span><span class="t">' + escHtml(course.title || '') + '</span>' + (meta.length ? '<span class="m">' + escHtml(meta.join(' · ')) + '</span>' : '');
     el.hidden = false;
   }
@@ -5904,11 +5902,11 @@
       return gradeSortKey(a) - gradeSortKey(b) || courseFamily(a).localeCompare(courseFamily(b)) || courseLevel(a).localeCompare(courseLevel(b)) || a.code.localeCompare(b.code);
     });
     var allGrades = finder.grade === '';
-    $('t-courses-hint').textContent = (finder.subject || 'All subjects') + (allGrades ? ', every grade' : ', grade ' + gradeLabel(finder.grade)) + ' · ' + rows.length + ' course' + (rows.length === 1 ? '' : 's') + '. Honors and Standard have their own tiles.';
+    $('t-courses-hint').textContent = (finder.subject || 'All subjects') + (allGrades ? ', every grade' : ', grade ' + gradeLabel(finder.grade)) + '. Honors and Standard have their own tiles.';
     // One subject across every grade (a music teacher sees all music courses), or back to one grade.
     var other = finder.subject ? catalog.courses.filter(function (c) { return subjectGroup(c) === finder.subject; }).length : 0;
     var sw = $('t-courses-all');
-    if (!allGrades && finder.subject && other > rows.length) sw.innerHTML = '<button type="button" class="link" id="t-courses-every">Show all grades of ' + escHtml(finder.subject) + ' (' + other + ' courses)</button>';
+    if (!allGrades && finder.subject && other > rows.length) sw.innerHTML = '<button type="button" class="link" id="t-courses-every">Show all grades of ' + escHtml(finder.subject) + '</button>';
     else if (allGrades && finder.subject && J.history.indexOf('grade') >= 0 && finder.lastGrade !== undefined && finder.lastGrade !== '') sw.innerHTML = '<button type="button" class="link" id="t-courses-one">Show grade ' + escHtml(gradeLabel(finder.lastGrade)) + ' only</button>';
     else sw.innerHTML = '';
     var every = $('t-courses-every'), one = $('t-courses-one');
@@ -5928,14 +5926,25 @@
         ' data-code="' + escHtml(c.code) + '"', !ready);
     }).join('') || '<div class="hint">No courses match. Try another subject or grade, or search the full list below.</div>';
     $('t-courses').querySelectorAll('.tile').forEach(function (b) {
-      b.addEventListener('click', function () { chooseCourse(findCourse(this.dataset.code)); go(nextScreen('course')); });
+      b.addEventListener('click', function () { chooseCourse(findCourse(this.dataset.code)); afterCourse(); });
     });
+  }
+  // The home page / syllabus / tile path asks for no semester: the course's first ready
+  // kit (an original before a Sparkle version) supplies the course details behind the panels.
+  function piecesKit(c) {
+    var ready = ((c && c.kits) || []).filter(function (k) { return k.status === 'ready'; });
+    return ready.filter(function (k) { return !isSparkle(k); })[0] || ready[0] || null;
+  }
+  function afterCourse() {
+    if (!piecesPath()) { go(nextScreen('course')); return; }
+    var k = piecesKit(course);
+    if (k) chooseWholeKit(k).catch(function () { /* shown in status */ });
   }
   // After the course: the module list. Every module of every ready kit is offered in one
   // list (Semester 1, Semester 2, and each Sparkle version beside the original it stands
   // in for); the teacher picks any of them, puts them in order, and says whether the file
   // carries a home page, syllabus and course tile or only adds modules to a course.
-  function afterScope() { return J.mode === 'preview' ? 'preview' : nextScreen(piecesPath() ? 'part' : 'modules'); }
+  function afterScope() { return J.mode === 'preview' ? 'preview' : nextScreen(piecesPath() ? 'course' : 'modules'); }
   // Add-on = no home page, syllabus or tile in the file. The teacher's choice on the module
   // list; a home saved before that choice existed keeps the old rule (a subset is an add-on).
   function moduleAddon() {
@@ -6351,7 +6360,6 @@
         + (canvasCourseBase(home.courseUrl) ? '' : ' The home page has no Syllabus or Modules buttons because no Canvas course link was given under Teacher details.');
       $('j-summary').innerHTML = [
         course ? '<span class="chipx"><b>' + escHtml(course.title) + '</b> ' + escHtml(course.code) + '</span>' : '',
-        kit ? '<span class="chipx">' + escHtml(kit.label) + '</span>' : '',
         '<span class="chipx' + (panelChanged('home') ? '' : ' off') + '">Home page: ' + (panelChanged('home') ? 'customized' : 'suggested look') + '</span>',
         '<span class="chipx' + (panelChanged('syllabus') ? '' : ' off') + '">Syllabus: ' + (panelChanged('syllabus') ? 'customized' : 'standard') + '</span>',
         '<span class="chipx' + (piecesTileChanged() ? '' : ' off') + '">Course tile: ' + (piecesTileChanged() ? 'customized' : 'standard') + '</span>'
@@ -7114,7 +7122,8 @@
     document.querySelectorAll('.tab').forEach(function (b) { b.addEventListener('click', function () { setTab(this.dataset.tab); }); });
     wireTiles();
     wireSyllabus();
-    if (location.hash === '#tiles') setTab('tiles'); else if (uiPref().tab === 'tiles') setTab('tiles');
+    // No tab in the header any more: the tiles view opens from the welcome screen link or #tiles.
+    if (location.hash === '#tiles') setTab('tiles');
     // On the review screen the preview pane only opens for an item, so closing it puts
     // the course map back to full width instead of hiding the pane everywhere.
     $('hide-preview').addEventListener('click', function () { if (J.screen === 'review') { closeReviewPeek(); return; } setPreviewShown(false); });
@@ -7144,7 +7153,7 @@
     loadFinder();
     // The search box drives the picker: an exact code or title selects the course;
     // anything else narrows the browse list and clears the current selection.
-    $('code').addEventListener('input', function () { var c = findCourse(this.value); chooseCourse(c); if (c && J.screen === 'course') go(nextScreen('course')); });
+    $('code').addEventListener('input', function () { var c = findCourse(this.value); chooseCourse(c); if (c && J.screen === 'course') afterCourse(); });
     $('subject-filter').addEventListener('change', function () { finder.subject = this.value; saveFinder(); renderFinder(); });
     $('preview').addEventListener('click', function (e) { if (e.target.closest('a')) e.preventDefault(); });
     FIELDS.forEach(function (f) { $('f-' + f).addEventListener('input', function () { readForm(); save(); saveProfile(); renderPreview(); if (kit) renderSyllabus(); }); });
@@ -7205,7 +7214,7 @@
     // the module list starts from an empty pick, so no kit is loaded for it
     var p = k && screen !== 'modules' ? selectKit(k) : Promise.resolve();
     return p.then(function () {
-      if (NEEDS_KIT[screen] && !kit) screen = c ? (piecesPath() ? 'part' : 'modules') : 'welcome';
+      if (NEEDS_KIT[screen] && !kit) screen = c ? (piecesPath() ? 'course' : 'modules') : 'welcome';
       if (NEEDS_COURSE[screen] && !course) screen = 'welcome';
       J.screen = screen; renderScreen();
     }, function () { J.screen = 'welcome'; renderScreen(); });
@@ -7759,7 +7768,8 @@
     res.linked = linked.indexOf('href="https://optimaoaoteam.instructure.com/courses/123/modules"') >= 0 && linked.indexOf('href="https://optimaoaoteam.instructure.com/courses/123/assignments/syllabus"') >= 0 && linked.indexOf('CANVAS_') < 0;
     go('details', true); res.urlField = getComputedStyle($('f-courseUrl')).display !== 'none';
     go('home', true); res.modHidden = getComputedStyle($('mod-cards')).display === 'none';
-    go('part', true); res.noModuleTile = !$('kits').querySelector('.tile[data-part="module"]');
+    // No semester step: the course screen leads straight to Teacher details.
+    res.noModuleTile = seq.indexOf('part') < 0 && nextScreen('course') === 'details' && afterScope() === 'details' && piecesKit(course) && piecesKit(course).status === 'ready';
     go('generate', true); res.generate = !$('dl-pieces').hidden && !$('copy-syl').hidden && $('dl').hidden && $('dl-plain').hidden && $('pdf').hidden;
     var n = piecesNames();
     return buildPieces().then(function (r) { return JSZip.loadAsync(r.blob); }).then(function (z) {
