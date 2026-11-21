@@ -5978,7 +5978,7 @@
   function unitsOfKit(k) {
     var mods = kitModules0(k), out = [];
     if (isSparkle(k)) {
-      var n = (/(\d+[A-Z]?)/.exec(k.replaces || '') || /-m(\d+)/.exec(k.id) || [])[1] || '';
+      var n = (/(\d+[A-Z]?)/.exec(k.replaces || '') || (k.replaces ? null : /-m(\d+)/.exec(k.id)) || [])[1] || '';
       out.push({ kit: k, key: k.id + '|all', title: k.unit || k.label, num: String(n).toUpperCase(), mods: mods.slice(), sparkle: true, blue: true, replaces: k.replaces || (n ? 'Module ' + n : '') });
     } else {
       mods.forEach(function (m) {
@@ -6009,9 +6009,11 @@
     var secs = originals.map(function (k) { return { kit: k, label: k.label, units: unitsOfKit(k) }; }), loose = [];
     kits.filter(isSparkle).forEach(function (k) {
       var u = unitsOfKit(k)[0], placed = false;
-      if (u.num) placed = secs.some(function (s) {
+      // A unit with no number (Founding Era) is matched by the title of the module it replaces.
+      var rt = (u.replaces || '').toLowerCase();
+      if (u.num || rt) placed = secs.some(function (s) {
         var idx = -1;
-        s.units.forEach(function (x, i) { if (!x.sparkle && x.num === u.num) idx = i; });
+        s.units.forEach(function (x, i) { if (!x.sparkle && (u.num ? x.num === u.num : (x.title || '').toLowerCase().indexOf(rt) === 0)) idx = i; });
         if (idx < 0) return false;
         var j = idx + 1; while (j < s.units.length && s.units[j].sparkle) j++;
         s.units.splice(j, 0, u);
